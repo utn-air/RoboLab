@@ -29,12 +29,24 @@ separate layer for better caching — code changes don't invalidate asset layers
 ## Run
 
 ```bash
-# Interactive shell
+# Interactive shell (bind-mounts the host repo into /workspace/robolab)
 ./docker/run_docker.sh
 
 # Or specify a custom tag
 ./docker/run_docker.sh my-tag
 ```
+
+`run_docker.sh` bind-mounts your local checkout into `/workspace/robolab`, so
+Python/code changes on the host are visible immediately inside the container.
+This means you usually do **not** need to rebuild the image after editing repo
+files like `examples/`, `robolab/`, `scripts/`, or `tests/`.
+
+You **do** still need to rebuild when you change:
+
+- `docker/Dockerfile`
+- system packages in the image
+- Python dependencies installed during image build
+- files that must be baked into the image rather than mounted from the repo
 
 ### Running a single command
 
@@ -44,6 +56,7 @@ docker run --rm \
     --network=host \
     --entrypoint /workspace/isaaclab/_isaac_sim/python.sh \
     -e ACCEPT_EULA=Y \
+    -v $(pwd):/workspace/robolab \
     robolab:<tag> \
     <script.py> [args...]
 ```

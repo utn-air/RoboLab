@@ -15,35 +15,43 @@ Usage:
     Run headless:
     $ python run_env.py --headless
 """
-import argparse
+
 import os
 import cv2 # Must import this before isaaclab. Do not remove
-
+import argparse
 from isaaclab.app import AppLauncher
+
+DEFAULT_KIT_ARGS = "--/app/livestream/publicEndpointAddress=172.29.5.11  --/app/livestream/port=49100"
 
 # add argparse arguments
 parser = argparse.ArgumentParser(description="Demo on using the mimic joints for Robotiq 140 gripper.")
-parser.add_argument("--num_envs", type=int, default=1, help="Number of environments to spawn.")
+parser.add_argument("--num_envs", 
+                    type=int, 
+                    default=1, 
+                    help="Number of environments to spawn.")
+
 # append AppLauncher cli args
 AppLauncher.add_app_launcher_args(parser)
+
 # parse the arguments
 args_cli = parser.parse_args()
+args_cli.livestream = 2
+args_cli.kit_args = DEFAULT_KIT_ARGS
 args_cli.enable_cameras = True
 args_cli.activate_contact_sensors = True
 args_cli.save_videos = True
+
 # launch omniverse app
 app_launcher = AppLauncher(args_cli)
 simulation_app = app_launcher.app
 
-import tyro
-
+# import tyro
 from robolab.constants import PACKAGE_DIR, get_timestamp, DEFAULT_OUTPUT_DIR, TASK_DIR
-
 from episodes import run_gripper_toggle_episode, run_prerecorded_episode, run_empty_episode
-
 from robolab.core.environments.runtime import create_env # noqa
 from robolab.core.environments.config import generate_env_cfg_from_task # noqa
-from robolab.policies.droid_jointpos.observations import ImageObsCfg, ProprioceptionObservationCfg # noqa
+from robolab.registrations.droid_jointpos.observations import ObservationCfg # noqa
+# from robolab.policies.droid_jointpos.observations import ImageObsCfg, ProprioceptionObservationCfg # noqa
 from robolab.robots.droid import DroidCfg, contact_gripper, DroidJointPositionActionCfg # noqa
 from robolab.variations.camera import OverShoulderLeftCameraCfg # noqa
 from robolab.variations.lighting import SphereLightCfg # noqa
@@ -56,7 +64,7 @@ def main():
 
     # # Setup environment
     EnvCfg, _ = generate_env_cfg_from_task(
-        task_file_path=f"{TASK_DIR}/sauce_bottles_crate_task.py",
+        task_file_path=f"{TASK_DIR}/benchmark/sauce_bottles_crate_task.py",
         env_name="SauceBottles",
         robot_cfg=DroidCfg,
         camera_cfg=OverShoulderLeftCameraCfg,

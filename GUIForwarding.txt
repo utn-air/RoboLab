@@ -1,0 +1,19 @@
+
+
+On you local machine, download Isaac Sim WebRTC Streaming Client from here: 
+- https://docs.isaacsim.omniverse.nvidia.com/5.0.0/installation/download.html 
+
+On your local machine terminal, run:
+ssh abut37yx@airtower -L 8011:localhost:8011
+ssh abut37yx@airtower -L 49100:localhost:49100
+
+within Docker on airtower for isaacsim:
+OMNI_KIT_ALLOW_ROOT=1 ./runheadless.sh --/app/livestream/publicEndpointAddress=172.29.5.11 --/app/livestream/port=49100
+
+within Docker on airtower for RoboLab:
+python examples/demo/run_env.py  \
+    --livestream 2 \
+    --kit_args "--/app/livestream/publicEndpointAddress=172.29.5.11 --/app/livestream/port=49100"
+
+Open Isaac Sim WebRTC Streaming Client on you local
+server IP: 127.0.0.1
