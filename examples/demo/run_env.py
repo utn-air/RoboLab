@@ -54,6 +54,7 @@ from robolab.registrations.droid_jointpos.observations import ObservationCfg # n
 # from robolab.policies.droid_jointpos.observations import ImageObsCfg, ProprioceptionObservationCfg # noqa
 from robolab.robots.droid import DroidCfg, contact_gripper, DroidJointPositionActionCfg # noqa
 from robolab.variations.camera import OverShoulderLeftCameraCfg # noqa
+from robolab.variations.backgrounds import find_and_generate_background_config
 from robolab.variations.lighting import SphereLightCfg # noqa
 
 
@@ -62,20 +63,27 @@ def main():
 
     num_episodes = 2
 
+    # custom background config
+    CustomBackgroundCfg = find_and_generate_background_config(
+        filename="royal_esplanade_2k.hdr",
+        folder_path=os.path.join(PACKAGE_DIR, "assets", "backgrounds", "indoors"),
+        intensity=300.0,
+    )
     # # Setup environment
     EnvCfg, _ = generate_env_cfg_from_task(
-        task_file_path=f"{TASK_DIR}/benchmark/sauce_bottles_crate_task.py",
+        task_file_path=f"{TASK_DIR}/benchmark/tool_organization_task.py",
         env_name="SauceBottles",
         robot_cfg=DroidCfg,
         camera_cfg=OverShoulderLeftCameraCfg,
         lighting_cfg=SphereLightCfg,
+        background_cfg=CustomBackgroundCfg,
         contact_gripper=contact_gripper,
         actions_cfg=DroidJointPositionActionCfg(),
         observations_cfg=ObservationCfg(),
         dt=1 / (60 * 2),
         render_interval=8,
         decimation=8,
-        eye=(1.5, 0.0, 1.0),
+        eye=(1.5, 0.0, 1.0), # view in gui 
         lookat=(0.2, 0.0, 0.0),
         env_spacing=2.0,
         num_envs=1,
