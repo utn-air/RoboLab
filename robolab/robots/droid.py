@@ -9,8 +9,12 @@ import numpy as np
 import torch
 from isaaclab.actuators import ImplicitActuatorCfg
 from isaaclab.assets import ArticulationCfg
+from isaaclab.controllers.differential_ik_cfg import DifferentialIKControllerCfg
 from isaaclab.envs import ManagerBasedRLEnv
-from isaaclab.envs.mdp.actions.actions_cfg import BinaryJointPositionActionCfg
+from isaaclab.envs.mdp.actions.actions_cfg import (
+    BinaryJointPositionActionCfg,
+    DifferentialInverseKinematicsActionCfg,
+)
 from isaaclab.envs.mdp.actions.binary_joint_actions import BinaryJointPositionAction
 from isaaclab.managers import ObservationGroupCfg as ObsGroup
 from isaaclab.managers import ObservationTermCfg as ObsTerm
@@ -250,6 +254,34 @@ class DroidJointPositionActionCfg:
         joint_names=["finger_joint"],
         open_command_expr = {"finger_joint": 0.0},
         close_command_expr={"finger_joint": np.pi / 4},
+    )
+@configclass
+class DroidIKActionCfg:
+    """
+    End-effector pose control for the Franka + Robotiq DROID setup.
+
+    Notes:
+        - Relative pose mode expects 6 values for the arm action:
+          (dx, dy, dz, droll, dpitch, dyaw)
+        - The gripper action is also relative and expects 1 value:
+          (dg), interpreted as a delta on the finger joint.
+    """
+
+    body = DifferentialInverseKinematicsActionCfg(
+        asset_name="robot",
+        joint_names=["panda_joint.*"],
+        body_name="base_link",
+        controller=DifferentialIKControllerCfg(command_type="pose", 
+                                                use_relative_mode=True, 
+                                                ik_method="dls"),
+        scale=0.5,
+        body_offset=DifferentialInverseKinematicsActionCfg.OffsetCfg(pos=[0.0, 0.0, 0.0]),
+    )
+
+    finger_joint = mdp.RelativeJointPositionActionCfg(
+        asset_name="robot",
+        joint_names=["finger_joint"],
+        scale=np.pi / 4,
     )
 
 ########################################################

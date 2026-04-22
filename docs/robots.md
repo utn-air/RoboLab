@@ -105,6 +105,7 @@ class MyRobotCfg:
 You also need to define an action config and proprioception observations that match your robot's joints. See the built-in examples:
 
 - **Joint position actions:** `DroidJointPositionActionCfg` in `robolab/robots/droid.py`
+- **End-effector IK actions:** `DroidIKActionCfg` in `robolab/robots/droid.py`
 - **IK actions:** `FrankaIKActionCfg` / `FrankaRelIKActionCfg` in `robolab/robots/franka_definitions.py`
 - **Proprioception:** `ProprioceptionObservationCfg` in `robolab/robots/droid.py`
 

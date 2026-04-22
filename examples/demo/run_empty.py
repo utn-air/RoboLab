@@ -43,6 +43,8 @@ import traceback
 
 from isaaclab.app import AppLauncher
 
+DEFAULT_KIT_ARGS = "--/app/livestream/publicEndpointAddress=172.29.5.11  --/app/livestream/port=49100"
+
 # add argparse arguments
 parser = argparse.ArgumentParser(description="")
 parser.add_argument("--num_envs", type=int, default=1, help="Number of environments to spawn.")
@@ -56,6 +58,11 @@ parser.add_argument("--num-steps", type=int, default=50, help="Number of steps t
 
 # parse the arguments
 args_cli, _= parser.parse_known_args()
+
+# isaac webRTC live streaming settings
+args_cli.livestream = 2
+args_cli.kit_args = DEFAULT_KIT_ARGS
+
 args_cli.enable_cameras = True
 args_cli.save_videos = True
 app_launcher = AppLauncher(args_cli)
@@ -65,6 +72,7 @@ from robolab.constants import PACKAGE_DIR, set_output_dir # noqa
 from episodes import run_empty_episode # noqa
 from robolab.core.environments.runtime import create_env, end_episode # noqa
 from robolab.registrations.droid_jointpos.auto_env_registrations import auto_register_droid_envs # noqa
+from robolab.registrations.droid_ee.auto_env_registrations import auto_register_droid_ee_envs # noqa
 from robolab.core.logging.recorder_manager import patch_recorder_manager # noqa
 from robolab.core.environments.factory import get_envs # noqa
 from robolab.constants import get_timestamp # noqa
@@ -75,8 +83,8 @@ import robolab.constants # noqa
 # Fix recorder manager
 patch_recorder_manager()
 # Run automatic factory generation before main
-auto_register_droid_envs()
-
+# auto_register_droid_envs()
+auto_register_droid_ee_envs()
 robolab.constants.VERBOSE = True
 robolab.constants.DEBUG = False
 robolab.constants.RECORD_IMAGE_DATA = False

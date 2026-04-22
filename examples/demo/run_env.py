@@ -22,6 +22,8 @@ import argparse
 from isaaclab.app import AppLauncher
 
 DEFAULT_KIT_ARGS = "--/app/livestream/publicEndpointAddress=172.29.5.11  --/app/livestream/port=49100"
+DEFAULT_VIEWER_EYE = (0.05, 0.57, 0.66)
+DEFAULT_VIEWER_LOOKAT = (0.55, 0.19, 0.17)
 
 # add argparse arguments
 parser = argparse.ArgumentParser(description="Demo on using the mimic joints for Robotiq 140 gripper.")
@@ -35,8 +37,12 @@ AppLauncher.add_app_launcher_args(parser)
 
 # parse the arguments
 args_cli = parser.parse_args()
+
+# isaac webRTC live streaming settings
 args_cli.livestream = 2
 args_cli.kit_args = DEFAULT_KIT_ARGS
+
+# enable cameras and video saving
 args_cli.enable_cameras = True
 args_cli.activate_contact_sensors = True
 args_cli.save_videos = True
@@ -62,16 +68,17 @@ def main():
     """Main function."""
 
     num_episodes = 2
+    env = None
 
     # custom background config
     CustomBackgroundCfg = find_and_generate_background_config(
         filename="royal_esplanade_2k.hdr",
         folder_path=os.path.join(PACKAGE_DIR, "assets", "backgrounds", "indoors"),
-        intensity=300.0,
+        intensity=600.0,
     )
     # # Setup environment
     EnvCfg, _ = generate_env_cfg_from_task(
-        task_file_path=f"{TASK_DIR}/benchmark/tool_organization_task.py",
+        task_file_path=f"{TASK_DIR}/randomize_initial_pose/rubiks_cube_and_banana_uniform_10cm.py",
         env_name="SauceBottles",
         robot_cfg=DroidCfg,
         camera_cfg=OverShoulderLeftCameraCfg,
@@ -83,8 +90,8 @@ def main():
         dt=1 / (60 * 2),
         render_interval=8,
         decimation=8,
-        eye=(1.5, 0.0, 1.0), # view in gui 
-        lookat=(0.2, 0.0, 0.0),
+        eye=DEFAULT_VIEWER_EYE,
+        lookat=DEFAULT_VIEWER_LOOKAT,
         env_spacing=2.0,
         num_envs=1,
         seed=0,
@@ -92,37 +99,48 @@ def main():
 
     env_cfg = EnvCfg()
 
-    env, _ = create_env(scene=env_cfg,
-                     device=args_cli.device,
-                     num_envs=args_cli.num_envs,
-                     use_fabric=True)
+    try:
+        env, _ = create_env(scene=env_cfg,
+                         device=args_cli.device,
+                         num_envs=args_cli.num_envs,
+                         use_fabric=True)
 
-    output_dir = os.path.join(env.output_dir, get_timestamp())
-    for i in range(num_episodes):
-        env.output_dir = os.path.join(output_dir, f"episode_{i}")
+        output_dir = os.path.join(env.output_dir, get_timestamp())
+        for i in range(num_episodes):
+            env.output_dir = os.path.join(output_dir, f"episode_{i}")
 
-        # # Pre-recorded episode
-        # run_prerecorded_episode(env,
-        #             save_videos=args_cli.save_videos,
-        #             headless=args_cli.headless)
+            # # Pre-recorded episode
+            # run_prerecorded_episode(env,
+            #             save_videos=args_cli.save_videos,
+            #             headless=args_cli.headless)
 
-        # Just toggle the gripper episode
-        run_gripper_toggle_episode(env,
-                    save_videos=args_cli.save_videos,
-                    headless=args_cli.headless)
-
-
-        # # Policy (import from policy.episode import run_episode)
-        # from policy.episode import run_episode
-        # run_episode(env=env,
-        #             env_cfg=env_cfg,
-        #             save_videos=args_cli.save_videos,
-        #             headless=args_cli.headless)
+            # Just toggle the gripper episode
+            run_gripper_toggle_episode(env,
+                        save_videos=args_cli.save_videos,
+                        headless=args_cli.headless)
 
 
-        # run_empty_episode(env, num_envs=args_cli.num_envs, num_steps=10)
+            # # Policy (import from policy.episode import run_episode)
+            # from policy.episode import run_episode
+            # run_episode(env=env,
+            #             env_cfg=env_cfg,
+            #             save_videos=args_cli.save_videos,
+            #             headless=args_cli.headless)
 
-    env.close()
+
+            # run_empty_episode(env, num_envs=args_cli.num_envs, num_steps=10)
+
+        print("Episodes complete. Press Ctrl+C to close the environment.")
+        while simulation_app.is_running():
+            simulation_app.update()
+
+    except KeyboardInterrupt:
+        print("Ctrl+C received. Closing environment.")
+
+    finally:
+        if env is not None:
+            env.close()
+        simulation_app.close()
     return
 
 if __name__ == "__main__":

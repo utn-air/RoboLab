@@ -11,6 +11,8 @@ You need a custom registration if:
 - You want different [lighting](lighting.md), [backgrounds](background.md), or simulation parameters (dt, decimation, render interval)
 
 > **If you're using DROID with joint-position actions**, RoboLab ships a ready-to-use registration. You can skip to [Evaluating a New Policy](policy.md), which shows how to use the built-in registration directly.
+>
+> **If you're using DROID with end-effector pose control**, RoboLab also ships a parallel built-in registration at `robolab/registrations/droid_ee/auto_env_registrations.py`.
 
 ## Step 1: Define Your Observation Config
 
@@ -178,7 +180,8 @@ You can register both benchmark tasks and your own tasks in the same function �
 For complete working examples inside the RoboLab repo:
 
 - [`robolab/registrations/example/auto_env_registration.py`](../robolab/registrations/example/auto_env_registration.py) — Basic registration example
-- [`robolab/registrations/droid_jointpos/auto_env_registrations.py`](../robolab/registrations/droid_jointpos/auto_env_registrations.py) — Full DROID robot registration
+- [`robolab/registrations/droid_jointpos/auto_env_registrations.py`](../robolab/registrations/droid_jointpos/auto_env_registrations.py) — Full DROID joint-position registration
+- [`robolab/registrations/droid_ee/auto_env_registrations.py`](../robolab/registrations/droid_ee/auto_env_registrations.py) — Full DROID end-effector IK registration
 
 ---
 

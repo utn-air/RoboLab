@@ -38,10 +38,16 @@ import traceback
 from isaaclab.app import AppLauncher
 from robolab.constants import PACKAGE_DIR, set_output_dir # noqa
 
+DEFAULT_KIT_ARGS = "--/app/livestream/publicEndpointAddress=172.29.5.11  --/app/livestream/port=49100"
+USE_DROID_IK = True
+TASK_FOLDER_POSTFIX = "DroidIK" if USE_DROID_IK else ""
+
+
 # add argparse arguments
 parser = argparse.ArgumentParser(description="")
 parser.add_argument("--task", '-t', type=str, default="RubiksCubeAndBananaTask", help="Task name to run.")
-parser.add_argument("--recorded-data-folder", '--dir', type=str, default=os.path.join(PACKAGE_DIR, 'examples', 'demo', 'recorded_data'), help="Recorded data folder to run.")
+# parser.add_argument("--recorded-data-folder", '--dir', type=str, default=os.path.join(PACKAGE_DIR, 'examples', 'demo', 'recorded_data'), help="Recorded data folder to run.")
+parser.add_argument("--recorded-data-folder", '--dir', type=str, default=os.path.join(PACKAGE_DIR, 'output', 'run_empty_env'), help="Recorded data folder to run.")
 parser.add_argument("--num_envs", type=int, default=1, help="Number of environments to spawn.")
 parser.add_argument("--enable-subtask", "--enable_subtask", action="store_true", help="Enable subtask progress checking.")
 # append AppLauncher cli args
@@ -49,6 +55,11 @@ AppLauncher.add_app_launcher_args(parser)
 
 # parse the arguments
 args_cli, _= parser.parse_known_args()
+
+# isaac webRTC live streaming settings
+args_cli.livestream = 2
+args_cli.kit_args = DEFAULT_KIT_ARGS
+
 args_cli.enable_cameras = True
 args_cli.save_videos = True
 app_launcher = AppLauncher(args_cli)
@@ -57,6 +68,7 @@ simulation_app = app_launcher.app
 from episodes import run_prerecorded_episode_hdf5 # noqa
 from robolab.core.environments.runtime import create_env, end_episode # noqa
 from robolab.registrations.droid_jointpos.auto_env_registrations import auto_register_droid_envs # noqa
+from robolab.registrations.droid_ee.auto_env_registrations import auto_register_droid_ee_envs # noqa
 from robolab.core.logging.recorder_manager import patch_recorder_manager # noqa
 from robolab.core.environments.factory import get_envs # noqa
 from robolab.constants import get_timestamp # noqa
@@ -67,7 +79,10 @@ import robolab.constants # noqa
 # Fix recorder manager
 patch_recorder_manager()
 # Run automatic factory generation before main
-auto_register_droid_envs()
+if USE_DROID_IK:
+    auto_register_droid_ee_envs()
+else:
+    auto_register_droid_envs()
 
 robolab.constants.ENABLE_SUBTASK_PROGRESS_CHECKING = args_cli.enable_subtask
 robolab.constants.VERBOSE = True
@@ -77,15 +92,16 @@ robolab.constants.RECORD_IMAGE_DATA = False
 def main():
     """Main function."""
     task = args_cli.task
-    output_dir = os.path.join(PACKAGE_DIR, "output", "playback_"+os.path.basename(args_cli.recorded_data_folder) + "_" + task)
+    task_folder_name = f"{task}{TASK_FOLDER_POSTFIX}"
+    output_dir = os.path.join(PACKAGE_DIR, "output", "playback_" + os.path.basename(args_cli.recorded_data_folder) + "_" + task_folder_name)
     os.makedirs(output_dir, exist_ok=True)
 
 
     # Check if task is a folder inside the recorded_data folder
-    if os.path.isdir(os.path.join(args_cli.recorded_data_folder, task)):
-        hdf5_path = os.path.join(args_cli.recorded_data_folder, task, 'data.hdf5')
+    if os.path.isdir(os.path.join(args_cli.recorded_data_folder, task_folder_name)):
+        hdf5_path = os.path.join(args_cli.recorded_data_folder, task_folder_name, 'data.hdf5')
     else:
-        raise ValueError(f"Task {task} not found in {args_cli.recorded_data_folder}")
+        raise ValueError(f"Task {task_folder_name} not found in {args_cli.recorded_data_folder}")
 
     task_envs = get_envs(task=task)
     print(f"Running {len(task_envs)} environments: {task_envs}")
