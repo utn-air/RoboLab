@@ -32,3 +32,5 @@ videos/
 pyrightconfig.json
 
 ${data}/*
+checkpoints/*
+assets/*
