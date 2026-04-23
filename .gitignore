@@ -33,4 +33,4 @@ pyrightconfig.json
 
 ${data}/*
 checkpoints/*
-assets/*
+assets/
