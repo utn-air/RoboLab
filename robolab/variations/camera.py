@@ -20,7 +20,9 @@ class OverShoulderLeftCameraCfg:
             vertical_aperture=3.024,
         ),
         offset=TiledCameraCfg.OffsetCfg(
-            pos=(0.05, 0.57, 0.66), rot=(-0.393, -0.195, 0.399, 0.805), convention="opengl"
+            pos=(0.05, 0.57, 0.66), 
+            rot=(-0.393, -0.195, 0.399, 0.805), 
+            convention="opengl"
         ),
     )
 @configclass
@@ -38,7 +40,7 @@ class OverShoulderRightCameraCfg:
         ),
         offset=TiledCameraCfg.OffsetCfg(
             pos=(0.05, -0.57, 0.66),
-            rot=(0.393, -0.195, -0.399, 0.805),
+            rot=(-0.393, -0.195, -0.399, -0.805),
             convention="opengl",
         ),
     )

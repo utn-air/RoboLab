@@ -24,13 +24,15 @@ def auto_register_droid_ee_envs(task_dirs=DEFAULT_TASK_SUBFOLDERS, lighting_inte
 
     from robolab.core.environments.factory import auto_discover_and_create_cfgs, create_env_cfg
     from robolab.core.observations.observation_utils import generate_image_obs_from_cameras, generate_obs_cfg
-    from robolab.registrations.droid_jointpos.observations import ImageObsCfg, ProprioceptionObservationCfg
+    from robolab.registrations.droid_ee.observations import ImageObsCfg, ProprioceptionObservationCfg
     from robolab.robots.droid import DroidCfg, DroidIKActionCfg, contact_gripper
     from robolab.variations.backgrounds import HomeOfficeBackgroundCfg
-    from robolab.variations.camera import EgocentricMirroredCameraCfg, OverShoulderLeftCameraCfg
+    from robolab.variations.camera import OverShoulderRightCameraCfg, OverShoulderLeftCameraCfg, EgocentricMirroredCameraCfg
     from robolab.variations.lighting import SphereLightCfg
 
-    ViewportCameraCfg = generate_image_obs_from_cameras([EgocentricMirroredCameraCfg])
+    ViewportCameraCfg = generate_image_obs_from_cameras(
+        [OverShoulderRightCameraCfg, OverShoulderLeftCameraCfg, EgocentricMirroredCameraCfg ]
+    )
 
     ObservationCfg = generate_obs_cfg({
         "image_obs": ImageObsCfg(),
@@ -42,7 +44,7 @@ def auto_register_droid_ee_envs(task_dirs=DEFAULT_TASK_SUBFOLDERS, lighting_inte
         observations_cfg=ObservationCfg(),
         actions_cfg=DroidIKActionCfg(),
         robot_cfg=DroidCfg,
-        camera_cfg=[OverShoulderLeftCameraCfg, EgocentricMirroredCameraCfg],
+        camera_cfg=[OverShoulderRightCameraCfg, OverShoulderLeftCameraCfg, EgocentricMirroredCameraCfg],
         lighting_cfg=SphereLightCfg,
         background_cfg=HomeOfficeBackgroundCfg,
         contact_gripper=contact_gripper,
