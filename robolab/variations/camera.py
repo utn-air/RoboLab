@@ -23,6 +23,25 @@ class OverShoulderLeftCameraCfg:
             pos=(0.05, 0.57, 0.66), rot=(-0.393, -0.195, 0.399, 0.805), convention="opengl"
         ),
     )
+@configclass
+class OverShoulderRightCameraCfg:
+    external_right_cam = TiledCameraCfg(
+        prim_path="{ENV_REGEX_NS}/external_right_cam",
+        height=720,
+        width=1280,
+        data_types=["rgb"],
+        spawn=sim_utils.PinholeCameraCfg(
+            focal_length=2.1,
+            focus_distance=28.0,
+            horizontal_aperture=5.376,
+            vertical_aperture=3.024,
+        ),
+        offset=TiledCameraCfg.OffsetCfg(
+            pos=(0.05, -0.57, 0.66),
+            rot=(0.393, -0.195, -0.399, 0.805),
+            convention="opengl",
+        ),
+    )
 
 ################################################################################
 # Egocentric cameras
