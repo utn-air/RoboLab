@@ -48,10 +48,8 @@ class VALPDroidEEClient(InferenceClient):
         self.device = os.environ.get("VALP_DEVICE", self.cfg.get("device", "cuda:0"))
         self.rollout_horizon = 1
         self._env_prev_action: dict[int, object] = {}
-        self._env_goal_initialized: dict[int, bool] = {}
         self._env_goal_rep: dict[int, object] = {}
         self._env_goal_rep_wrist: dict[int, object] = {}
-        self._warned_goal_fallback = False
 
         self._initialize_model()
 
@@ -210,18 +208,30 @@ class VALPDroidEEClient(InferenceClient):
 
     def reset(self):
         self._env_prev_action.clear()
-        self._env_goal_initialized.clear()
         self._env_goal_rep.clear()
         self._env_goal_rep_wrist.clear()
-        self._warned_goal_fallback = False
+
+    def set_goal_images(self, external_image, wrist_image, *, env_id: int = 0, instruction: str = "goal"):
+        goal_rep = self.world_model.encode(external_image)
+        goal_rep_wrist = self.world_model.encode(wrist_image)
+        self._env_goal_rep[env_id] = goal_rep
+        self._env_goal_rep_wrist[env_id] = goal_rep_wrist
+        self.world_model.reset_logs(
+            goal_rep=goal_rep,
+            goal_rep_wrist=goal_rep_wrist,
+            exp_name=f"{instruction}_env{env_id}",
+        )
 
     def infer(self, obs: dict, instruction: str, *, env_id: int = 0) -> dict:
         import torch
 
         curr_obs = self._extract_observation(obs, env_id=env_id)
 
-        if not self._env_goal_initialized.get(env_id, False):
-            self._initialize_goal_from_current_obs(curr_obs, instruction, env_id)
+        if env_id not in self._env_goal_rep or env_id not in self._env_goal_rep_wrist:
+            raise RuntimeError(
+                "VALP goal images have not been set for this environment. "
+                "Provide task goal images from the eval side before calling infer()."
+            )
 
         self.world_model.goal_rep = self._env_goal_rep[env_id]
         self.world_model.goal_rep_wrist = self._env_goal_rep_wrist[env_id]
@@ -267,25 +277,6 @@ class VALPDroidEEClient(InferenceClient):
             "wrist_image": wrist_image,
             "ee_pose": ee_pose,
         }
-
-    def _initialize_goal_from_current_obs(self, curr_obs: dict, instruction: str, env_id: int) -> None:
-        if not self._warned_goal_fallback:
-            print(
-                "[VALP] No goal-image source is wired into RoboLab policy eval yet. "
-                "Using the first observation of each env as the goal representation fallback."
-            )
-            self._warned_goal_fallback = True
-
-        goal_rep = self.world_model.encode(curr_obs["external_image"])
-        goal_rep_wrist = self.world_model.encode(curr_obs["wrist_image"])
-        self._env_goal_rep[env_id] = goal_rep
-        self._env_goal_rep_wrist[env_id] = goal_rep_wrist
-        self.world_model.reset_logs(
-            goal_rep=goal_rep,
-            goal_rep_wrist=goal_rep_wrist,
-            exp_name=f"{instruction}_env{env_id}",
-        )
-        self._env_goal_initialized[env_id] = True
 
 
 MyPolicyClient = VALPDroidEEClient
