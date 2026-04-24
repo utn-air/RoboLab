@@ -53,7 +53,7 @@ parser.add_argument("--tag", nargs='+', default=None,
 parser.add_argument("--task-dirs", nargs='+', default=DEFAULT_TASK_SUBFOLDERS,
                        help="List of task directories to evaluate on")
 parser.add_argument("--policy",
-                    choices=["pi0", "pi0_fast", "paligemma", "paligemma_fast", "pi05", "gr00t", "dreamzero", "molmo", "openvla", "openvla_oft"], default="pi05",
+                    choices=["pi0", "pi0_fast", "paligemma", "paligemma_fast", "pi05", "gr00t", "dreamzero", "valp", "molmo", "openvla", "openvla_oft"], default="pi05",
                        help="Action-prediction backend to use (default: pi05)")
 parser.add_argument("--num-runs", "--num_runs", type=int, default=1,
                        help="Number of sequential runs per task (default: 1). Total episodes = num_runs * num_envs. Prefer increasing --num_envs for more episodes. Only increase --num-runs if you run out of GPU memory with the desired num_envs.")
@@ -107,8 +107,14 @@ robolab.constants.DEBUG = args_cli.enable_debug
 patch_recorder_manager()
 
 # Run automatic factory generation before main
-from robolab.registrations.droid_jointpos.auto_env_registrations import auto_register_droid_envs # noqa
-auto_register_droid_envs(task_dirs=args_cli.task_dirs, task=args_cli.task)
+if args_cli.policy == "valp":
+    from robolab.registrations.droid_ee.auto_env_registrations import auto_register_droid_ee_envs  # noqa
+
+    auto_register_droid_ee_envs(task_dirs=args_cli.task_dirs, task=args_cli.task)
+else:
+    from robolab.registrations.droid_jointpos.auto_env_registrations import auto_register_droid_envs  # noqa
+
+    auto_register_droid_envs(task_dirs=args_cli.task_dirs, task=args_cli.task)
 
 EVENT_STATUS_CODES = {
     StatusCode.WRONG_OBJECT_GRABBED_FAILURE,

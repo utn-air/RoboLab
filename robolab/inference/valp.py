@@ -1,264 +1,291 @@
-# my_policy/inference_client.py
+from __future__ import annotations
+
+import os
+import sys
+from pathlib import Path
 
 import numpy as np
-from robolab.inference.base_client import InferenceClient
+
+from .base_client import InferenceClient
 
 
-class MyPolicyClient(InferenceClient):
-    def __init__(self, remote_host: str = "localhost", remote_port: int = 8000) -> None:
-        # Connect to your model server
-        ...
+REPO_ROOT = Path(__file__).resolve().parents[2]
+VALP_ROOT = REPO_ROOT / "valp"
+DEFAULT_CFG_PATH = VALP_ROOT / "configs" / "inference" / "vjepa2-ac-vitg" / "droid-224px-8f.yaml"
 
-    def infer(self, obs: dict, instruction: str) -> dict:
-        # For the default DROID registration, obs contains:
-        #   obs["image_obs"]["external_cam"]    - (N, H, W, 3) torch tensor, uint8
-        #   obs["image_obs"]["wrist_cam"]       - (N, H, W, 3) torch tensor, uint8
-        #   obs["proprio_obs"]["arm_joint_pos"] - (N, 7) torch tensor, float32
-        #   obs["proprio_obs"]["gripper_pos"]   - (N, 1) torch tensor, float32
-
-        # Extract observations for this env (N = num_envs; index by env_id)
-        image = obs["image_obs"]["external_cam"][0].cpu().numpy()
-        joint_pos = obs["proprio_obs"]["arm_joint_pos"][0].cpu().numpy()
-
-        # Call your model server and get back an action
-        action = self._query_server(image, joint_pos, instruction)
-
-        # Return dict with "action" (np.ndarray) and "viz" (np.ndarray for display)
-        return {
-            "action": action,  # shape (8,): 7 joint positions + 1 gripper {0, 1}
-            "viz": image,      # any RGB image for the live visualization window
-        }
-
-    def reset(self):
-        # Called between episodes. Clear any internal state (action buffers, etc.)
-        ...
+if str(VALP_ROOT) not in sys.path:
+    sys.path.insert(0, str(VALP_ROOT))
 
 
-
+class VALPDroidEEClient(InferenceClient):
+    """Local RoboLab inference client for the VALP world model on DroidIK envs."""
 
     def __init__(
         self,
-        cfg_path: str,
-        model_name: str = "",
-        default_checkpoint_path: str = "",
-        **kwargs,
+        remote_host: str = "localhost",
+        remote_port: int = 8000,
+        cfg_path: str | None = None,
     ) -> None:
-        super().__init__(default_checkpoint_path=default_checkpoint_path, **kwargs)
+        del remote_host, remote_port
+
         import yaml
 
-        self.cfg_path = cfg_path
-        with open(self.cfg_path, "r") as f:
+        resolved_cfg = Path(
+            cfg_path
+            or os.environ.get("VALP_CFG_PATH")
+            or DEFAULT_CFG_PATH
+        ).expanduser().resolve()
+        if not resolved_cfg.exists():
+            raise FileNotFoundError(
+                f"VALP config not found at '{resolved_cfg}'. "
+                "Set VALP_CFG_PATH to your inference yaml before running evaluation."
+            )
+
+        self.cfg_path = resolved_cfg
+        with self.cfg_path.open("r", encoding="utf-8") as f:
             self.cfg = yaml.safe_load(f)
 
-    def initialize(self):
-        # torch import
+        self.device = os.environ.get("VALP_DEVICE", self.cfg.get("device", "cuda:0"))
+        self.rollout_horizon = 1
+        self._env_prev_action: dict[int, object] = {}
+        self._env_goal_initialized: dict[int, bool] = {}
+        self._env_goal_rep: dict[int, object] = {}
+        self._env_goal_rep_wrist: dict[int, object] = {}
+        self._warned_goal_fallback = False
+
+        self._initialize_model()
+
+    def _initialize_model(self) -> None:
+        import copy
+
         import torch
 
-        # VJEPA imports
-        from app.vjepa_droid.transforms import make_transforms
+        from app.vjepa_rig.transforms import make_transforms
+        from app.vjepa_rig.utils import init_video_model, load_checkpoint, load_pretrained
         from inference.utils.world_model_wrapper import WorldModel
 
-        self.device = self.cfg.get("device", "cuda")
+        cfgs_model = self.cfg.get("model", {})
+        cfgs_meta = self.cfg.get("meta", {})
+        cfgs_data = self.cfg.get("data", {})
+        cfgs_data_aug = self.cfg.get("data_aug", {})
+        cfgs_mpc_args = self.cfg.get("mpc_args", {})
+        cfgs_log_args = self.cfg.get("log", {})
+        cfgs_exp_args = self.cfg.get("exp", {})
 
-        # model config 
-        cfgs_model = self.cfg.get("model")
-
-        pretrained_encoder = cfgs_model.get("pretrained_encoder", None)
-        predictors = cfgs_model.get("predictors", None)
-
-        self.side_decoder_name = cfgs_model.get("side_decoder", None)
-        self.wrist_decoder_name = cfgs_model.get("wrist_decoder", None)
-
-        # data config
-        cfgs_data = self.cfg.get("data")
+        camera_views = cfgs_data.get("camera_views", ["right_mp4_path"])
         crop_size = cfgs_data.get("crop_size", 256)
         patch_size = cfgs_data.get("patch_size", 16)
         tubelet_size = cfgs_data.get("tubelet_size", 2)
 
-        # data augs
-        cfgs_data_aug = self.cfg.get("data_aug")
-        use_aa = cfgs_data_aug.get("auto_augment", False)
-        horizontal_flip = cfgs_data_aug.get("horizontal_flip", False)
-        motion_shift = cfgs_data_aug.get("motion_shift", False)
-        ar_range = cfgs_data_aug.get("random_resize_aspect_ratio", [3 / 4, 4 / 3])
-        rr_scale = cfgs_data_aug.get("random_resize_scale", [0.3, 1.0])
-        reprob = cfgs_data_aug.get("reprob", 0.0)
-
-        # cfgs_mpc_args config
-        cfgs_mpc_args = self.cfg.get("mpc_args")
-        self.rollout_horizon = cfgs_mpc_args.get("rollout_horizon", 2)
-        samples = cfgs_mpc_args.get("samples", 25)
-        topk = cfgs_mpc_args.get("topk", 10)
-        cem_steps = cfgs_mpc_args.get("cem_steps", 1)
-        momentum_mean = cfgs_mpc_args.get("momentum_mean", 0.15)
-        momentum_mean_gripper = cfgs_mpc_args.get("momentum_mean_gripper", 0.15)
-        momentum_std = cfgs_mpc_args.get("momentum_std", 0.75)
-        momentum_std_gripper = cfgs_mpc_args.get("momentum_std_gripper", 0.15)
-        maxnorm = cfgs_mpc_args.get("maxnorm", 0.075)
-        maxrotnorm = cfgs_mpc_args.get("maxrotnorm", 0.314) 
-        verbose = cfgs_mpc_args.get("verbose", True)
-
-        # log
-        cfgs_log_args = self.cfg.get("log")
-        log_recons = cfgs_log_args.get("log_recons", False)
-        log_objective_loss = cfgs_log_args.get("log_objective_loss", False)
-
-        # exp
-        cfgs_exp_args = self.cfg.get("exp")
-        objective = cfgs_exp_args.get("objective", "l1")
-        warm_starting = cfgs_exp_args.get("warm-starting", False)
-
-        # Initialize transform (random-resize-crop augmentations)
         transform = make_transforms(
-            random_horizontal_flip=horizontal_flip,
-            random_resize_aspect_ratio=ar_range,
-            random_resize_scale=rr_scale,
-            reprob=reprob,
-            auto_augment=use_aa,
-            motion_shift=motion_shift,
+            random_horizontal_flip=cfgs_data_aug.get("horizontal_flip", False),
+            random_resize_aspect_ratio=cfgs_data_aug.get("random_resize_aspect_ratio", [3 / 4, 4 / 3]),
+            random_resize_scale=cfgs_data_aug.get("random_resize_scale", [0.3, 1.0]),
+            reprob=cfgs_data_aug.get("reprob", 0.0),
+            auto_augment=cfgs_data_aug.get("auto_augment", False),
+            motion_shift=cfgs_data_aug.get("motion_shift", False),
             crop_size=crop_size,
         )
 
-        # load pretrained encoder model
-        encoder = torch.hub.load(
-            ".", # path to hubconf.py
-            pretrained_encoder, 
-            source="local", 
-            pretrained=True,
+        model_name = cfgs_model.get("model_name", "vit_giant_xformers")
+        pred_depth = cfgs_model.get("pred_depth", 24)
+        pred_num_heads = cfgs_model.get("pred_num_heads")
+        cross_attn_num_heads = cfgs_model.get("cross_attn_num_heads")
+        pred_embed_dim = cfgs_model.get("pred_embed_dim", 1024)
+        pred_is_frame_causal = cfgs_model.get("pred_is_frame_causal", True)
+        uniform_power = cfgs_model.get("uniform_power", False)
+        use_rope = cfgs_model.get("use_rope", False)
+        use_silu = cfgs_model.get("use_silu", False)
+        use_pred_silu = cfgs_model.get("use_pred_silu", False)
+        wide_silu = cfgs_model.get("wide_silu", True)
+        use_extrinsics = cfgs_model.get("use_extrinsics", False)
+        dual_view_training = bool(cfgs_model.get("dual_view_training", False))
+        use_dinov3_encoder = bool(cfgs_model.get("use_dinov3_encoder", False))
+        use_activation_checkpointing = cfgs_model.get("use_activation_checkpointing", False)
+        use_sdpa = bool(cfgs_meta.get("use_sdpa", False))
+
+        context_encoder_key = cfgs_meta.get("context_encoder_key", "encoder")
+        pretrain_checkpoint = cfgs_meta.get("pretrain_checkpoint")
+        predictor_checkpoint = cfgs_model.get("predictor_checkpoint")
+        pretrain_dinocheckpoint = cfgs_meta.get("pretrain_dinocheckpoint")
+
+        if dual_view_training:
+            inferred_mode = "dual"
+        elif len(camera_views) == 1:
+            inferred_mode = "wrist" if "wrist" in camera_views[0] else "side"
+        elif len(camera_views) == 2:
+            inferred_mode = "independent_dual"
+        else:
+            raise ValueError(f"Unsupported VALP camera_views configuration: {camera_views}")
+
+        encoder, predictor = init_video_model(
+            uniform_power=uniform_power,
+            device=self.device,
+            patch_size=patch_size,
+            max_num_frames=512,
+            tubelet_size=tubelet_size,
+            model_name=model_name,
+            crop_size=crop_size,
+            pred_depth=pred_depth,
+            pred_num_heads=pred_num_heads,
+            pred_embed_dim=pred_embed_dim,
+            action_embed_dim=7,
+            pred_is_frame_causal=pred_is_frame_causal,
+            use_extrinsics=use_extrinsics,
+            use_sdpa=use_sdpa,
+            use_silu=use_silu,
+            use_pred_silu=use_pred_silu,
+            wide_silu=wide_silu,
+            use_rope=use_rope,
+            use_activation_checkpointing=use_activation_checkpointing,
+            dual_view_predictor=dual_view_training,
+            cross_attn_num_heads=cross_attn_num_heads,
+            use_dinov3_encoder=use_dinov3_encoder,
         )
-        encoder.to(self.device).eval()
-        tokens_per_frame = int((crop_size // encoder.patch_size) ** 2)
 
-        # -- single predictors
+        encoder = load_pretrained(
+            r_path=pretrain_dinocheckpoint if use_dinov3_encoder else pretrain_checkpoint,
+            target_encoder=encoder,
+            context_encoder_key=context_encoder_key,
+            use_dinov3_encoder=use_dinov3_encoder,
+        )
+
         predictor_models = {}
-        for predictor in predictors:
-            pred_model = torch.hub.load(
-                ".", # path to hubconf.py
-                predictor, 
-                source="local",
-                encoder_embed_dim=encoder.embed_dim,
-                pretrained=True,
-            ) 
-            pred_model.to(self.device).eval()
-            predictor_models[predictor] = pred_model
+        if inferred_mode == "independent_dual":
+            side_predictor, _, _, _, _ = load_checkpoint(
+                r_path=predictor_checkpoint[0],
+                predictor=copy.deepcopy(predictor),
+                opt=None,
+                scaler=None,
+            )
+            wrist_predictor, _, _, _, _ = load_checkpoint(
+                r_path=predictor_checkpoint[1],
+                predictor=copy.deepcopy(predictor),
+                opt=None,
+                scaler=None,
+            )
+            side_predictor.to(self.device).eval()
+            wrist_predictor.to(self.device).eval()
+            predictor_models["side"] = side_predictor
+            predictor_models["wrist"] = wrist_predictor
+        else:
+            predictor, _, _, _, _ = load_checkpoint(
+                r_path=predictor_checkpoint,
+                predictor=predictor,
+                opt=None,
+                scaler=None,
+            )
+            predictor.to(self.device).eval()
+            predictor_models["dual" if inferred_mode == "dual" else inferred_mode] = predictor
 
-        # -- side decoder
-        side_decoder = None
-        if log_recons:
-            side_decoder = torch.hub.load(
-                ".", # path to hubconf.py
-                self.side_decoder_name, 
-                source="local", 
-                pretrained=True)
-            side_decoder.to(self.device).eval()
+        encoder.to(self.device).eval()
+        tokens_per_frame = int((crop_size // patch_size) ** 2)
 
-        # -- wrist decoder
-        wrist_decoder = None
-        if log_recons:
-            wrist_decoder = torch.hub.load(
-                ".", # path to hubconf.py
-                self.wrist_decoder_name, 
-                source="local", 
-                pretrained=True)
-            wrist_decoder.to(self.device).eval()
-
-
-        # World model wrapper initialization
+        self.rollout_horizon = cfgs_mpc_args.get("rollout_horizon", 2)
         self.world_model = WorldModel(
             encoder=encoder,
             predictor=predictor_models,
+            inferred_mode=inferred_mode,
             tokens_per_frame=tokens_per_frame,
             mpc_args={
                 "rollout": self.rollout_horizon,
-                "samples": samples,
-                "topk": topk,
-                "cem_steps": cem_steps,
-                "momentum_mean": momentum_mean,
-                "momentum_mean_gripper": momentum_mean_gripper,
-                "momentum_std": momentum_std,
-                "momentum_std_gripper": momentum_std_gripper,
-                "maxnorm": maxnorm,
-                "maxrotnorm": maxrotnorm,
-                "verbose": verbose,
-                "objective": objective,
-                "warm_starting": warm_starting
+                "samples": cfgs_mpc_args.get("samples", 25),
+                "topk": cfgs_mpc_args.get("topk", 10),
+                "cem_steps": cfgs_mpc_args.get("cem_steps", 1),
+                "momentum_mean": cfgs_mpc_args.get("momentum_mean", 0.15),
+                "momentum_mean_gripper": cfgs_mpc_args.get("momentum_mean_gripper", 0.15),
+                "momentum_std": cfgs_mpc_args.get("momentum_std", 0.75),
+                "momentum_std_gripper": cfgs_mpc_args.get("momentum_std_gripper", 0.15),
+                "maxnorm": cfgs_mpc_args.get("maxnorm", 0.075),
+                "maxrotnorm": cfgs_mpc_args.get("maxrotnorm", 0.314),
+                "verbose": cfgs_mpc_args.get("verbose", True),
+                "objective": cfgs_exp_args.get("objective", "l1"),
+                "warm_starting": cfgs_exp_args.get("warm-starting", False),
             },
             normalize_reps=True,
             device=self.device,
-            side_decoder = side_decoder,
-            wrist_decoder = wrist_decoder,
             transform=transform,
-            log_recons=log_recons,
-            log_objective_loss=log_objective_loss,
+            log_objective_loss=cfgs_log_args.get("log_objective_loss", False),
         )
 
-    def act(self, obs: Obs) -> Act:
-        # torch imports
+    def reset(self):
+        self._env_prev_action.clear()
+        self._env_goal_initialized.clear()
+        self._env_goal_rep.clear()
+        self._env_goal_rep_wrist.clear()
+        self._warned_goal_fallback = False
+
+    def infer(self, obs: dict, instruction: str, *, env_id: int = 0) -> dict:
         import torch
-        from torchvision.io import decode_jpeg
+
+        curr_obs = self._extract_observation(obs, env_id=env_id)
+
+        if not self._env_goal_initialized.get(env_id, False):
+            self._initialize_goal_from_current_obs(curr_obs, instruction, env_id)
+
+        self.world_model.goal_rep = self._env_goal_rep[env_id]
+        self.world_model.goal_rep_wrist = self._env_goal_rep_wrist[env_id]
 
         with torch.no_grad():
+            pose = torch.from_numpy(curr_obs["ee_pose"]).unsqueeze(0).to(
+                self.device, dtype=torch.float32, non_blocking=True
+            )
 
-            # [1, 7] -> [B, state_dim]
-            # in DROID 0 is open to 1 is closed: float
-            # In RCS 1 is open and 0 is close: binary
-            print("received state", obs.info["xyzrpy"], 1-obs.gripper[0])
-            s_n = (
-                torch.tensor((np.concatenate(([obs.info["xyzrpy"], 
-                                               [1-obs.gripper[0]]]), 
-                                            axis=0))) 
-                                            .unsqueeze(0)
-                                            .to(self.device, 
-                                            dtype=torch.float, 
-                                            non_blocking=True)
-                )
-
-            side = base64.urlsafe_b64decode(obs.cameras["rgb_side"])
-            side = torch.frombuffer(bytearray(side), dtype=torch.uint8)
-            side_img = decode_jpeg(side)
-
-            wrist = base64.urlsafe_b64decode(obs.cameras["rgb_wrist"])
-            wrist = torch.frombuffer(bytearray(wrist), dtype=torch.uint8)
-            wrist_img = decode_jpeg(wrist)
-  
-
-            # Action conditioned predictor and zero-shot action inference with CEM
             actions, mean = self.world_model.infer_next_action(
-                                            s_n,
-                                            side_img,
-                                            wrist_img, 
-                                            prev_action=self.prev_action,
-                                        ) # [rollout_horizon, 7]
+                pose=pose,
+                obs=curr_obs["external_image"],
+                obs_wrist=curr_obs["wrist_image"],
+                prev_action=self._env_prev_action.get(env_id),
+            )
 
-            self.prev_action = mean[1:]
-            
-            first_action = actions[0].cpu()
-            print(f"vjepa side action: {first_action.numpy()}")
-            # convert back to RCS gripper format
-            first_action[-1] =  1 - first_action[-1] 
+            self._env_prev_action[env_id] = mean[1:] if mean.shape[0] > 1 else None
+            action = actions[0].detach().cpu().numpy().astype(np.float32)
 
-        return Act(action=np.array(first_action))
+        viz = np.concatenate(
+            [
+                curr_obs["external_image"].cpu().numpy(),
+                curr_obs["wrist_image"].cpu().numpy(),
+            ],
+            axis=1,
+        )
+        return {"action": action, "viz": viz}
 
-    def reset(self, obs: Obs, instruction: Any, **kwargs) -> dict[str, Any]:
-        super().reset(obs, instruction, **kwargs)
-        # imports
-        import torch
-        from torchvision.io import decode_jpeg
+    def _extract_observation(self, obs_dict: dict, *, env_id: int) -> dict:
+        from scipy.spatial.transform import Rotation
 
-        self.goal_rep = None
+        robot_state = obs_dict["proprio_obs"]
+        external_image = obs_dict["image_obs"]["external_cam"][env_id].clone().detach().cpu()
+        wrist_image = obs_dict["image_obs"]["wrist_cam"][env_id].clone().detach().cpu()
+        ee_pos = robot_state["ee_pos"][env_id].clone().detach().cpu().numpy()
+        ee_quat = robot_state["ee_quat"][env_id].clone().detach().cpu().numpy()
+        ee_rpy = Rotation.from_quat(ee_quat[[1, 2, 3, 0]]).as_euler("xyz", degrees=False)
+        gripper_pos = robot_state["gripper_pos"][env_id].clone().detach().cpu().numpy()
+        ee_pose = np.concatenate([ee_pos, ee_rpy, gripper_pos], axis=0).astype(np.float32)
 
-        goal_image = base64.urlsafe_b64decode(obs.cameras["rgb_side"])
-        goal_image = torch.frombuffer(bytearray(goal_image), dtype=torch.uint8)
-        self.goal_rep = self.world_model.encode(decode_jpeg(goal_image))
-    
-        goal_wrist = base64.urlsafe_b64decode(obs.cameras["rgb_wrist"])
-        goal_wrist = torch.frombuffer(bytearray(goal_wrist), dtype=torch.uint8)
-        self.goal_rep_wrist = self.world_model.encode(decode_jpeg(goal_wrist))
+        return {
+            "external_image": external_image,
+            "wrist_image": wrist_image,
+            "ee_pose": ee_pose,
+        }
 
-        self.prev_action = None
-        if hasattr(self, "world_model"):
-            self.world_model.reset_logs(goal_rep=self.goal_rep, 
-                                        goal_rep_wrist=self.goal_rep_wrist,
-                                        exp_name=instruction)
+    def _initialize_goal_from_current_obs(self, curr_obs: dict, instruction: str, env_id: int) -> None:
+        if not self._warned_goal_fallback:
+            print(
+                "[VALP] No goal-image source is wired into RoboLab policy eval yet. "
+                "Using the first observation of each env as the goal representation fallback."
+            )
+            self._warned_goal_fallback = True
 
-        return {}
+        goal_rep = self.world_model.encode(curr_obs["external_image"])
+        goal_rep_wrist = self.world_model.encode(curr_obs["wrist_image"])
+        self._env_goal_rep[env_id] = goal_rep
+        self._env_goal_rep_wrist[env_id] = goal_rep_wrist
+        self.world_model.reset_logs(
+            goal_rep=goal_rep,
+            goal_rep_wrist=goal_rep_wrist,
+            exp_name=f"{instruction}_env{env_id}",
+        )
+        self._env_goal_initialized[env_id] = True
+
+
+MyPolicyClient = VALPDroidEEClient

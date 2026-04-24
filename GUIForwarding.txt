@@ -17,3 +17,5 @@ python examples/demo/run_env.py  \
 
 Open Isaac Sim WebRTC Streaming Client on you local
 server IP: 127.0.0.1
+
+python -m VALPDroidEEClient.serve --checkpoint /path/to/config --port 8000
