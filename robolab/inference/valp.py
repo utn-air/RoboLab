@@ -103,9 +103,13 @@ class VALPDroidEEClient(InferenceClient):
         use_sdpa = bool(cfgs_meta.get("use_sdpa", False))
 
         context_encoder_key = cfgs_meta.get("context_encoder_key", "encoder")
-        pretrain_checkpoint = cfgs_meta.get("pretrain_checkpoint")
+        pretrain_checkpoint = str(REPO_ROOT / cfgs_meta.get("pretrain_checkpoint"))
         predictor_checkpoint = cfgs_model.get("predictor_checkpoint")
-        pretrain_dinocheckpoint = cfgs_meta.get("pretrain_dinocheckpoint")
+        pretrain_dinocheckpoint = str(REPO_ROOT / cfgs_meta.get("pretrain_dinocheckpoint"))
+        if isinstance(predictor_checkpoint, list):
+            predictor_checkpoint = [str(REPO_ROOT / ckpt) for ckpt in predictor_checkpoint]
+        else:
+            predictor_checkpoint = str(REPO_ROOT / predictor_checkpoint)
 
         if dual_view_training:
             inferred_mode = "dual"

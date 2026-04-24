@@ -41,6 +41,8 @@ from collections import Counter
 from isaaclab.app import AppLauncher
 from robolab.constants import get_timestamp, DEFAULT_TASK_SUBFOLDERS # noqa
 
+DEFAULT_KIT_ARGS = "--/app/livestream/publicEndpointAddress=172.29.5.11  --/app/livestream/port=49100"
+
 # add argparse arguments
 parser = argparse.ArgumentParser(description="")
 parser.add_argument("--num-envs", "--num_envs", type=int, default=1, help="Number of environments to spawn.")
@@ -78,6 +80,11 @@ parser.add_argument("--video-mode", "--video_mode", type=str, default="all",
                     help="Which videos to save: 'all' (sensor + viewport), 'viewport' only, 'sensor' only, or 'none' (default: all)")
 # parse the arguments
 args_cli, _= parser.parse_known_args()
+
+# isaac webRTC live streaming settings
+args_cli.livestream = 2
+args_cli.kit_args = DEFAULT_KIT_ARGS
+
 args_cli.enable_cameras = True
 args_cli.save_videos = args_cli.video_mode != "none"
 app_launcher = AppLauncher(args_cli)
