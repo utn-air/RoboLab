@@ -31,6 +31,7 @@ COPY assets/objects/     /workspace/robolab/assets/objects/
 # Accept NVIDIA/Isaac Sim EULAs
 ENV OMNI_KIT_ACCEPT_EULA=YES
 ENV ACCEPT_EULA=Y
+ENV PROTOCOL_BUFFERS_PYTHON_IMPLEMENTATION=python
 
 # Copy project code (assets/ excluded via .dockerignore)
 COPY . /workspace/robolab
@@ -39,6 +40,10 @@ WORKDIR /workspace/robolab
 # Install Python dependencies
 # GIT_LFS_SKIP_SMUDGE=1 avoids pulling large LFS objects during build
 RUN GIT_LFS_SKIP_SMUDGE=1 /workspace/isaaclab/_isaac_sim/python.sh -m pip install --no-cache-dir -e .
+
+RUN /workspace/isaaclab/_isaac_sim/python.sh -m pip install --no-cache-dir --no-deps \
+    timm \
+    einops
 
 WORKDIR /workspace/robolab/valp
 RUN GIT_LFS_SKIP_SMUDGE=1 /workspace/isaaclab/_isaac_sim/python.sh -m pip install --no-cache-dir --no-deps -e .
