@@ -47,7 +47,7 @@ TASK_FOLDER_POSTFIX = "DroidIK" if USE_DROID_IK else ""
 parser = argparse.ArgumentParser(description="")
 parser.add_argument("--task", '-t', type=str, default="RubiksCubeAndBananaTask", help="Task name to run.")
 # parser.add_argument("--recorded-data-folder", '--dir', type=str, default=os.path.join(PACKAGE_DIR, 'examples', 'demo', 'recorded_data'), help="Recorded data folder to run.")
-parser.add_argument("--recorded-data-folder", '--dir', type=str, default=os.path.join(PACKAGE_DIR, 'output', 'run_empty_env'), help="Recorded data folder to run.")
+parser.add_argument("--recorded-data-folder", '--dir', type=str, default=os.path.join(PACKAGE_DIR, 'output', '2026-04-27_11-15-53_valp'), help="Recorded data folder to run.")
 parser.add_argument("--num_envs", type=int, default=1, help="Number of environments to spawn.")
 parser.add_argument("--enable-subtask", "--enable_subtask", action="store_true", help="Enable subtask progress checking.")
 # append AppLauncher cli args

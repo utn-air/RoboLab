@@ -26,14 +26,14 @@ class ImageObsCfg(ObsGroup):
                 "normalize": False,
                 }
             )
-    external_cam = ObsTerm(
-        func=mdp.observations.image,
-        params={
-            "sensor_cfg": SceneEntityCfg("external_cam"),
-            "data_type": "rgb",
-            "normalize": False,
-            }
-        )
+    # external_cam = ObsTerm(
+    #     func=mdp.observations.image,
+    #     params={
+    #         "sensor_cfg": SceneEntityCfg("external_cam"),
+    #         "data_type": "rgb",
+    #         "normalize": False,
+    #         }
+    #     )
     wrist_cam = ObsTerm(
             func=mdp.observations.image,
             params={

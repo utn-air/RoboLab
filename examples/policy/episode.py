@@ -4,7 +4,7 @@
 """Policy episode runner for RoboLab.
 
 This module contains the run_episode function that executes policy-controlled
-episodes using various policy backends (pi0, gr00t, dreamzero, molmo, openvla, etc.).
+episodes using various policy backends (valp, pi0, gr00t, dreamzero, molmo, openvla, etc.).
 
 Supports multi-env: one PolicyClient per env, per-env video writers,
 actions inferred per active env and stacked for env.step().
@@ -50,6 +50,81 @@ from robolab.core.logging.results import get_all_env_subtask_infos
 from robolab.core.observations.observation_utils import unpack_image_obs, unpack_viewport_cams
 from robolab.core.utils.video_utils import VideoWriter
 from robolab.core.world.world_state import get_world
+
+
+def _get_action_dim(env, fallback: int = 8) -> int:
+    space = getattr(env, "single_action_space", None) or getattr(env, "action_space", None)
+    shape = getattr(space, "shape", None)
+    if shape:
+        return int(shape[-1])
+
+    action_manager = getattr(env, "action_manager", None)
+    total_dim = getattr(action_manager, "total_action_dim", None)
+    return int(total_dim) if total_dim is not None else fallback
+
+
+def _compute_reach_goal_positions(env, target_object: str, z_offset: float) -> torch.Tensor:
+    world = get_world(env)
+    corners, centroid = world.get_bbox(target_object, env_id=None)
+    target_positions = centroid.clone()
+    target_positions[:, 2] = corners[:, :, 2].max(dim=1).values + z_offset
+    return target_positions + env.scene.env_origins
+
+
+def _drive_gripper_to_reach_goal(env, goal_cfg: dict, obs: dict) -> dict:
+    target_object = goal_cfg["object"]
+    z_offset = float(goal_cfg.get("z_offset", 0.12))
+    tolerance = float(goal_cfg.get("tolerance", 0.025))
+    max_steps = int(goal_cfg.get("drive_steps", 80))
+    settle_steps = int(goal_cfg.get("settle_steps", 4))
+    ik_action_scale = float(goal_cfg.get("ik_action_scale", 0.5))
+    max_action = float(goal_cfg.get("max_action", 0.25))
+    link_name = goal_cfg.get("link_name", "base_link")
+    action_dim = _get_action_dim(env)
+
+    target_positions = _compute_reach_goal_positions(env, target_object, z_offset)
+    actions = torch.zeros(env.num_envs, action_dim, device=env.device)
+
+    for _ in range(max_steps):
+        gripper_pose = get_world(env).get_articulation_link_pose("robot", link_name, env_id=None)
+        pos_error = target_positions - gripper_pose[:, :3]
+        if torch.linalg.norm(pos_error, dim=1).max().item() <= tolerance:
+            break
+
+        actions.zero_()
+        actions[:, :3] = torch.clamp(pos_error / max(ik_action_scale, 1e-6), -max_action, max_action)
+        obs, _, _, _, _ = env.step(actions)
+
+    actions.zero_()
+    for _ in range(settle_steps):
+        obs, _, _, _, _ = env.step(actions)
+
+    return obs
+
+
+def _setup_valp_goal_images(env, client, env_cfg, obs: dict, instruction: str) -> dict:
+    goal_cfg = getattr(env_cfg, "valp_goal", None)
+    if not goal_cfg:
+        return obs
+    if goal_cfg.get("mode") != "reach_above_object":
+        raise ValueError(f"Unsupported VALP goal mode: {goal_cfg.get('mode')}")
+
+    target_object = goal_cfg.get("object")
+    print(f"\033[96m[RoboLab] Capturing VALP goal images: reach above '{target_object}'\033[0m")
+    goal_obs = _drive_gripper_to_reach_goal(env, goal_cfg, obs)
+
+    external_key = goal_cfg.get("external_camera", "external_right_cam")
+    wrist_key = goal_cfg.get("wrist_camera", "wrist_cam")
+    for env_id in range(env.num_envs):
+        external_goal = goal_obs["image_obs"][external_key][env_id].clone().detach().cpu()
+        wrist_goal = goal_obs["image_obs"][wrist_key][env_id].clone().detach().cpu()
+        client.set_goal_images(external_goal, wrist_goal, env_id=env_id, instruction=instruction)
+
+    # Goal capture is a mini rollout and can satisfy the task termination
+    # condition. Clear eval freeze/result state before starting the real episode.
+    env.reset_eval_state()
+    obs, _ = env.reset()
+    return obs
 
 
 def run_episode(env, env_cfg, episode, headless=False, save_videos=True, video_mode="all", remote_host="localhost", remote_port="8000"):
@@ -99,14 +174,16 @@ def run_episode(env, env_cfg, episode, headless=False, save_videos=True, video_m
     max_steps = env.max_episode_length
     video_fps = 1 / (env_cfg.sim.render_interval * env_cfg.sim.dt) # Hz
     instruction = env_cfg.instruction
-    action_dim = 8  # 7 joints + 1 gripper
+    action_dim = _get_action_dim(env)
 
     subtask_status = []
 
     # Single client (one WebSocket connection) with per-env chunk state
     client = PolicyClient(remote_host=remote_host, remote_port=remote_port)
     clients = [client] * env.num_envs
-
+    if backend == "valp":
+        obs = _setup_valp_goal_images(env, client, env_cfg, obs, instruction)        
+    
     # Set up per-run HDF5 file and per-env demo indices
     if env.recorder_manager is not None and hasattr(env.recorder_manager, 'set_hdf5_file'):
         env.recorder_manager.set_hdf5_file(f"run_{episode}.hdf5")
@@ -139,6 +216,8 @@ def run_episode(env, env_cfg, episode, headless=False, save_videos=True, video_m
 
         while not timeline.is_playing():
             kit_app.update()
+        
+        print("policy_inference")
 
         timer.start("policy_inference")
         # Infer actions for all active (non-frozen) envs

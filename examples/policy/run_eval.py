@@ -75,7 +75,7 @@ parser.add_argument("--remote-port", "--remote_port", type=int, default=8000,
                        help="Remote port for policy server (default: 8000)")
 parser.add_argument("--instruction-type", "--instruction_type", type=str, default="default",
                        help="Which instruction variant to use when a task defines multiple (default, vague, specific, etc.)")
-parser.add_argument("--video-mode", "--video_mode", type=str, default="all",
+parser.add_argument("--video-mode", "--video_mode", type=str, default="sensor",
                     choices=["all", "viewport", "sensor", "none"],
                     help="Which videos to save: 'all' (sensor + viewport), 'viewport' only, 'sensor' only, or 'none' (default: all)")
 # parse the arguments

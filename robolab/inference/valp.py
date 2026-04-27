@@ -268,7 +268,7 @@ class VALPDroidEEClient(InferenceClient):
         from scipy.spatial.transform import Rotation
 
         robot_state = obs_dict["proprio_obs"]
-        external_image = obs_dict["image_obs"]["external_cam"][env_id].clone().detach().cpu()
+        external_image = obs_dict["image_obs"]["external_right_cam"][env_id].clone().detach().cpu()
         wrist_image = obs_dict["image_obs"]["wrist_cam"][env_id].clone().detach().cpu()
         ee_pos = robot_state["ee_pos"][env_id].clone().detach().cpu().numpy()
         ee_quat = robot_state["ee_quat"][env_id].clone().detach().cpu().numpy()
