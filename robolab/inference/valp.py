@@ -11,7 +11,7 @@ from .base_client import InferenceClient
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
 VALP_ROOT = REPO_ROOT / "valp"
-DEFAULT_CFG_PATH = VALP_ROOT / "configs" / "inference" / "vjepa2-ac-vitg" / "droid-224px-8f-dual.yaml"
+DEFAULT_CFG_PATH = VALP_ROOT / "configs" / "inference" / "vjepa2-ac-vitg" / "droid-224px-8f-right.yaml"
 
 if str(VALP_ROOT) not in sys.path:
     sys.path.insert(0, str(VALP_ROOT))
@@ -188,6 +188,7 @@ class VALPDroidEEClient(InferenceClient):
             encoder=encoder,
             predictor=predictor_models,
             inferred_mode=inferred_mode,
+            use_dinov3_encoder=use_dinov3_encoder,
             tokens_per_frame=tokens_per_frame,
             mpc_args={
                 "rollout": self.rollout_horizon,
@@ -237,8 +238,8 @@ class VALPDroidEEClient(InferenceClient):
                 "Provide task goal images from the eval side before calling infer()."
             )
 
-        self.world_model.goal_rep = self._env_goal_rep[env_id]
-        self.world_model.goal_rep_wrist = self._env_goal_rep_wrist[env_id]
+        # self.world_model.goal_rep = self._env_goal_rep[env_id]
+        # self.world_model.goal_rep_wrist = self._env_goal_rep_wrist[env_id]
 
         with torch.no_grad():
             pose = torch.from_numpy(curr_obs["ee_pose"]).unsqueeze(0).to(
@@ -254,6 +255,7 @@ class VALPDroidEEClient(InferenceClient):
 
             self._env_prev_action[env_id] = mean[1:] if mean.shape[0] > 1 else None
             action = actions[0].detach().cpu().numpy().astype(np.float32)
+            action[:2] = -action[:2]
 
         viz = np.concatenate(
             [

@@ -102,7 +102,17 @@ def _drive_gripper_to_reach_goal(env, goal_cfg: dict, obs: dict) -> dict:
     return obs
 
 
-def _setup_valp_goal_images(env, client, env_cfg, obs: dict, instruction: str) -> dict:
+def _save_goal_image(image: torch.Tensor, path: str):
+    os.makedirs(os.path.dirname(path), exist_ok=True)
+    image_np = image.detach().cpu().numpy()
+    if image_np.dtype != "uint8":
+        image_np = image_np.clip(0, 255).astype("uint8")
+    if image_np.ndim == 3 and image_np.shape[-1] == 3:
+        image_np = cv2.cvtColor(image_np, cv2.COLOR_RGB2BGR)
+    cv2.imwrite(path, image_np)
+
+
+def _setup_valp_goal_images(env, client, env_cfg, obs: dict, instruction: str, episode: int) -> dict:
     goal_cfg = getattr(env_cfg, "valp_goal", None)
     if not goal_cfg:
         return obs
@@ -118,6 +128,9 @@ def _setup_valp_goal_images(env, client, env_cfg, obs: dict, instruction: str) -
     for env_id in range(env.num_envs):
         external_goal = goal_obs["image_obs"][external_key][env_id].clone().detach().cpu()
         wrist_goal = goal_obs["image_obs"][wrist_key][env_id].clone().detach().cpu()
+        goal_dir = os.path.join(get_output_dir(), "valp_goal_images")
+        _save_goal_image(external_goal, os.path.join(goal_dir, f"run_{episode}_env{env_id}_{external_key}.png"))
+        _save_goal_image(wrist_goal, os.path.join(goal_dir, f"run_{episode}_env{env_id}_{wrist_key}.png"))
         client.set_goal_images(external_goal, wrist_goal, env_id=env_id, instruction=instruction)
 
     # Goal capture is a mini rollout and can satisfy the task termination
@@ -182,7 +195,7 @@ def run_episode(env, env_cfg, episode, headless=False, save_videos=True, video_m
     client = PolicyClient(remote_host=remote_host, remote_port=remote_port)
     clients = [client] * env.num_envs
     if backend == "valp":
-        obs = _setup_valp_goal_images(env, client, env_cfg, obs, instruction)        
+        obs = _setup_valp_goal_images(env, client, env_cfg, obs, instruction, episode)        
     
     # Set up per-run HDF5 file and per-env demo indices
     if env.recorder_manager is not None and hasattr(env.recorder_manager, 'set_hdf5_file'):
@@ -216,9 +229,6 @@ def run_episode(env, env_cfg, episode, headless=False, save_videos=True, video_m
 
         while not timeline.is_playing():
             kit_app.update()
-        
-        print("policy_inference")
-
         timer.start("policy_inference")
         # Infer actions for all active (non-frozen) envs
         actions = torch.zeros(env.num_envs, action_dim, device=env.device)
