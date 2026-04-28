@@ -255,7 +255,6 @@ class VALPDroidEEClient(InferenceClient):
 
             self._env_prev_action[env_id] = mean[1:] if mean.shape[0] > 1 else None
             action = actions[0].detach().cpu().numpy().astype(np.float32)
-            action[:2] = -action[:2]
 
         viz = np.concatenate(
             [
