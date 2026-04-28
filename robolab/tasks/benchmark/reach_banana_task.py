@@ -56,7 +56,7 @@ class ReachBananaTask(Task):
     scene = import_scene("banana_bowl.usda", contact_object_list)
     terminations = ReachBananaTerminations
     instruction = {
-        "default": "Move the gripper above the banana",
+        "default": "Reach the banana",
         "vague": "Reach the fruit",
         "specific": "Move the robot gripper to a position just above the yellow banana without grasping it",
     }

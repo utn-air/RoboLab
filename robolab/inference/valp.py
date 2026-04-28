@@ -11,7 +11,7 @@ from .base_client import InferenceClient
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
 VALP_ROOT = REPO_ROOT / "valp"
-DEFAULT_CFG_PATH = VALP_ROOT / "configs" / "inference" / "vjepa2-ac-vitg" / "droid-224px-8f-right.yaml"
+DEFAULT_CFG_PATH = VALP_ROOT / "configs" / "inference" / "vjepa2-ac-vitg" / "droid-256px-8f-right.yaml"
 
 if str(VALP_ROOT) not in sys.path:
     sys.path.insert(0, str(VALP_ROOT))
@@ -70,10 +70,10 @@ class VALPDroidEEClient(InferenceClient):
         cfgs_log_args = self.cfg.get("log", {})
         cfgs_exp_args = self.cfg.get("exp", {})
 
-        camera_views = cfgs_data.get("camera_views", ["right_mp4_path"])
+        camera_views = cfgs_data.get("camera_views", ["left_mp4_path"])
         crop_size = cfgs_data.get("crop_size", 256)
-        patch_size = cfgs_data.get("patch_size", 16)
-        tubelet_size = cfgs_data.get("tubelet_size", 2)
+        patch_size = cfgs_data.get("patch_size")
+        tubelet_size = cfgs_data.get("tubelet_size")
 
         transform = make_transforms(
             random_horizontal_flip=cfgs_data_aug.get("horizontal_flip", False),
@@ -85,11 +85,11 @@ class VALPDroidEEClient(InferenceClient):
             crop_size=crop_size,
         )
 
-        model_name = cfgs_model.get("model_name", "vit_giant_xformers")
-        pred_depth = cfgs_model.get("pred_depth", 24)
-        pred_num_heads = cfgs_model.get("pred_num_heads")
-        cross_attn_num_heads = cfgs_model.get("cross_attn_num_heads")
-        pred_embed_dim = cfgs_model.get("pred_embed_dim", 1024)
+        model_name = cfgs_model.get("model_name")
+        pred_depth = cfgs_model.get("pred_depth")
+        pred_num_heads = cfgs_model.get("pred_num_heads", None)
+        cross_attn_num_heads = cfgs_model.get("cross_attn_num_heads", None)
+        pred_embed_dim = cfgs_model.get("pred_embed_dim")
         pred_is_frame_causal = cfgs_model.get("pred_is_frame_causal", True)
         uniform_power = cfgs_model.get("uniform_power", False)
         use_rope = cfgs_model.get("use_rope", False)
@@ -238,9 +238,6 @@ class VALPDroidEEClient(InferenceClient):
                 "Provide task goal images from the eval side before calling infer()."
             )
 
-        # self.world_model.goal_rep = self._env_goal_rep[env_id]
-        # self.world_model.goal_rep_wrist = self._env_goal_rep_wrist[env_id]
-
         with torch.no_grad():
             pose = torch.from_numpy(curr_obs["ee_pose"]).unsqueeze(0).to(
                 self.device, dtype=torch.float32, non_blocking=True
@@ -263,6 +260,7 @@ class VALPDroidEEClient(InferenceClient):
             ],
             axis=1,
         )
+        print(action)
         return {"action": action, "viz": viz}
 
     def _extract_observation(self, obs_dict: dict, *, env_id: int) -> dict:
