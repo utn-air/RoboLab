@@ -59,7 +59,6 @@ from robolab.constants import PACKAGE_DIR, set_output_dir # noqa
 from robolab.core.environments.runtime import create_env # noqa
 from robolab.eval import create_client, run_episode, summarize_run # noqa
 from robolab.registrations.droid_jointpos.auto_env_registrations_bg_variations import auto_register_droid_envs_bg_variations # noqa
-from robolab.core.logging.recorder_manager import patch_recorder_manager # noqa
 from robolab.core.environments.factory import get_envs_by_tag # noqa
 from robolab.core.logging.results import check_all_episodes_complete, check_run_complete # noqa
 from robolab.core.logging.results import init_experiment, summarize_experiment_results # noqa
@@ -69,8 +68,6 @@ robolab.constants.ENABLE_SUBTASK_PROGRESS_CHECKING = args_cli.enable_subtask
 robolab.constants.RECORD_IMAGE_DATA = args_cli.record_image_data
 robolab.constants.VERBOSE = args_cli.enable_verbose
 robolab.constants.DEBUG = args_cli.enable_debug
-
-patch_recorder_manager()
 
 auto_register_droid_envs_bg_variations(task_dirs=args_cli.task_dirs)
 

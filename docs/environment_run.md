@@ -175,7 +175,7 @@ You can also pass events directly to `create_env` using the `events` parameter. 
 from robolab.core.events.reset_camera import RandomizeCameraPoseUniform
 
 events = RandomizeCameraPoseUniform.from_params(
-    cameras=["external_cam"],
+    cameras=["over_shoulder_left_camera"],
     pose_range={"x": (-0.05, 0.05), "y": (-0.05, 0.05)},
 )
 env, env_cfg = create_env("BananaInBowlTask", events=events)

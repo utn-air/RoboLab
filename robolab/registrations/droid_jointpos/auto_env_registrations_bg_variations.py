@@ -52,10 +52,16 @@ def auto_register_droid_envs_bg_variations(
     """
     from robolab.core.environments.factory import batch_create_env_cfgs
     from robolab.core.observations.observation_utils import generate_image_obs_from_cameras, generate_obs_cfg
-    from robolab.registrations.droid_jointpos.observations import ImageObsCfg, ProprioceptionObservationCfg
-    from robolab.robots.droid import DroidCfg, DroidJointPositionActionCfg, contact_gripper
+    from robolab.registrations.droid_jointpos.camera_presets import WRIST_LEFT
+    from robolab.robots.droid import (
+        DroidCfg,
+        DroidJointPositionActionCfg,
+        ProprioceptionObservationCfg,
+        WristCameraCfg,
+        contact_gripper,
+    )
     from robolab.variations.backgrounds import find_and_generate_background_config
-    from robolab.variations.camera import EgocentricMirroredCameraCfg, OverShoulderLeftCameraCfg
+    from robolab.variations.camera import EgocentricMirroredCameraCfg
 
     # Use defaults if not provided
     if backgrounds is None:
@@ -66,7 +72,13 @@ def auto_register_droid_envs_bg_variations(
     print(f"Registering background variation environments for tasks: {tasks}")
     print(f"Using {len(backgrounds)} backgrounds: {backgrounds}")
 
+    cameras = WRIST_LEFT
+    # WristCameraCfg is robot-mounted (wrist_cam is already attached via DroidCfg).
+    # Including it as a scene mixin breaks spawn ordering (wrist_cam before robot).
+    scene_cameras = [c for c in cameras if c is not WristCameraCfg]
+
     # Generate Observations
+    ImageObsCfg = generate_image_obs_from_cameras(cameras)
     ViewportCameraCfg = generate_image_obs_from_cameras([EgocentricMirroredCameraCfg])
     ObservationCfg = generate_obs_cfg({
         "image_obs": ImageObsCfg(),
@@ -98,7 +110,7 @@ def auto_register_droid_envs_bg_variations(
                 observations_cfg=ObservationCfg(),
                 actions_cfg=DroidJointPositionActionCfg(),
                 robot_cfg=DroidCfg,
-                camera_cfg=[OverShoulderLeftCameraCfg, EgocentricMirroredCameraCfg],
+                camera_cfg=[*scene_cameras, EgocentricMirroredCameraCfg],
                 background_cfg=bg_config,
                 contact_gripper=contact_gripper,
                 dt=1 / (60 * 2),
