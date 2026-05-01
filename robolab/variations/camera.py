@@ -39,9 +39,12 @@ class OverShoulderRightCameraCfg:
             vertical_aperture=3.024,
         ),
         offset=TiledCameraCfg.OffsetCfg(
-            pos=(0.05, -0.57, 0.66),
-            rot=(0.80495472,  0.39914219, -0.19486072, -0.39339892),
-            # rot = (0.39305896, -0.19502926, -0.39905986,  0.80512078), # gemini
+            pos=(0.2, -0.57, 0.66),
+            rot=(0.842, 0.464, -0.112, -0.252),
+            # original rotation: rot=(0.80495472,  0.39914219, -0.19486072, -0.39339892),
+            # 10 degrees to left: rot=rot=(0.836, 0.415, -0.160, -0.321)
+            # 20 degrees to left: rot=(0.861, 0.427, -0.123, -0.247),
+            # 20 degrees to left and 5 degrees up: rot=(0.842, 0.464, -0.112, -0.252)
             convention="opengl",
         ),
     )

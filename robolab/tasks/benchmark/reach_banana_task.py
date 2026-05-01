@@ -53,7 +53,7 @@ class ReachBananaTerminations:
 @dataclass
 class ReachBananaTask(Task):
     contact_object_list = ["banana", "bowl", "table"]
-    scene = import_scene("banana_bowl.usda", contact_object_list)
+    scene = import_scene("banana_bowl.usda", contact_object_list) #rubiks_cube_banana_bowl.usda
     terminations = ReachBananaTerminations
     instruction = {
         "default": "Reach the banana",

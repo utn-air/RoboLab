@@ -11,7 +11,7 @@ from .base_client import InferenceClient
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
 VALP_ROOT = REPO_ROOT / "valp"
-DEFAULT_CFG_PATH = VALP_ROOT / "configs" / "inference" / "vjepa2-ac-vitg" / "droid-256px-8f-right.yaml"
+DEFAULT_CFG_PATH = VALP_ROOT / "configs" / "inference" / "vjepa2-ac-vitg" / "droid-224px-8f-dual.yaml"
 
 if str(VALP_ROOT) not in sys.path:
     sys.path.insert(0, str(VALP_ROOT))
@@ -178,7 +178,7 @@ class VALPDroidEEClient(InferenceClient):
                 scaler=None,
             )
             predictor.to(self.device).eval()
-            predictor_models["dual" if inferred_mode == "dual" else inferred_mode] = predictor
+            predictor_models[inferred_mode] = predictor
 
         encoder.to(self.device).eval()
         tokens_per_frame = int((crop_size // patch_size) ** 2)
