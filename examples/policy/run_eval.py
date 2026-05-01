@@ -95,6 +95,12 @@ parser.add_argument("--instruction-type", "--instruction_type", type=str, defaul
 parser.add_argument("--video-mode", "--video_mode", type=str, default="all",
                     choices=["all", "viewport", "sensor", "none"],
                     help="Which videos to save: 'all' (sensor + viewport), 'viewport' only, 'sensor' only, or 'none' (default: all)")
+parser.add_argument("--randomize-background", "--randomize_background", action="store_true",
+                    help="Sample a random non-default background per task at registration time. "
+                         "Each registered env gets one fixed background; the chosen texture is "
+                         "recorded in the per-task env_cfg.json.")
+parser.add_argument("--background-seed", "--background_seed", type=int, default=None,
+                    help="Seed for reproducible per-task background sampling. Used with --randomize-background.")
 # parse the arguments
 args_cli, _= parser.parse_known_args()
 args_cli.enable_cameras = True
@@ -121,9 +127,17 @@ robolab.constants.DEBUG = args_cli.enable_debug
 from robolab.registrations.droid_jointpos.auto_env_registrations import auto_register_droid_envs # noqa
 if args_cli.policy == "dreamzero" and args_cli.dz_cam2 in ("right", "head"):
     from robolab.registrations.droid_jointpos.camera_presets import WRIST_LEFT_RIGHT_HEAD # noqa
-    auto_register_droid_envs(task_dirs=args_cli.task_dirs, task=args_cli.task, cameras=WRIST_LEFT_RIGHT_HEAD)
+    auto_register_droid_envs(
+        task_dirs=args_cli.task_dirs, task=args_cli.task, cameras=WRIST_LEFT_RIGHT_HEAD,
+        randomize_background=args_cli.randomize_background,
+        background_seed=args_cli.background_seed,
+    )
 else:
-    auto_register_droid_envs(task_dirs=args_cli.task_dirs, task=args_cli.task)
+    auto_register_droid_envs(
+        task_dirs=args_cli.task_dirs, task=args_cli.task,
+        randomize_background=args_cli.randomize_background,
+        background_seed=args_cli.background_seed,
+    )
 
 def main():
     """Main function."""

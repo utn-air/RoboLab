@@ -29,7 +29,6 @@ git clone https://github.com/NVlabs/RoboLab.git
 cd robolab
 uv venv --python 3.11
 source .venv/bin/activate
-uv pip install "setuptools<81"
 uv sync
 ```
 

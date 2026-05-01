@@ -1,6 +1,8 @@
 # SPDX-FileCopyrightText: Copyright (c) 2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: CC-BY-NC-4.0
 
+import random
+
 import robolab.constants
 from robolab.constants import DEFAULT_TASK_SUBFOLDERS, TASK_DIR
 
@@ -24,7 +26,8 @@ The columns are:
 - Tags: Tag names this environment belongs to
 
 """
-def auto_register_droid_envs(task_dirs=DEFAULT_TASK_SUBFOLDERS, lighting_intensity=None, task=None, cameras=None):
+def auto_register_droid_envs(task_dirs=DEFAULT_TASK_SUBFOLDERS, lighting_intensity=None, task=None, cameras=None,
+                             randomize_background=False, background_seed=None):
     """Automatically discover and register tasks.
 
     Args:
@@ -37,6 +40,11 @@ def auto_register_droid_envs(task_dirs=DEFAULT_TASK_SUBFOLDERS, lighting_intensi
               the presets from ``camera_presets`` (e.g. ``WRIST_LEFT``,
               ``WRIST_LEFT_RIGHT_HEAD``) or your own list. Defaults to ``WRIST_LEFT``.
               The viewport camera is attached separately for video recording.
+        randomize_background: If True, sample a random background per task at registration time
+              (excluding the default home_office background). Each registered env gets one fixed
+              background; assignments are reproducible when ``background_seed`` is provided.
+        background_seed: Seed for reproducible per-task background sampling. Ignored if
+              ``randomize_background`` is False.
     """
     from robolab.core.environments.factory import auto_discover_and_create_cfgs
     from robolab.core.observations.observation_utils import generate_image_obs_from_cameras, generate_obs_cfg
@@ -68,6 +76,26 @@ def auto_register_droid_envs(task_dirs=DEFAULT_TASK_SUBFOLDERS, lighting_intensi
     # order, causing the camera to spawn before its parent prim exists.
     scene_cameras = [c for c in cameras if c is not WristCameraCfg]
 
+    if randomize_background:
+        from robolab.variations.backgrounds import find_background_files, generate_background_config
+
+        rng = random.Random(background_seed)
+        all_bgs = find_background_files()
+        # Exclude the default so this is genuinely "besides the default"
+        default_bg_path = HomeOfficeBackgroundCfg.dome_light.spawn.texture_file
+        all_bgs = [p for p in all_bgs if p != default_bg_path]
+        if not all_bgs:
+            raise FileNotFoundError(
+                "No backgrounds available for randomization after excluding the default."
+            )
+
+        def _bg_factory():
+            return generate_background_config(rng.choice(all_bgs))
+
+        background_cfg = _bg_factory
+    else:
+        background_cfg = HomeOfficeBackgroundCfg
+
     auto_discover_and_create_cfgs(
         task_dir=TASK_DIR,
         task_subdirs=task_dirs,
@@ -80,7 +108,7 @@ def auto_register_droid_envs(task_dirs=DEFAULT_TASK_SUBFOLDERS, lighting_intensi
         robot_cfg=DroidCfg,
         camera_cfg=[*scene_cameras, EgocentricMirroredCameraCfg],
         lighting_cfg=SphereLightCfg,
-        background_cfg=HomeOfficeBackgroundCfg,
+        background_cfg=background_cfg,
         contact_gripper=contact_gripper,
         dt=1 / (60 * 2),
         render_interval=8,

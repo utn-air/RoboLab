@@ -3,7 +3,15 @@
 # isort: skip_file
 
 """
-Run policy evaluation with background scene variations.
+Run policy evaluation across a TASK × BACKGROUND matrix.
+
+This script registers every (task, background) combination as a separate env
+(via auto_register_droid_envs_bg_variations) and evaluates each one. Use it to
+measure robustness of the SAME task across MANY backgrounds.
+
+For "give each task a different random background in a single benchmark pass"
+(per-task random, NOT a matrix sweep), use `run_eval.py --randomize-background`
+instead. See docs/background.md → "Choosing a Background Strategy".
 
 Usage:
     $ python run_eval_background_variation.py --headless

@@ -7,10 +7,16 @@ import robolab.constants
 from robolab.constants import BACKGROUND_ASSET_DIR, DEFAULT_TASK_SUBFOLDERS
 
 """
-Scene registration for background variation experiments.
+Scene registration for TASK × BACKGROUND matrix experiments.
 
-This module registers environments with different background scenes for the specified tasks.
-Each task gets an environment registered for each background file.
+Registers one env per (task, background) combination — i.e. given N tasks and
+M backgrounds, you end up with N*M registered envs (BananaInBowlTask_bg_warehouse,
+BananaInBowlTask_bg_billiard_hall, ... RubiksCubeAndBananaTask_bg_warehouse, ...).
+
+For per-task random backgrounds (one randomly sampled bg per task, NOT a full
+sweep), use `auto_register_droid_envs(randomize_background=True)` from
+auto_env_registrations.py instead. See docs/background.md → "Choosing a
+Background Strategy" for the full comparison.
 """
 
 # Background files to use for variation experiments
