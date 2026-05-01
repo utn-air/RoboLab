@@ -128,9 +128,8 @@ def _setup_valp_goal_images(env, client, env_cfg, obs: dict, instruction: str, e
     for env_id in range(env.num_envs):
         external_goal = goal_obs["image_obs"][external_key][env_id].clone().detach().cpu()
         wrist_goal = goal_obs["image_obs"][wrist_key][env_id].clone().detach().cpu()
-        goal_dir = os.path.join(get_output_dir(), "valp_goal_images")
-        _save_goal_image(external_goal, os.path.join(goal_dir, f"run_{episode}_env{env_id}_{external_key}.png"))
-        _save_goal_image(wrist_goal, os.path.join(goal_dir, f"run_{episode}_env{env_id}_{wrist_key}.png"))
+        _save_goal_image(external_goal, os.path.join(get_output_dir(), f"run_{episode}_env{env_id}_{external_key}.png"))
+        _save_goal_image(wrist_goal, os.path.join(get_output_dir(), f"run_{episode}_env{env_id}_{wrist_key}.png"))
         client.set_goal_images(external_goal, wrist_goal, env_id=env_id, instruction=instruction)
 
     # Goal capture is a mini rollout and can satisfy the task termination
