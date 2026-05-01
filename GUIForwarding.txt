@@ -20,3 +20,10 @@ server IP: 127.0.0.1
 
 #run evaluation:
 PROTOCOL_BUFFERS_PYTHON_IMPLEMENTATION=python /workspace/isaaclab/_isaac_sim/python.sh examples/policy/run_eval.py --policy valp --task ReachBananaTask
+
+- Load the model only once
+- How far is the home gripper to banana?
+- change save output/logs format
+- each benchmark task run should run all config files
+- no of steps 
+- why body_offset

@@ -39,11 +39,11 @@ WORKDIR /workspace/robolab
 
 # Install Python dependencies
 # GIT_LFS_SKIP_SMUDGE=1 avoids pulling large LFS objects during build
+# RoboLab
 RUN GIT_LFS_SKIP_SMUDGE=1 /workspace/isaaclab/_isaac_sim/python.sh -m pip install --no-cache-dir -e .
-
+# Valp
 RUN /workspace/isaaclab/_isaac_sim/python.sh -m pip install --no-cache-dir --no-deps \
     timm \
     einops
-
 WORKDIR /workspace/robolab/valp
 RUN GIT_LFS_SKIP_SMUDGE=1 /workspace/isaaclab/_isaac_sim/python.sh -m pip install --no-cache-dir --no-deps -e .

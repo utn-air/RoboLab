@@ -274,7 +274,7 @@ class DroidIKActionCfg:
         controller=DifferentialIKControllerCfg(command_type="pose", 
                                                 use_relative_mode=True, 
                                                 ik_method="dls"),
-        scale=0.5,
+        scale=1.0,
         body_offset=DifferentialInverseKinematicsActionCfg.OffsetCfg(pos=[0.0, 0.0, 0.0]),
     )
 
