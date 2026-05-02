@@ -144,6 +144,8 @@ def generate_task_env_cfg(task_class: Task,
             self.contact_object_list = task_class.contact_object_list
             if getattr(task_class, "valp_goal", None) is not None:
                 self.valp_goal = task_class.valp_goal
+            if getattr(task_class, "episode_steps", None) is not None:
+                self.episode_steps = task_class.episode_steps
 
             # Set optional rewards if provided by the task
             if getattr(task_class, 'rewards', None) is not None:

@@ -108,7 +108,7 @@ def run_episode(env, env_cfg, episode, headless=False, save_videos=True, video_m
 
     obs, _ = env.reset()
     obs, _ = env.reset()
-    max_steps = env.max_episode_length
+    max_steps = getattr(env_cfg, "episode_steps", None) or env.max_episode_length
     video_fps = 1 / (env_cfg.sim.render_interval * env_cfg.sim.dt) # Hz
     instruction = env_cfg.instruction
     action_dim = _get_action_dim(env)
@@ -149,7 +149,7 @@ def run_episode(env, env_cfg, episode, headless=False, save_videos=True, video_m
     kit_app = omni.kit.app.get_app()
 
     actual_steps = 0
-    for step in tqdm(range(20)):
+    for step in tqdm(range(max_steps)):
 
         while not timeline.is_playing():
             kit_app.update()

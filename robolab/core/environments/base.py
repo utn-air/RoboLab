@@ -121,6 +121,7 @@ class RobolabDefaultEnvCfg(ManagerBasedRLEnvCfg):
     rerender_on_reset: bool = True
     seed: int | None = 0
     subtasks: list[dict[str, dict]] | None = None
+    episode_steps: int | None = None
 
     def __post_init__(self):
         if self.observations is None:

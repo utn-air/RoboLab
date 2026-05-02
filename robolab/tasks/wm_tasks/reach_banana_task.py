@@ -60,7 +60,8 @@ class ReachBananaTask(Task):
         "vague": "Reach the fruit",
         "specific": "Move the robot gripper to a position just above the yellow banana without grasping it",
     }
-    episode_length_s: int = 20
+    # episode_length_s: int = 20
+    episode_steps: int = 25
     attributes = ["reach", "valp_goal"]
     valp_goal = {
         "mode": "reach_above_object",
