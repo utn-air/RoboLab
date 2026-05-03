@@ -181,10 +181,21 @@ def _extract_events_from_log(log_file: str) -> dict:
 def main():
     """Main function."""
     if args_cli.output_folder_name is None:
-        args_cli.output_folder_name = get_timestamp() + f"_{args_cli.policy}"
-        if args_cli.instruction_type != "default":
-            args_cli.output_folder_name += f"_{args_cli.instruction_type}"
+        if args_cli.policy == "valp":
+            from robolab.inference.valp import VALPDroidEEClient
+            client = VALPDroidEEClient(
+                remote_host=args_cli.remote_host,
+                remote_port=args_cli.remote_port,
+            )
+            modelname = client.metadata()["modelname"]
+            args_cli.output_folder_name = f"{modelname}"
+            client.sock.close()
 
+        else:
+            args_cli.output_folder_name = get_timestamp() + f"_{args_cli.policy}"
+            if args_cli.instruction_type != "default":
+                args_cli.output_folder_name += f"_{args_cli.instruction_type}"
+    
     output_dir = os.path.join(PACKAGE_DIR, "output", args_cli.output_folder_name)
     os.makedirs(output_dir, exist_ok=True)
 

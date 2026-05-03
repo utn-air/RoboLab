@@ -115,6 +115,9 @@ class VALPDroidEEClient(InferenceClient):
             "wrist_image": wrist_image,
             "ee_pose": ee_pose,
         }
+    
+    def metadata(self):
+        return self._request({"method": "metadata"})
 
 MyPolicyClient = VALPDroidEEClient
 

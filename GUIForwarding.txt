@@ -38,12 +38,11 @@ PROTOCOL_BUFFERS_PYTHON_IMPLEMENTATION=python \
     --remote-port 8000
 
 TODO
-    - change output format
     - integrate latest changes from RoboLab to this repo
 
 Define benchmark tasks properly
     - why body_offset
     - substasks and no of steps switch
-
-run_eval.py:
     - each eval run should run all tasks / envs
+
+mpc tuning
