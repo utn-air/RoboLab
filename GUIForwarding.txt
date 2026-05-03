@@ -24,7 +24,7 @@ server IP: 127.0.0.1
 # Terminal 1 inside Docker: load VALP once and keep this running
 cd /workspace/robolab
 /workspace/isaaclab/_isaac_sim/python.sh valp/inference/serve_policy.py \
-    --cfg-path valp/configs/inference/vjepa2-ac-vitg/droid-224px-8f-dual.yaml \
+    --cfg-file droid-224px-8f-dual.yaml \
     --host 0.0.0.0 \
     --port 8000
 
@@ -37,10 +37,13 @@ PROTOCOL_BUFFERS_PYTHON_IMPLEMENTATION=python \
     --remote-host localhost \
     --remote-port 8000
 
-TODO:
-- integrate latest changes from RoboLab to this repo
-- define benchmark tasks properly
-- change output/logs format
-- each eval run should run all tasks?
-- substasks and no of steps switch
-- why body_offset
+TODO
+    - change output/logs format
+    - integrate latest changes from RoboLab to this repo
+
+Define benchmark tasks properly
+    - why body_offset
+    - substasks and no of steps switch
+
+run_eval.py:
+    - each eval run should run all tasks / envs

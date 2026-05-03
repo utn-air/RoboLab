@@ -7,6 +7,8 @@ import struct
 import traceback
 from pathlib import Path
 
+import numpy as np
+
 from .base_client import InferenceClient
 
 ################################ CLIENT ############################################
@@ -66,7 +68,7 @@ class VALPDroidEEClient(InferenceClient):
         self._request({"method": "reset"})
 
     def set_goal_images(self, external_image, wrist_image, *, env_id: int = 0, instruction: str = "goal"):
-        # SEND EXACT PARAMS PASSED TO THIS FUNCTION TO SERVER
+
         self._request(
             {
                 "method": "set_goal_images",
@@ -78,16 +80,34 @@ class VALPDroidEEClient(InferenceClient):
         )
 
     def infer(self, obs: dict, instruction: str, *, env_id: int = 0) -> dict:
-        # SEND EXACT PARAMS PASSED TO THIS FUNCTION TO SERVER 
+        proc_obs = self._extract_observation(obs, env_id=env_id)
         
         return self._request(
             {
                 "method": "infer",
-                "obs": obs,
+                "obs": proc_obs,
                 "instruction": instruction,
                 "env_id": env_id,
             }
         )
+
+    def _extract_observation(self, obs_dict: dict, *, env_id: int) -> dict:
+        from scipy.spatial.transform import Rotation
+
+        robot_state = obs_dict["proprio_obs"]
+        external_image = obs_dict["image_obs"]["external_right_cam"][env_id].clone().detach().cpu()
+        wrist_image = obs_dict["image_obs"]["wrist_cam"][env_id].clone().detach().cpu()
+        ee_pos = robot_state["ee_pos"][env_id].clone().detach().cpu().numpy()
+        ee_quat = robot_state["ee_quat"][env_id].clone().detach().cpu().numpy()
+        ee_rpy = Rotation.from_quat(ee_quat[[1, 2, 3, 0]]).as_euler("xyz", degrees=False)
+        gripper_pos = robot_state["gripper_pos"][env_id].clone().detach().cpu().numpy()
+        ee_pose = np.concatenate([ee_pos, ee_rpy, gripper_pos], axis=0).astype(np.float32)
+
+        return {
+            "external_image": external_image,
+            "wrist_image": wrist_image,
+            "ee_pose": ee_pose,
+        }
 
 MyPolicyClient = VALPDroidEEClient
 
