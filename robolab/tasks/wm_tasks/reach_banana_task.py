@@ -56,7 +56,7 @@ class ReachBananaTask(Task):
     scene = import_scene("banana_bowl.usda", contact_object_list) #rubiks_cube_banana_bowl.usda
     terminations = ReachBananaTerminations
     instruction = {
-        "default": "Reach the banana",
+        "default": "ReachBanana",
         "vague": "Reach the fruit",
         "specific": "Move the robot gripper to a position just above the yellow banana without grasping it",
     }

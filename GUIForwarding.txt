@@ -38,7 +38,7 @@ PROTOCOL_BUFFERS_PYTHON_IMPLEMENTATION=python \
     --remote-port 8000
 
 TODO
-    - change output/logs format
+    - change output format
     - integrate latest changes from RoboLab to this repo
 
 Define benchmark tasks properly
