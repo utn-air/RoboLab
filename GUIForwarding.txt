@@ -1,32 +1,46 @@
+GUI FORWARDING:
 
+1. On you local machine, download Isaac Sim WebRTC Streaming Client from here: 
+https://docs.isaacsim.omniverse.nvidia.com/5.0.0/installation/download.html 
 
-On you local machine, download Isaac Sim WebRTC Streaming Client from here: 
-- https://docs.isaacsim.omniverse.nvidia.com/5.0.0/installation/download.html 
-
-On your local machine terminal, run:
+2. On your local machine terminal, run:
 ssh abut37yx@airtower -L 8011:localhost:8011
 ssh abut37yx@airtower -L 49100:localhost:49100
 
-within Docker on airtower for isaacsim:
+3.1 within Docker on airtower for isaacsim:
 OMNI_KIT_ALLOW_ROOT=1 ./runheadless.sh --/app/livestream/publicEndpointAddress=172.29.5.11 --/app/livestream/port=49100
 
-within Docker on airtower for RoboLab:
+3.2 ithin Docker on airtower for RoboLab:
 python examples/demo/run_env.py  \
     --livestream 2 \
     --kit_args "--/app/livestream/publicEndpointAddress=172.29.5.11 --/app/livestream/port=49100"
 
-Open Isaac Sim WebRTC Streaming Client on you local
+4. Open Isaac Sim WebRTC Streaming Client on you local
 server IP: 127.0.0.1
 
-#run evaluation:
-PROTOCOL_BUFFERS_PYTHON_IMPLEMENTATION=python /workspace/isaaclab/_isaac_sim/python.sh examples/policy/run_eval.py --policy valp --task ReachBananaTask
+# Start RoboLab Docker with the VALP image:
+./docker/run_docker.sh nisarga-valp
 
-- Load the model only once from server
+# Terminal 1 inside Docker: load VALP once and keep this running
+cd /workspace/robolab
+/workspace/isaaclab/_isaac_sim/python.sh valp/inference/serve_policy.py \
+    --cfg-path valp/configs/inference/vjepa2-ac-vitg/droid-224px-8f-dual.yaml \
+    --host 0.0.0.0 \
+    --port 8000
+
+# Terminal 2 inside the same Docker container: run/rerun eval
+cd /workspace/robolab
+PROTOCOL_BUFFERS_PYTHON_IMPLEMENTATION=python \
+    /workspace/isaaclab/_isaac_sim/python.sh examples/policy/run_eval.py \
+    --policy valp \
+    --task ReachBananaTask \
+    --remote-host localhost \
+    --remote-port 8000
+
+TODO:
 - integrate latest changes from RoboLab to this repo
-
-experiments:
-- How far is the home gripper to banana
+- define benchmark tasks properly
 - change output/logs format
-- each benchmark task run should run all config files
+- each eval run should run all tasks?
 - substasks and no of steps switch
 - why body_offset

@@ -8,6 +8,7 @@ RoboLab uses a **server-client architecture**: your model runs as a standalone s
 |--------|-------------|----------|-------------|--------------|
 | Pi0 / Pi0-fast / Pi05 | `Pi0DroidJointposClient` | WebSocket (OpenPI) | 8000 | `openpi-client` |
 | GR00T | `GR00TDroidJointposClient` | ZMQ | 5555 | `zmq`, `msgpack` |
+| VALP | `VALPDroidEEClient` | TCP | 8000 | VALP |
 
 All clients live in `robolab/inference/` and implement the `InferenceClient` base class:
 
@@ -123,6 +124,35 @@ uv run python gr00t/eval/run_gr00t_server.py \
 cd robolab
 uv run python examples/policy/run_eval.py --policy gr00t --remote-host 0.0.0.0 --remote-port 5555 --headless
 ```
+
+---
+
+## VALP
+
+Run VALP as two simple processes: one server that loads the model once, and one eval process that sends observations to it.
+
+### Start the policy server
+```bash
+cd /workspace/robolab
+/workspace/isaaclab/_isaac_sim/python.sh valp/inference/serve_policy.py \
+    --cfg-path valp/configs/inference/vjepa2-ac-vitg/droid-224px-8f-dual.yaml \
+    --host 0.0.0.0 \
+    --port 8000
+```
+
+### Run evaluation
+```bash
+cd /workspace/robolab
+PROTOCOL_BUFFERS_PYTHON_IMPLEMENTATION=python \
+    /workspace/isaaclab/_isaac_sim/python.sh examples/policy/run_eval.py \
+    --policy valp \
+    --task ReachBananaTask \
+    --remote-host localhost \
+    --remote-port 8000 \
+    --headless
+```
+
+You can stop and rerun evaluation without reloading the model as long as the server terminal stays alive.
 
 ---
 
