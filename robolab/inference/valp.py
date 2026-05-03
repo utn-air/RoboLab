@@ -82,22 +82,49 @@ class VALPDroidEEClient(InferenceClient):
 
 MyPolicyClient = VALPDroidEEClient
 
-########### SERVER ################
+##################################### SERVER ##########################################
+
+_HEADER = struct.Struct("!Q")
+
+def _recv_exact(sock: socket.socket, size: int) -> bytes:
+    chunks = []
+    remaining = size
+    while remaining:
+        chunk = sock.recv(remaining)
+        if not chunk:
+            raise ConnectionError("VALP policy socket closed")
+        chunks.append(chunk)
+        remaining -= len(chunk)
+    return b"".join(chunks)
+
+
+def _send_message(sock: socket.socket, payload: dict) -> None:
+    data = pickle.dumps(payload, protocol=pickle.HIGHEST_PROTOCOL)
+    sock.sendall(_HEADER.pack(len(data)) + data)
+
+
+def _recv_message(sock: socket.socket) -> dict:
+    size = _HEADER.unpack(_recv_exact(sock, _HEADER.size))[0]
+    return pickle.loads(_recv_exact(sock, size))
+
 class VALPDroidEEPolicy:
     """Local RoboLab inference client for the VALP world model on DroidIK envs."""
 
     def __init__(
         self,
         cfg_path: str | None = None,
+        host: str = "0.0.0.0", 
+        port: int = 8000
     ) -> None:
+
+        self.host = host
+        self.port = int(port)
         import yaml
 
         self.cfg_path = Path.joinpath(VALP_ROOT, cfg_path)
         with self.cfg_path.open("r", encoding="utf-8") as f:
             self.cfg = yaml.safe_load(f)
-
-        self.device = os.environ.get("VALP_DEVICE", self.cfg.get("device", "cuda:0"))
-        self.rollout_horizon = 1
+        
         self._env_prev_action: dict[int, object] = {}
         self._env_goal_rep: dict[int, object] = {}
         self._env_goal_rep_wrist: dict[int, object] = {}
@@ -120,6 +147,8 @@ class VALPDroidEEPolicy:
         cfgs_mpc_args = self.cfg.get("mpc_args", {})
         cfgs_log_args = self.cfg.get("log", {})
         cfgs_exp_args = self.cfg.get("exp", {})
+
+        self.device = self.cfg.get("device", "cuda:0")
 
         camera_views = cfgs_data.get("camera_views", ["left_mp4_path"])
         crop_size = cfgs_data.get("crop_size", 256)
@@ -234,7 +263,6 @@ class VALPDroidEEPolicy:
         encoder.to(self.device).eval()
         tokens_per_frame = int((crop_size // patch_size) ** 2)
 
-        self.rollout_horizon = cfgs_mpc_args.get("rollout_horizon", 2)
         self.world_model = WorldModel(
             encoder=encoder,
             predictor=predictor_models,
@@ -242,7 +270,7 @@ class VALPDroidEEPolicy:
             use_dinov3_encoder=use_dinov3_encoder,
             tokens_per_frame=tokens_per_frame,
             mpc_args={
-                "rollout": self.rollout_horizon,
+                "rollout": cfgs_mpc_args.get("rollout_horizon", 2),
                 "samples": cfgs_mpc_args.get("samples", 25),
                 "topk": cfgs_mpc_args.get("topk", 10),
                 "cem_steps": cfgs_mpc_args.get("cem_steps", 1),
@@ -332,39 +360,6 @@ class VALPDroidEEPolicy:
             "ee_pose": ee_pose,
         }
 
-_HEADER = struct.Struct("!Q")
-
-def _recv_exact(sock: socket.socket, size: int) -> bytes:
-    chunks = []
-    remaining = size
-    while remaining:
-        chunk = sock.recv(remaining)
-        if not chunk:
-            raise ConnectionError("VALP policy socket closed")
-        chunks.append(chunk)
-        remaining -= len(chunk)
-    return b"".join(chunks)
-
-
-def _send_message(sock: socket.socket, payload: dict) -> None:
-    data = pickle.dumps(payload, protocol=pickle.HIGHEST_PROTOCOL)
-    sock.sendall(_HEADER.pack(len(data)) + data)
-
-
-def _recv_message(sock: socket.socket) -> dict:
-    size = _HEADER.unpack(_recv_exact(sock, _HEADER.size))[0]
-    return pickle.loads(_recv_exact(sock, size))
-
-class VALPDroidEEServer:
-    """Tiny blocking TCP server that owns one loaded VALP policy."""
-
-    def __init__(self, policy: VALPDroidEEPolicy, 
-                        host: str = "0.0.0.0", 
-                        port: int = 8000) -> None:
-        self.policy = policy
-        self.host = host
-        self.port = int(port)
-
     def serve_forever(self) -> None:
         with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as server_sock:
             server_sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
@@ -395,7 +390,7 @@ class VALPDroidEEServer:
         method = request.get("method", "infer")
 
         if method == "set_goal_images":
-            self.policy.set_goal_images(
+            self.set_goal_images(
                 request["external_image"],
                 request["wrist_image"],
                 env_id=int(request.get("env_id", 0)),
@@ -404,13 +399,12 @@ class VALPDroidEEServer:
             return {"ok": True}
 
         if method == "reset":
-            self.policy.reset()
+            self.reset()
             return {"ok": True}
 
         if method == "infer":
-            return self.policy.infer(
+            return self.infer(
                 request["obs"], 
                 request.get("instruction", ""), 
                 env_id=int(request.get("env_id", 0))
             )
-
