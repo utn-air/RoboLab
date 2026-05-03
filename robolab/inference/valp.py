@@ -67,7 +67,14 @@ class VALPDroidEEClient(InferenceClient):
     def reset(self):
         self._request({"method": "reset"})
 
-    def set_goal_images(self, external_image, wrist_image, *, env_id: int = 0, instruction: str = "goal"):
+    def set_goal_images(
+        self,
+        external_image,
+        wrist_image,
+        *,
+        env_id: int = 0,
+        instruction: str = "goal"
+    ):
 
         self._request(
             {
