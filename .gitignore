@@ -33,6 +33,6 @@ pyrightconfig.json
 
 ${data}/*
 checkpoints/*
-assets/
 valp/
 logs/
+assets/

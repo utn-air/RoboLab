@@ -1,22 +1,4 @@
-GUI FORWARDING:
 
-1. On you local machine, download Isaac Sim WebRTC Streaming Client from here: 
-https://docs.isaacsim.omniverse.nvidia.com/5.0.0/installation/download.html 
-
-2. On your local machine terminal, run:
-ssh abut37yx@airtower -L 8011:localhost:8011
-ssh abut37yx@airtower -L 49100:localhost:49100
-
-3.1 within Docker on airtower for isaacsim:
-OMNI_KIT_ALLOW_ROOT=1 ./runheadless.sh --/app/livestream/publicEndpointAddress=172.29.5.11 --/app/livestream/port=49100
-
-3.2 ithin Docker on airtower for RoboLab:
-python examples/demo/run_env.py  \
-    --livestream 2 \
-    --kit_args "--/app/livestream/publicEndpointAddress=172.29.5.11 --/app/livestream/port=49100"
-
-4. Open Isaac Sim WebRTC Streaming Client on you local
-server IP: 127.0.0.1
 
 # Start RoboLab Docker with the VALP image:
 ./docker/run_docker.sh nisarga-valp
@@ -45,3 +27,10 @@ TODO:
     - substasks and number of steps switch
     - each eval run should run all tasks / envs
     - mpc tuning
+
+Benchmark tasks:
+    1. Change positions of object - 10
+    2. Randomise items - 20
+    3. Randomise table texture - 5
+    4. Randomise bg - 50
+    5. Randomise init gripper position - 4
