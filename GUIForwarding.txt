@@ -21,15 +21,16 @@ server IP: 127.0.0.1
 # Start RoboLab Docker with the VALP image:
 ./docker/run_docker.sh nisarga-valp
 
-# Terminal 1 inside Docker: load VALP once and keep this running
-cd /workspace/robolab
+
+RUN EVALUATIONS:
+
+# Terminal 1 inside Docker: load VALP once and keep this running:
 /workspace/isaaclab/_isaac_sim/python.sh valp/inference/serve_policy.py \
     --cfg-file droid-224px-8f-dual.yaml \
     --host 0.0.0.0 \
     --port 8000
 
-# Terminal 2 inside the same Docker container: run/rerun eval
-cd /workspace/robolab
+# Terminal 2 inside the same Docker container: run/rerun eval:
 PROTOCOL_BUFFERS_PYTHON_IMPLEMENTATION=python \
     /workspace/isaaclab/_isaac_sim/python.sh examples/policy/run_eval.py \
     --policy valp \
@@ -37,12 +38,10 @@ PROTOCOL_BUFFERS_PYTHON_IMPLEMENTATION=python \
     --remote-host localhost \
     --remote-port 8000
 
-TODO
+TODO:
+
     - integrate latest changes from RoboLab to this repo
-
-Define benchmark tasks properly
     - why body_offset
-    - substasks and no of steps switch
+    - substasks and number of steps switch
     - each eval run should run all tasks / envs
-
-mpc tuning
+    - mpc tuning

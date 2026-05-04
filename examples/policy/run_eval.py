@@ -181,21 +181,10 @@ def _extract_events_from_log(log_file: str) -> dict:
 def main():
     """Main function."""
     if args_cli.output_folder_name is None:
-        if args_cli.policy == "valp":
-            from robolab.inference.valp import VALPDroidEEClient
-            client = VALPDroidEEClient(
-                remote_host=args_cli.remote_host,
-                remote_port=args_cli.remote_port,
-            )
-            modelname = client.metadata()["modelname"]
-            args_cli.output_folder_name = f"{modelname}"
-            client.sock.close()
+        args_cli.output_folder_name = get_timestamp() + f"_{args_cli.policy}"
+        if args_cli.instruction_type != "default":
+            args_cli.output_folder_name += f"_{args_cli.instruction_type}"
 
-        else:
-            args_cli.output_folder_name = get_timestamp() + f"_{args_cli.policy}"
-            if args_cli.instruction_type != "default":
-                args_cli.output_folder_name += f"_{args_cli.instruction_type}"
-    
     output_dir = os.path.join(PACKAGE_DIR, "output", args_cli.output_folder_name)
     os.makedirs(output_dir, exist_ok=True)
 
@@ -224,6 +213,14 @@ def main():
     )
 
     episode_results_file, episode_results = init_experiment(output_dir)
+    shared_policy_client = None
+    if args_cli.policy == "valp":
+        from robolab.inference.valp import VALPDroidEEClient
+
+        shared_policy_client = VALPDroidEEClient(
+            remote_host=args_cli.remote_host,
+            remote_port=args_cli.remote_port,
+        )
 
     for task_env in task_envs:
         scene_output_dir = os.path.join(output_dir, task_env)
@@ -263,7 +260,8 @@ def main():
                         video_mode=args_cli.video_mode,
                         headless=args_cli.headless,
                         remote_host=args_cli.remote_host,
-                        remote_port=args_cli.remote_port)
+                        remote_port=args_cli.remote_port,
+                        policy_client=shared_policy_client)
 
             # Get per-env final info for incomplete episodes
             final_infos = get_final_subtask_info(env, env_id=None)  # list[dict | None]
