@@ -19,8 +19,6 @@ from pathlib import Path
 
 import cv2
 import torch
-from contextlib import ContextDecorator
-import sys
 
 
 REPO_ROOT = Path(__file__).resolve().parents[3]
@@ -208,61 +206,6 @@ def drive_to_valp_goal(env, env_cfg, obs: dict | None = None) -> dict:
     return obs
 
 
-class _suppress_recording(ContextDecorator):
-    """Context manager that attempts to prevent recorder actions during env.step().
-
-    It temporarily clears `env.recorder_manager._terms` and, if available,
-    sets `env.cfg.recorders.dataset_export_mode` to `EXPORT_NONE`.
-    """
-
-    def __init__(self, env):
-        self.env = env
-        self._saved_terms = None
-        self._saved_mode = None
-        self._have_export_mode = False
-
-    def __enter__(self):
-        # Silence recorder manager terms if present
-        rm = getattr(self.env, "recorder_manager", None)
-        if rm is not None and hasattr(rm, "_terms"):
-            try:
-                self._saved_terms = rm._terms
-                rm._terms = {}
-            except Exception:
-                self._saved_terms = None
-
-        # Try to set recorder export mode to none (best-effort)
-        try:
-            from isaaclab.managers.recorder_manager import DatasetExportMode
-
-            if hasattr(self.env, "cfg") and getattr(self.env.cfg, "recorders", None) is not None:
-                self._have_export_mode = True
-                self._saved_mode = self.env.cfg.recorders.dataset_export_mode
-                self.env.cfg.recorders.dataset_export_mode = DatasetExportMode.EXPORT_NONE
-        except Exception:
-            pass
-
-        return self
-
-    def __exit__(self, exc_type, exc, tb):
-        # Restore terms
-        rm = getattr(self.env, "recorder_manager", None)
-        if rm is not None and hasattr(rm, "_terms") and self._saved_terms is not None:
-            try:
-                rm._terms = self._saved_terms
-            except Exception:
-                pass
-
-        # Restore export mode
-        if self._have_export_mode and hasattr(self.env, "cfg"):
-            try:
-                self.env.cfg.recorders.dataset_export_mode = self._saved_mode
-            except Exception:
-                pass
-
-        return False
-
-
 def generate_goal_images(env, env_cfg, obs: dict | None = None, overwrite: bool = False) -> dict[str, Path]:
     """Generate and cache one canonical pair of goal images for a WM task."""
     paths = goal_image_paths(env_cfg)
@@ -270,16 +213,22 @@ def generate_goal_images(env, env_cfg, obs: dict | None = None, overwrite: bool 
         return paths
 
     goal_cfg = _goal_cfg(env_cfg)
-    # Drive to goal without leaving recorder traces or printing to console
-    with _suppress_recording(env):
-        goal_obs = drive_to_valp_goal(env, env_cfg, obs=obs)
+    print(f"\033[96m[RoboLab] Generating VALP goal images for {_task_name(env_cfg)}\033[0m")
+    goal_obs = drive_to_valp_goal(env, env_cfg, obs=obs)
 
     external_key = goal_cfg.get("external_camera", "over_shoulder_right_camera")
     wrist_key = goal_cfg.get("wrist_camera", "wrist_cam")
     _save_rgb_image(goal_obs["image_obs"][external_key][0], paths["external"])
     _save_rgb_image(goal_obs["image_obs"][wrist_key][0], paths["wrist"])
 
-    # Do not write metadata or print anything; return the image paths instead.
+    metadata = {
+        "task": _task_name(env_cfg),
+        "instruction": getattr(env_cfg, "instruction", None),
+        "goal": goal_cfg,
+        "external_image": paths["external"].name,
+        "wrist_image": paths["wrist"].name,
+    }
+    paths["metadata"].write_text(json.dumps(metadata, indent=2), encoding="utf-8")
     return paths
 
 
