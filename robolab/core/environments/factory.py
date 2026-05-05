@@ -8,6 +8,7 @@ This module provides a factory pattern for automatically creating environments
 from task files, integrating with the existing environment creation system.
 """
 
+import inspect
 import time
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from pathlib import Path
@@ -17,6 +18,23 @@ import robolab.constants
 from robolab.constants import TASK_DIR
 from robolab.core.environments.config import generate_env_cfg_from_task, print_env_cfg
 from robolab.core.task.task_utils import resolve_task_path
+
+# Cfg-typed kwargs that may be passed as zero-arg factories instead of classes.
+# When the value is callable (and not a class), the factory invokes it once per
+# task to produce a fresh cfg — letting callers do per-task variation (e.g.
+# random background sampling) without the factory knowing about the variation.
+_RESOLVABLE_CFG_KEYS = {
+    "background_cfg", "camera_cfg", "lighting_cfg",
+    "robot_cfg", "observations_cfg", "actions_cfg",
+}
+
+
+def _resolve_per_task_kwargs(env_kwargs: dict) -> dict:
+    """Invoke per-task cfg factories; pass classes/instances/scalars through unchanged."""
+    return {
+        k: (v() if (k in _RESOLVABLE_CFG_KEYS and callable(v) and not inspect.isclass(v)) else v)
+        for k, v in env_kwargs.items()
+    }
 
 
 class EnvFactory:
@@ -135,6 +153,7 @@ class EnvFactory:
                 background_cfg=WarehouseBackgroundCfg,
             )
         """
+        env_kwargs = _resolve_per_task_kwargs(env_kwargs)
         task_file_path, task_name = resolve_task_path(task, self.task_dir)
 
         # Create and register the environment
@@ -277,6 +296,7 @@ class EnvFactory:
                                 pattern: str = "*_task.py",
                                 add_tags: str | list[str] = "all",
                                 task_subdirs: list[str] | None = None,
+                                tasks: str | list[str] | None = None,
                                 env_prefix: str = "",
                                 env_postfix: str = "",
                                 verbose_timing: bool = False,
@@ -289,6 +309,10 @@ class EnvFactory:
             add_tags: Tag name for discovered tasks, or list of tag names to file this under.
             task_subdirs: List of subdirectories to search (e.g., ["single_tasks", "composite_tasks"])
                          If None, searches the main task directory
+            tasks: If provided, skip discovery and create configs only for the given task(s).
+                   Accepts a single task name/filename/path (str) or a list of them. When set,
+                   `pattern`, `task_subdirs`, and `verbose_timing` are ignored. Resolution uses
+                   the factory's `task_dir` as the search root (see `create_env_cfg`).
             env_prefix: Prefix for environment names
             env_postfix: Postfix for environment names
             verbose_timing: If True, print timing information for each task registration
@@ -310,6 +334,17 @@ class EnvFactory:
         Returns:
             Dictionary mapping task names to generated environment classes
         """
+        if tasks is not None:
+            task_list = tasks if isinstance(tasks, list) else [tasks]
+            print(f"\033[96m[RoboLab] Registering {len(task_list)} task(s): {task_list}\033[0m")
+            return {
+                (Path(t).stem if ('/' in t or '\\' in t) else t):
+                    self.create_env_cfg(
+                        t, tags=add_tags, env_prefix=env_prefix, env_postfix=env_postfix, **env_kwargs
+                    )
+                for t in task_list
+            }
+
         total_start = time.time()
 
         # Discover task files
@@ -781,6 +816,9 @@ def auto_discover_and_create_cfgs(task_dir=None, **kwargs) -> dict[str, type]:
         add_tags: Tag name for discovered tasks, or list of tag names
         task_subdirs: List of subdirectories to search (e.g., ["single_tasks", "composite_tasks"])
                      If None, searches the main task directory
+        tasks: If provided, skip discovery and create configs only for the given task(s).
+               Accepts a single task name/filename/path (str) or a list of them. When set,
+               `pattern`, `task_subdirs`, and `verbose_timing` are ignored.
         env_prefix: Prefix for environment names
         env_postfix: Postfix for environment names
         verbose_timing: If True, print timing information for each task registration (default: False)

@@ -140,7 +140,7 @@ python examples/policy/run_eval.py --headless --num_envs 20
 python examples/policy/run_eval.py --headless --num_envs 10 --num-runs 2
 ```
 
-**Multi-env episode handling:** With `num_envs > 1`, each environment runs an independent episode. The built-in `run_eval.py` handles per-env termination, video recording, and result logging automatically. If you are writing a custom evaluation loop, see `examples/policy/episode.py` for the multi-env episode runner pattern, which manages per-env video writers, independent termination tracking, and batched policy inference.
+**Multi-env episode handling:** With `num_envs > 1`, each environment runs an independent episode. The built-in `run_eval.py` handles per-env termination, video recording, and result logging automatically. If you are writing a custom evaluation loop, see `robolab/eval/episode.py` for the multi-env episode runner pattern (`from robolab.eval import run_episode`), which manages per-env video writers, independent termination tracking, and batched policy inference.
 
 ## Initial Condition Randomization
 
@@ -175,7 +175,7 @@ You can also pass events directly to `create_env` using the `events` parameter. 
 from robolab.core.events.reset_camera import RandomizeCameraPoseUniform
 
 events = RandomizeCameraPoseUniform.from_params(
-    cameras=["external_cam"],
+    cameras=["over_shoulder_left_camera"],
     pose_range={"x": (-0.05, 0.05), "y": (-0.05, 0.05)},
 )
 env, env_cfg = create_env("BananaInBowlTask", events=events)
@@ -251,7 +251,7 @@ patch_recorder_manager()
 def run_episode(env, env_cfg, client, episode, headless=False):
     """Run a single policy-controlled episode (single-env example).
 
-    For multi-env, see examples/policy/episode.py which handles per-env
+    For multi-env, see robolab/eval/episode.py which handles per-env
     video writers, per-env policy clients, and independent termination.
     """
     obs, _ = env.reset()
@@ -378,6 +378,8 @@ The built-in `examples/policy/run_eval.py` supports the full set of evaluation f
 | `--enable-subtask` | Enable subtask progress checking (records score, reason, subtask log) | `False` |
 | `--record-image-data` | Record image observations to HDF5 | `False` |
 | `--video-mode MODE` | Which videos to save: `all` (sensor + viewport), `viewport` only, `sensor` only, or `none` | `all` |
+| `--randomize-background` | Sample a random non-default background per task at registration time. The chosen texture is recorded in each task's `env_cfg.json`. See [Backgrounds — Per-Run Random Background per Task](background.md#per-run-random-background-per-task). | `False` |
+| `--background-seed N` | Seed for reproducible per-task background sampling. Used with `--randomize-background`. | `None` |
 | `--headless` | Run without live display window. **Recommended for multi-task runs** — see [GPU VRAM leak in non-headless mode](debug.md#gpu-vram-leak-in-non-headless-mode-across-environment-reloads) | `False` |
 | `--enable-verbose` | Verbose output | `False` |
 | `--enable-debug` | Debug output | `False` |

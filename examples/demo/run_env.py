@@ -17,8 +17,8 @@ Usage:
 """
 
 import os
-import cv2 # Must import this before isaaclab. Do not remove
-import argparse
+
+import cv2  # Must import this before isaaclab. Do not remove
 from isaaclab.app import AppLauncher
 
 DEFAULT_KIT_ARGS = "--/app/livestream/publicEndpointAddress=172.29.5.11  --/app/livestream/port=49100"
@@ -51,17 +51,21 @@ args_cli.save_videos = True
 app_launcher = AppLauncher(args_cli)
 simulation_app = app_launcher.app
 
-# import tyro
-from robolab.constants import PACKAGE_DIR, get_timestamp, DEFAULT_OUTPUT_DIR, TASK_DIR
-from episodes import run_gripper_toggle_episode, run_prerecorded_episode, run_empty_episode
-from robolab.core.environments.runtime import create_env # noqa
-from robolab.core.environments.config import generate_env_cfg_from_task # noqa
-from robolab.registrations.droid_jointpos.observations import ObservationCfg # noqa
-# from robolab.policies.droid_jointpos.observations import ImageObsCfg, ProprioceptionObservationCfg # noqa
-from robolab.robots.droid import DroidCfg, contact_gripper, DroidJointPositionActionCfg # noqa
-from robolab.variations.camera import OverShoulderLeftCameraCfg # noqa
-from robolab.variations.backgrounds import find_and_generate_background_config
-from robolab.variations.lighting import SphereLightCfg # noqa
+import tyro
+from episodes import run_empty_episode, run_gripper_toggle_episode, run_prerecorded_episode
+
+from robolab.constants import DEFAULT_OUTPUT_DIR, PACKAGE_DIR, TASK_DIR, get_timestamp
+from robolab.core.environments.config import generate_env_cfg_from_task  # noqa
+from robolab.core.environments.runtime import create_env  # noqa
+from robolab.core.observations.observation_utils import generate_image_obs_from_cameras, generate_obs_cfg  # noqa
+from robolab.robots.droid import (  # noqa
+    DroidCfg,
+    DroidJointPositionActionCfg,
+    ProprioceptionObservationCfg,
+    contact_gripper,
+)
+from robolab.variations.camera import OverShoulderLeftCameraCfg  # noqa
+from robolab.variations.lighting import SphereLightCfg  # noqa
 
 
 def main():
@@ -70,12 +74,12 @@ def main():
     num_episodes = 2
     env = None
 
-    # custom background config
-    CustomBackgroundCfg = find_and_generate_background_config(
-        filename="royal_esplanade_2k.hdr",
-        folder_path=os.path.join(PACKAGE_DIR, "assets", "backgrounds", "indoors"),
-        intensity=600.0,
-    )
+    ImageObsCfg = generate_image_obs_from_cameras([OverShoulderLeftCameraCfg])
+    ObservationCfg = generate_obs_cfg({
+        "image_obs": ImageObsCfg(),
+        "proprio_obs": ProprioceptionObservationCfg(),
+    })
+
     # # Setup environment
     EnvCfg, _ = generate_env_cfg_from_task(
         task_file_path=f"{TASK_DIR}/randomize_initial_pose/rubiks_cube_and_banana_uniform_10cm.py",

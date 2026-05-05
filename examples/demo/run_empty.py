@@ -76,12 +76,10 @@ from robolab.registrations.droid_ee.auto_env_registrations import auto_register_
 from robolab.core.logging.recorder_manager import patch_recorder_manager # noqa
 from robolab.core.environments.factory import get_envs # noqa
 from robolab.constants import get_timestamp # noqa
-from robolab.core.logging.results import dump_results_to_file, summarize_experiment_results # noqa
+from robolab.core.logging.results import dump_results_to_file, get_all_env_events, summarize_experiment_results # noqa
 from robolab.core.logging.results import init_experiment, update_experiment_results # noqa
 import robolab.constants # noqa
 
-# Fix recorder manager
-patch_recorder_manager()
 # Run automatic factory generation before main
 # auto_register_droid_envs()
 auto_register_droid_ee_envs()
@@ -129,9 +127,23 @@ def main():
                 save_image=False,
                 save_videos=False)
 
+            # Pull events before end_episode (which may reset the env)
+            per_env_events = get_all_env_events(env) or []
+
             end_episode(env)
 
-            dump_results_to_file(os.path.join(scene_output_dir, f"log_{i}.json"), msgs, append=False)
+            # Write v2 per-env event logs
+            for eid in range(args_cli.num_envs):
+                events = per_env_events[eid] if eid < len(per_env_events) else []
+                log_obj = {
+                    "schema_version": 2,
+                    "task": task_env,
+                    "env_id": eid,
+                    "run": i,
+                    "events": events,
+                }
+                log_path = os.path.join(scene_output_dir, f"log_{i}_env{eid}.json")
+                dump_results_to_file(log_path, log_obj, append=False)
 
             # Update run results
             if robolab.constants.ENABLE_SUBTASK_PROGRESS_CHECKING:

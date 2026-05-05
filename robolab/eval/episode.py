@@ -4,12 +4,13 @@
 """Policy episode runner for RoboLab.
 
 This module contains the run_episode function that executes policy-controlled
-episodes using various policy backends (valp, pi0, gr00t, dreamzero, molmo, openvla, etc.).
+episodes using various policy backends (pi0, gr00t, dreamzero, valp).
 
 Supports multi-env: one PolicyClient per env, per-env video writers,
 actions inferred per active env and stacked for env.step().
 """
 
+import logging
 import os
 import re
 import time
@@ -18,6 +19,8 @@ from collections import defaultdict
 import cv2
 from tqdm import tqdm
 import torch
+
+logger = logging.getLogger(__name__)
 
 class TimingStats:
     """Simple timing utility for profiling code sections."""
@@ -50,32 +53,25 @@ from robolab.core.logging.results import get_all_env_subtask_infos
 from robolab.core.observations.observation_utils import unpack_image_obs, unpack_viewport_cams
 from robolab.core.utils.video_utils import VideoWriter
 from robolab.core.world.world_state import get_world
+from robolab.eval.base_client import InferenceClient
+
 from robolab.tasks.wm_tasks.goal_images import set_client_goal_images
 
-
-def _get_action_dim(env, fallback: int = 8) -> int:
-    space = getattr(env, "single_action_space", None) or getattr(env, "action_space", None)
-    shape = getattr(space, "shape", None)
-    if shape:
-        return int(shape[-1])
-
-    action_manager = getattr(env, "action_manager", None)
-    total_dim = getattr(action_manager, "total_action_dim", None)
-    return int(total_dim) if total_dim is not None else fallback
-
-
-def run_episode(env, env_cfg, episode, headless=False, save_videos=True, video_mode="all", remote_host="localhost", remote_port="8000"):
+def run_episode(env, env_cfg, episode, client: InferenceClient, *, headless=False, save_videos=True, video_mode="all"):
     """Run a policy-controlled episode across all parallel envs.
+
+    The policy client is constructed by the caller (typically via
+    :func:`robolab.eval.create_client`). This function stays policy-agnostic.
 
     Args:
         env: The environment instance (RobolabEnv with num_envs >= 1)
-        env_cfg: Environment configuration with policy attribute
+        env_cfg: Environment configuration
         episode: Run index (each run produces num_envs episodes)
+        client: Constructed inference client. One connection shared across envs
+            with per-env chunk state keyed by ``env_id``.
         headless: If True, don't display video
         save_videos: If True, save per-env episode videos
         video_mode: Which videos to save: 'all', 'viewport', 'sensor', or 'none'
-        remote_host: Host for policy server
-        remote_port: Port for policy server
 
     Returns:
         tuple: (env_results, subtask_status, timing)
@@ -84,39 +80,22 @@ def run_episode(env, env_cfg, episode, headless=False, save_videos=True, video_m
             timing: dict with wall-clock timing breakdown
     """
     timer = TimingStats()
-    # Dynamically choose policy backend
-    backend = getattr(env_cfg, "policy", "pi0").lower()
-
-    if backend in ("pi0", "pi0_fast", "paligemma", "paligemma_fast", "pi05"):
-        from robolab.inference.pi0_family import Pi0DroidJointposClient as PolicyClient
-    elif "gr00t" in backend:
-        from robolab.inference.gr00t import GR00TDroidJointposClient as PolicyClient
-    elif backend == "dreamzero":
-        from robolab.inference.dreamzero import DreamZeroClient as PolicyClient
-    elif backend == "valp":
-        from robolab.inference.valp import VALPDroidEEClient as PolicyClient
-    elif backend == "molmo":
-        from robolab.inference.droid_molmo import MolmoActClient as PolicyClient
-    elif backend == "openvla":
-        from robolab.inference.openvla import OpenVLAClient as PolicyClient
-    elif backend == "openvla_oft":
-        from robolab.inference.openvla_oft import OpenVLAOFTClient as PolicyClient
-    else:
-        raise ValueError(
-            f"Unsupported policy '{backend}'. Choose 'pi0', 'pi0_fast', 'pi05', 'paligemma', 'paligemma_fast', 'gr00t', 'dreamzero', 'valp', 'molmo', 'openvla', 'openvla_oft'"
-        )
 
     obs, _ = env.reset()
     obs, _ = env.reset()
     max_steps = getattr(env_cfg, "episode_steps", None) or env.max_episode_length
     video_fps = 1 / (env_cfg.sim.render_interval * env_cfg.sim.dt) # Hz
     instruction = env_cfg.instruction
-    action_dim = _get_action_dim(env)
+    # Pull action dim from the env's action manager (IsaacLab canonical),
+    # falling back to the gym action space if the manager isn't available.
+    action_dim = getattr(
+        getattr(env, "action_manager", None),
+        "total_action_dim",
+        None,
+    ) or env.action_space.shape[-1]
 
     subtask_status = []
 
-    # Single client (one WebSocket connection) with per-env chunk state
-    client = PolicyClient(remote_host=remote_host, remote_port=remote_port)
     clients = [client] * env.num_envs
     if backend == "valp":
         obs = set_client_goal_images(client, env, env_cfg, obs, instruction)
@@ -134,9 +113,10 @@ def run_episode(env, env_cfg, episode, headless=False, save_videos=True, video_m
     save_sensor = save_videos and video_mode in ("all", "sensor")
     save_viewport = save_videos and video_mode in ("all", "viewport")
     cleaned_instruction = re.sub(r'[^\w\s]', '', instruction).replace(' ', '_')
+    # Define unconditionally so the finally clause below can iterate them either way.
+    video_writers_obs: list[VideoWriter] = []
+    video_writers_viewport: list[VideoWriter] = []
     if save_videos:
-        video_writers_obs = []
-        video_writers_viewport = []
         for env_id in range(env.num_envs):
             suffix = f"_{episode}_env{env_id}" if env.num_envs > 1 else f"_{episode}"
             if save_sensor:
@@ -152,61 +132,67 @@ def run_episode(env, env_cfg, episode, headless=False, save_videos=True, video_m
     kit_app = omni.kit.app.get_app()
 
     actual_steps = 0
-    for step in tqdm(range(max_steps)):
+    try:
+        for step in tqdm(range(max_steps)):
 
-        while not timeline.is_playing():
-            kit_app.update()
-        timer.start("policy_inference")
-        # Infer actions for all active (non-frozen) envs
-        actions = torch.zeros(env.num_envs, action_dim, device=env.device)
-        last_viz = None
-        for env_id in env.active_env_ids:
-            ret = clients[env_id].infer(obs, instruction, env_id=env_id)
-            actions[env_id] = torch.tensor(ret["action"], device=env.device)
-            if env_id == 0 or last_viz is None:
-                last_viz = ret.get("viz")
-        timer.stop("policy_inference")
+            while not timeline.is_playing():
+                kit_app.update()
 
-        if not headless and last_viz is not None:
-            cv2.imshow(f"{instruction}", cv2.cvtColor(last_viz, cv2.COLOR_RGB2BGR))
-            cv2.waitKey(1)
+            timer.start("policy_inference")
+            # Infer actions for all active (non-frozen) envs
+            actions = torch.zeros(env.num_envs, action_dim, device=env.device)
+            last_viz = None
+            for env_id in env.active_env_ids:
+                ret = clients[env_id].infer(obs, instruction, env_id=env_id)
+                actions[env_id] = torch.tensor(ret["action"], device=env.device)
+                if env_id == 0 or last_viz is None:
+                    last_viz = ret.get("viz")
+            timer.stop("policy_inference")
 
-        if VISUALIZE:
-            get_world(env).visualize()
+            if not headless and last_viz is not None:
+                cv2.imshow(f"{instruction}", cv2.cvtColor(last_viz, cv2.COLOR_RGB2BGR))
+                cv2.waitKey(1)
 
-        timer.start("env_step")
-        obs, reward, term, trunc, info = env.step(actions)
-        timer.stop("env_step")
+            if VISUALIZE:
+                get_world(env).visualize()
 
-        # Collect per-env subtask info (list of dicts, one per env)
-        per_env_infos = get_all_env_subtask_infos(env)
-        subtask_status.append(per_env_infos)
+            timer.start("env_step")
+            obs, reward, term, trunc, info = env.step(actions)
+            timer.stop("env_step")
 
-        # Write per-env video frames (skip frozen envs)
-        if save_videos:
-            timer.start("video_write")
-            for env_id in range(env.num_envs):
-                if env._frozen_envs[env_id]:
-                    continue
-                if save_sensor:
-                    frame_obs = unpack_image_obs(obs, scale=0.5, env_id=env_id).get("combined_image")
-                    video_writers_obs[env_id].write(frame_obs)
-                if save_viewport:
-                    frame_vp = unpack_viewport_cams(obs, env_id=env_id).get("combined_image")
-                    video_writers_viewport[env_id].write(frame_vp)
-            timer.stop("video_write")
+            # Collect per-env subtask info (list of dicts, one per env)
+            per_env_infos = get_all_env_subtask_infos(env)
+            subtask_status.append(per_env_infos)
 
-        actual_steps += 1
+            # Write per-env video frames (skip frozen envs)
+            if save_videos:
+                timer.start("video_write")
+                for env_id in range(env.num_envs):
+                    if env._frozen_envs[env_id]:
+                        continue
+                    if save_sensor:
+                        frame_obs = unpack_image_obs(obs, scale=0.5, env_id=env_id).get("combined_image")
+                        video_writers_obs[env_id].write(frame_obs)
+                    if save_viewport:
+                        frame_vp = unpack_viewport_cams(obs, env_id=env_id).get("combined_image")
+                        video_writers_viewport[env_id].write(frame_vp)
+                timer.stop("video_write")
 
-        # RobolabEnv freezes terminated envs and exports recordings automatically
-        if env.all_terminated:
-            break
+            actual_steps += 1
 
-    if save_videos:
+            # RobolabEnv freezes terminated envs and exports recordings automatically
+            if env.all_terminated:
+                break
+    finally:
         for vw in video_writers_obs + video_writers_viewport:
-            vw.release()
-
-    client.reset()
+            try:
+                vw.release()
+            except Exception:
+                logger.exception("Failed to release video writer")
+        try:
+            client.reset()
+        except Exception:
+            logger.exception("Failed to reset client after episode")
 
     timing = timer.to_dict(actual_steps)
     return env.get_env_results(), subtask_status, timing
