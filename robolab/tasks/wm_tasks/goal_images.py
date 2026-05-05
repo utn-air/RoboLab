@@ -169,14 +169,13 @@ def drive_to_valp_goal(env, env_cfg, obs: dict | None = None) -> dict:
 def generate_goal_images(env, env_cfg, obs: dict | None = None) -> dict[str, Path]:
     """Generate and cache one canonical pair of goal images for a WM task."""
     paths = goal_image_paths(env_cfg)
-    goal_cfg = env_cfg.goal
 
     task_name = getattr(env_cfg, "_task_name")
     print(f"\033[96m[RoboLab] Generating VALP goal images for {task_name}\033[0m")
     goal_obs = drive_to_valp_goal(env, env_cfg, obs=obs)
 
-    external_key = goal_cfg.get("external_camera", "over_shoulder_right_camera")
-    wrist_key = goal_cfg.get("wrist_camera", "wrist_cam")
+    external_key = env_cfg.goal.get("external_camera", "over_shoulder_right_camera")
+    wrist_key = env_cfg.goal.get("wrist_camera", "wrist_cam")
     _save_rgb_image(goal_obs["image_obs"][external_key][0], paths["external"])
     _save_rgb_image(goal_obs["image_obs"][wrist_key][0], paths["wrist"])
     return paths
