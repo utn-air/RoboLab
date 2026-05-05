@@ -21,16 +21,12 @@ PROTOCOL_BUFFERS_PYTHON_IMPLEMENTATION=python \
     --remote-port 8000
 
 TODO:
-
-    - integrate latest changes from RoboLab to this repo
-    - why body_offset
-    - substasks and number of steps switch
-    - each eval run should run all tasks / envs
+    - Fix robot controller and see what is body_offset
+    - define benchmark tasks:
+        1. Change positions of object - 10
+        2. Randomise items - 20
+        3. Randomise table texture - 5
+        4. Randomise bg - 50
+        5. Randomise init gripper position - 4
     - mpc tuning
-
-Benchmark tasks:
-    1. Change positions of object - 10
-    2. Randomise items - 20
-    3. Randomise table texture - 5
-    4. Randomise bg - 50
-    5. Randomise init gripper position - 4
+    - substasks and number of steps switch
