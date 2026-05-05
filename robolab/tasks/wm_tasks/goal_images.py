@@ -182,16 +182,15 @@ def generate_goal_images(env, env_cfg, obs: dict | None = None) -> dict[str, Pat
     return paths
 
 
-def ensure_goal_images(env, env_cfg, obs: dict | None = None) -> dict[str, Path]:
-    paths = goal_image_paths(env_cfg)
-    if not all(path.exists() for path in paths.values()):
-        return generate_goal_images(env, env_cfg, obs=obs)
-    return paths
 
 
 def set_client_goal_images(client, env, env_cfg, obs: dict | None, instruction: str) -> dict:
     """Ensure cached images exist, load them, set them on the VALP client, and reset env."""
-    paths = ensure_goal_images(env, env_cfg, obs=obs)
+    
+    paths = goal_image_paths(env_cfg)
+    if not all(path.exists() for path in paths.values()):
+        paths = generate_goal_images(env, env_cfg, obs=obs)
+
     external_goal = _load_rgb_image(paths["external"])
     wrist_goal = _load_rgb_image(paths["wrist"])
 
