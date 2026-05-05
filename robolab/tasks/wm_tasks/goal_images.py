@@ -25,36 +25,22 @@ REPO_ROOT = Path(__file__).resolve().parents[3]
 WM_GOAL_DIR = REPO_ROOT / "assets" / "wm_tasks"
 
 
-def _safe_name(name: str) -> str:
-    return re.sub(r"[^A-Za-z0-9_.-]+", "_", name).strip("_")
-
 
 def _task_name(env_cfg) -> str:
-    return _safe_name(getattr(env_cfg, "_task_name", None) or env_cfg.__class__.__name__)
+    return getattr(env_cfg, "_task_name", None) or env_cfg.__class__.__name__
 
 
-def _goal_cfg(env_cfg) -> dict:
-    goal_cfg = getattr(env_cfg, "valp_goal", None)
-    if not goal_cfg:
-        raise ValueError(
-            f"{_task_name(env_cfg)} does not define valp_goal; cannot generate VALP goal images."
-        )
-    return dict(goal_cfg)
 
-
-def goal_image_dir(env_cfg) -> Path:
-    return WM_GOAL_DIR / _task_name(env_cfg)
 
 
 def goal_image_paths(env_cfg) -> dict[str, Path]:
-    goal_cfg = _goal_cfg(env_cfg)
+    goal_cfg = getattr(env_cfg, "goal", None)
     external_key = goal_cfg.get("external_camera", "over_shoulder_right_camera")
     wrist_key = goal_cfg.get("wrist_camera", "wrist_cam")
-    root = goal_image_dir(env_cfg)
+    root = WM_GOAL_DIR / _task_name(env_cfg)
     return {
         "external": root / f"{external_key}.png",
         "wrist": root / f"{wrist_key}.png",
-        "metadata": root / "metadata.json",
     }
 
 
@@ -138,7 +124,8 @@ def drive_to_valp_goal(env, env_cfg, obs: dict | None = None) -> dict:
     """Drive the robot to the task's configured VALP goal pose and return latest obs."""
     from robolab.core.world.world_state import get_world
 
-    goal_cfg = _goal_cfg(env_cfg)
+    goal_cfg = getattr(env_cfg, "goal", None)
+
     mode = goal_cfg.get("mode")
     if mode not in ("reach_above_object", "reach_above_object_with_yaw"):
         raise ValueError(f"Unsupported VALP goal mode: {mode}")

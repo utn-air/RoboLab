@@ -65,8 +65,8 @@ class ReachBananaTask(Task):
     }
     # episode_length_s: int = 20
     episode_steps: int = 25
-    attributes = ["reach", "valp_goal"]
-    valp_goal = {
+    attributes = ["reach", "goal"]
+    goal = {
         "mode": "reach_above_object",
         "object": "banana",
         "z_offset": 0.12,
