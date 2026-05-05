@@ -27,11 +27,7 @@ WM_GOAL_DIR = REPO_ROOT / "assets" / "wm_tasks"
 
 
 def _task_name(env_cfg) -> str:
-    return getattr(env_cfg, "_task_name", None) or env_cfg.__class__.__name__
-
-
-
-
+    return getattr(env_cfg, "_task_name", None) 
 
 def goal_image_paths(env_cfg) -> dict[str, Path]:
     goal_cfg = getattr(env_cfg, "goal", None)
@@ -47,17 +43,6 @@ def goal_image_paths(env_cfg) -> dict[str, Path]:
 def goal_images_exist(env_cfg) -> bool:
     paths = goal_image_paths(env_cfg)
     return paths["external"].exists() and paths["wrist"].exists()
-
-
-def _get_action_dim(env, fallback: int = 7) -> int:
-    space = getattr(env, "single_action_space", None) or getattr(env, "action_space", None)
-    shape = getattr(space, "shape", None)
-    if shape:
-        return int(shape[-1])
-
-    action_manager = getattr(env, "action_manager", None)
-    total_dim = getattr(action_manager, "total_action_dim", None)
-    return int(total_dim) if total_dim is not None else fallback
 
 
 def _save_rgb_image(image: torch.Tensor, path: Path) -> None:
@@ -146,7 +131,7 @@ def drive_to_valp_goal(env, env_cfg, obs: dict | None = None) -> dict:
     link_name = goal_cfg.get("link_name", "base_link")
     yaw_action_index = int(goal_cfg.get("yaw_action_index", 5))
 
-    action_dim = _get_action_dim(env)
+    action_dim = 7
     target_positions = _compute_reach_goal_positions(env, target_object, z_offset)
     actions = torch.zeros(env.num_envs, action_dim, device=env.device)
 
