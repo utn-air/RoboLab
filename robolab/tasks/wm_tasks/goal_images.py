@@ -99,7 +99,7 @@ def drive_to_valp_goal(env, env_cfg, obs: dict | None = None) -> dict:
     from robolab.core.world.world_state import get_world
 
     mode = env_cfg.goal.get("mode")
-    if mode not in ("reach_above_object", "reach_above_object_with_yaw"):
+    if mode not in ("reach", "reachandrotate"):
         raise ValueError(f"Unsupported VALP goal mode: {mode}")
 
     if obs is None:
@@ -173,6 +173,41 @@ def generate_goal_images(env, env_cfg, obs: dict | None = None) -> dict[str, Pat
     task_name = getattr(env_cfg, "_task_name")
     print(f"\033[96m[RoboLab] Generating VALP goal images for {task_name}\033[0m")
     goal_obs = drive_to_valp_goal(env, env_cfg, obs=obs)
+
+    # recorder = getattr(env, "recorder_manager", None)
+    # old_terms = None
+    # old_term_names = None
+    # old_export_mode = None
+    # old_flush_interval = None
+    # if recorder is not None:
+    #     old_terms = getattr(recorder, "_terms", None)
+    #     old_term_names = getattr(recorder, "_term_names", None)
+    #     old_flush_interval = getattr(recorder, "_flush_interval", None)
+    #     if getattr(recorder, "cfg", None) is not None:
+    #         from isaaclab.managers.recorder_manager import DatasetExportMode
+
+    #         old_export_mode = recorder.cfg.dataset_export_mode
+    #         recorder.cfg.dataset_export_mode = DatasetExportMode.EXPORT_NONE
+    #     if old_terms is not None:
+    #         recorder._terms = {}
+    #     if old_term_names is not None:
+    #         recorder._term_names = []
+    #     if old_flush_interval is not None:
+    #         recorder._flush_interval = 0
+
+    # try:
+    #     goal_obs = drive_to_valp_goal(env, env_cfg, obs=obs)
+    # finally:
+    #     if recorder is not None:
+    #         recorder.clear()
+    #         if old_terms is not None:
+    #             recorder._terms = old_terms
+    #         if old_term_names is not None:
+    #             recorder._term_names = old_term_names
+    #         if old_export_mode is not None:
+    #             recorder.cfg.dataset_export_mode = old_export_mode
+    #         if old_flush_interval is not None:
+    #             recorder._flush_interval = old_flush_interval
 
     external_key = env_cfg.goal.get("external_camera", "over_shoulder_right_camera")
     wrist_key = env_cfg.goal.get("wrist_camera", "wrist_cam")

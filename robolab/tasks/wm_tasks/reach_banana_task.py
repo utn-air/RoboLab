@@ -67,7 +67,7 @@ class ReachBananaTask(Task):
     episode_steps: int = 25
     attributes = ["reach", "goal"]
     goal = {
-        "mode": "reach_above_object",
+        "mode": "reach",
         "object": "banana",
         "z_offset": 0.12,
         "tolerance": 0.025,
