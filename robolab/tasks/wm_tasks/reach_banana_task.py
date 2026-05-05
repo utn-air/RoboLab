@@ -46,7 +46,10 @@ class ReachBananaTerminations:
     time_out = DoneTerm(func=mdp.time_out, time_out=True)
     success = DoneTerm(
         func=gripper_above_object,
-        params={"object": "banana", "z_offset": 0.12, "tolerance": 0.04},
+        params={"object": "banana", 
+                "z_offset": 0.12, 
+                "tolerance": 0.04
+                },
     )
 
 

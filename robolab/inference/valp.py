@@ -67,6 +67,12 @@ class VALPDroidEEClient(InferenceClient):
     def reset(self):
         self._request({"method": "reset"})
 
+    def close(self):
+        try:
+            self.sock.close()
+        except OSError:
+            pass
+
     def set_goal_images(
         self,
         external_image,

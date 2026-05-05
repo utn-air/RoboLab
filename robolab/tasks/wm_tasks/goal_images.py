@@ -139,7 +139,7 @@ def drive_to_valp_goal(env, env_cfg, obs: dict | None = None) -> dict:
     from robolab.core.world.world_state import get_world
 
     goal_cfg = _goal_cfg(env_cfg)
-    mode = goal_cfg.get("mode", "reach_above_object")
+    mode = goal_cfg.get("mode")
     if mode not in ("reach_above_object", "reach_above_object_with_yaw"):
         raise ValueError(f"Unsupported VALP goal mode: {mode}")
 

@@ -120,6 +120,9 @@ def run_episode(env, env_cfg, episode, headless=False, save_videos=True, video_m
     clients = [client] * env.num_envs
     if backend == "valp":
         obs = set_client_goal_images(client, env, env_cfg, obs, instruction)
+        # set different initial config
+        # actions = torch.tensor([[0.0, 0.0, 0.0, 0.0, 0.0, -1.5, 0.0]], device=env.device).repeat(env.num_envs, 1)
+        # env.step(actions)  # step to update visuals after setting goal images
     
     # Set up per-run HDF5 file and per-env demo indices
     if env.recorder_manager is not None and hasattr(env.recorder_manager, 'set_hdf5_file'):
