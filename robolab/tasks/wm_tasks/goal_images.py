@@ -11,9 +11,6 @@ goal images under ``assets/wm_tasks``.
 from __future__ import annotations
 
 import argparse
-import json
-import os
-import re
 import sys
 from pathlib import Path
 
@@ -25,24 +22,16 @@ REPO_ROOT = Path(__file__).resolve().parents[3]
 WM_GOAL_DIR = REPO_ROOT / "assets" / "wm_tasks"
 
 
-
-def _task_name(env_cfg) -> str:
-    return getattr(env_cfg, "_task_name", None) 
-
 def goal_image_paths(env_cfg) -> dict[str, Path]:
-    goal_cfg = getattr(env_cfg, "goal", None)
+    goal_cfg = env_cfg.goal
     external_key = goal_cfg.get("external_camera", "over_shoulder_right_camera")
     wrist_key = goal_cfg.get("wrist_camera", "wrist_cam")
-    root = WM_GOAL_DIR / _task_name(env_cfg)
+    task_name = getattr(env_cfg, "_task_name", env_cfg.__class__.__name__)
+    root = WM_GOAL_DIR / task_name
     return {
         "external": root / f"{external_key}.png",
         "wrist": root / f"{wrist_key}.png",
     }
-
-
-def goal_images_exist(env_cfg) -> bool:
-    paths = goal_image_paths(env_cfg)
-    return paths["external"].exists() and paths["wrist"].exists()
 
 
 def _save_rgb_image(image: torch.Tensor, path: Path) -> None:
@@ -109,8 +98,7 @@ def drive_to_valp_goal(env, env_cfg, obs: dict | None = None) -> dict:
     """Drive the robot to the task's configured VALP goal pose and return latest obs."""
     from robolab.core.world.world_state import get_world
 
-    goal_cfg = getattr(env_cfg, "goal", None)
-
+    goal_cfg = env_cfg.goal
     mode = goal_cfg.get("mode")
     if mode not in ("reach_above_object", "reach_above_object_with_yaw"):
         raise ValueError(f"Unsupported VALP goal mode: {mode}")
@@ -181,33 +169,23 @@ def drive_to_valp_goal(env, env_cfg, obs: dict | None = None) -> dict:
 def generate_goal_images(env, env_cfg, obs: dict | None = None) -> dict[str, Path]:
     """Generate and cache one canonical pair of goal images for a WM task."""
     paths = goal_image_paths(env_cfg)
-    if goal_images_exist(env_cfg):
-        return paths
+    goal_cfg = env_cfg.goal
 
-    goal_cfg = _goal_cfg(env_cfg)
-    print(f"\033[96m[RoboLab] Generating VALP goal images for {_task_name(env_cfg)}\033[0m")
+    task_name = getattr(env_cfg, "_task_name")
+    print(f"\033[96m[RoboLab] Generating VALP goal images for {task_name}\033[0m")
     goal_obs = drive_to_valp_goal(env, env_cfg, obs=obs)
 
     external_key = goal_cfg.get("external_camera", "over_shoulder_right_camera")
     wrist_key = goal_cfg.get("wrist_camera", "wrist_cam")
     _save_rgb_image(goal_obs["image_obs"][external_key][0], paths["external"])
     _save_rgb_image(goal_obs["image_obs"][wrist_key][0], paths["wrist"])
-
-    metadata = {
-        "task": _task_name(env_cfg),
-        "instruction": getattr(env_cfg, "instruction", None),
-        "goal": goal_cfg,
-        "external_image": paths["external"].name,
-        "wrist_image": paths["wrist"].name,
-    }
-    paths["metadata"].write_text(json.dumps(metadata, indent=2), encoding="utf-8")
     return paths
 
 
 def ensure_goal_images(env, env_cfg, obs: dict | None = None) -> dict[str, Path]:
     paths = goal_image_paths(env_cfg)
-    if not goal_images_exist(env_cfg):
-        paths = generate_goal_images(env, env_cfg, obs=obs)
+    if not all(path.exists() for path in paths.values()):
+        return generate_goal_images(env, env_cfg, obs=obs)
     return paths
 
 
