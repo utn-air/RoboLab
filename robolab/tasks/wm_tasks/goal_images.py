@@ -178,10 +178,10 @@ def drive_to_valp_goal(env, env_cfg, obs: dict | None = None) -> dict:
     return obs
 
 
-def generate_goal_images(env, env_cfg, obs: dict | None = None, overwrite: bool = False) -> dict[str, Path]:
+def generate_goal_images(env, env_cfg, obs: dict | None = None) -> dict[str, Path]:
     """Generate and cache one canonical pair of goal images for a WM task."""
     paths = goal_image_paths(env_cfg)
-    if goal_images_exist(env_cfg) and not overwrite:
+    if goal_images_exist(env_cfg):
         return paths
 
     goal_cfg = _goal_cfg(env_cfg)
@@ -208,7 +208,6 @@ def ensure_goal_images(env, env_cfg, obs: dict | None = None) -> dict[str, Path]
     paths = goal_image_paths(env_cfg)
     if not goal_images_exist(env_cfg):
         paths = generate_goal_images(env, env_cfg, obs=obs)
-        env.reset_eval_state()
     return paths
 
 
@@ -235,7 +234,6 @@ def main() -> int:
     parser.add_argument("--task-dirs", nargs="+", default=["wm_tasks"], help="Task folders to register.")
     parser.add_argument("--num-envs", "--num_envs", type=int, default=1)
     parser.add_argument("--instruction-type", "--instruction_type", default="default")
-    parser.add_argument("--overwrite", action="store_true")
     args_cli, _ = parser.parse_known_args()
     args_cli.enable_cameras = True
 
@@ -260,7 +258,7 @@ def main() -> int:
             instruction_type=args_cli.instruction_type,
             policy="valp",
         )
-        generate_goal_images(env, env_cfg, overwrite=args_cli.overwrite)
+        generate_goal_images(env, env_cfg)
         env.close()
     finally:
         simulation_app.close()
