@@ -24,8 +24,8 @@ WM_GOAL_DIR = REPO_ROOT / "assets" / "wm_tasks"
 
 def goal_image_paths(env_cfg) -> dict[str, Path]:
     goal_cfg = env_cfg.goal
-    external_key = goal_cfg.get("external_camera", "over_shoulder_right_camera")
-    wrist_key = goal_cfg.get("wrist_camera", "wrist_cam")
+    external_key = env_cfg.goal.get("external_camera", "over_shoulder_right_camera")
+    wrist_key = env_cfg.goal.get("wrist_camera", "wrist_cam")
     task_name = getattr(env_cfg, "_task_name", env_cfg.__class__.__name__)
     root = WM_GOAL_DIR / task_name
     return {
