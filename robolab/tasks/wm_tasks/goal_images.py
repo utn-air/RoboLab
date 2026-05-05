@@ -95,12 +95,12 @@ def _object_axis_yaw(env, object_name: str, axis: str = "x") -> torch.Tensor:
 
 
 def drive_to_valp_goal(env, env_cfg, obs: dict | None = None) -> dict:
-    """Drive the robot to the task's configured VALP goal pose and return latest obs."""
+    """Drive the robot to the task's configured goal pose and return latest obs."""
     from robolab.core.world.world_state import get_world
 
     mode = env_cfg.goal.get("mode")
     if mode not in ("reach", "reachandrotate"):
-        raise ValueError(f"Unsupported VALP goal mode: {mode}")
+        raise ValueError(f"Unsupported goal mode: {mode}")
 
     if obs is None:
         obs, _ = env.reset()
@@ -122,7 +122,7 @@ def drive_to_valp_goal(env, env_cfg, obs: dict | None = None) -> dict:
     target_positions = _compute_reach_goal_positions(env, target_object, z_offset)
     actions = torch.zeros(env.num_envs, action_dim, device=env.device)
 
-    if mode == "reach_above_object_with_yaw":
+    if mode == "reachandrotate":
         yaw_source = env_cfg.goal.get("yaw_source", "object_axis")
         if yaw_source == "object_axis":
             target_yaw = _object_axis_yaw(env, target_object, env_cfg.goal.get("object_yaw_axis", "x"))
@@ -162,6 +162,8 @@ def drive_to_valp_goal(env, env_cfg, obs: dict | None = None) -> dict:
     for _ in range(settle_steps):
         obs, _, _, _, _ = env.step(actions)
 
+    env.reset_eval_state()
+
     return obs
 
 
@@ -171,43 +173,8 @@ def generate_goal_images(env, env_cfg, obs: dict | None = None) -> dict[str, Pat
     paths = goal_image_paths(env_cfg)
 
     task_name = getattr(env_cfg, "_task_name")
-    print(f"\033[96m[RoboLab] Generating VALP goal images for {task_name}\033[0m")
+    print(f"\033[96m[RoboLab] Generating goal images for {task_name}\033[0m")
     goal_obs = drive_to_valp_goal(env, env_cfg, obs=obs)
-
-    # recorder = getattr(env, "recorder_manager", None)
-    # old_terms = None
-    # old_term_names = None
-    # old_export_mode = None
-    # old_flush_interval = None
-    # if recorder is not None:
-    #     old_terms = getattr(recorder, "_terms", None)
-    #     old_term_names = getattr(recorder, "_term_names", None)
-    #     old_flush_interval = getattr(recorder, "_flush_interval", None)
-    #     if getattr(recorder, "cfg", None) is not None:
-    #         from isaaclab.managers.recorder_manager import DatasetExportMode
-
-    #         old_export_mode = recorder.cfg.dataset_export_mode
-    #         recorder.cfg.dataset_export_mode = DatasetExportMode.EXPORT_NONE
-    #     if old_terms is not None:
-    #         recorder._terms = {}
-    #     if old_term_names is not None:
-    #         recorder._term_names = []
-    #     if old_flush_interval is not None:
-    #         recorder._flush_interval = 0
-
-    # try:
-    #     goal_obs = drive_to_valp_goal(env, env_cfg, obs=obs)
-    # finally:
-    #     if recorder is not None:
-    #         recorder.clear()
-    #         if old_terms is not None:
-    #             recorder._terms = old_terms
-    #         if old_term_names is not None:
-    #             recorder._term_names = old_term_names
-    #         if old_export_mode is not None:
-    #             recorder.cfg.dataset_export_mode = old_export_mode
-    #         if old_flush_interval is not None:
-    #             recorder._flush_interval = old_flush_interval
 
     external_key = env_cfg.goal.get("external_camera", "over_shoulder_right_camera")
     wrist_key = env_cfg.goal.get("wrist_camera", "wrist_cam")
@@ -217,7 +184,7 @@ def generate_goal_images(env, env_cfg, obs: dict | None = None) -> dict[str, Pat
 
 
 def set_client_goal_images(client, env, env_cfg, obs: dict | None, instruction: str) -> dict:
-    """Ensure cached images exist, load them, set them on the VALP client, and reset env."""
+    """Ensure cached images exist, load them, set them on the client, and reset env."""
     
     paths = goal_image_paths(env_cfg)
     if not all(path.exists() for path in paths.values()):
@@ -237,7 +204,7 @@ def set_client_goal_images(client, env, env_cfg, obs: dict | None, instruction: 
 def main() -> int:
     from isaaclab.app import AppLauncher
 
-    parser = argparse.ArgumentParser(description="Generate cached VALP goal images for WM tasks.")
+    parser = argparse.ArgumentParser(description="Generate cached goal images for WM tasks.")
     AppLauncher.add_app_launcher_args(parser)
     parser.add_argument("--task", required=True, help="Task name to generate, e.g. ReachBananaTask.")
     parser.add_argument("--task-dirs", nargs="+", default=["wm_tasks"], help="Task folders to register.")
