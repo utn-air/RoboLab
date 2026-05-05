@@ -98,42 +98,41 @@ def drive_to_valp_goal(env, env_cfg, obs: dict | None = None) -> dict:
     """Drive the robot to the task's configured VALP goal pose and return latest obs."""
     from robolab.core.world.world_state import get_world
 
-    goal_cfg = env_cfg.goal
-    mode = goal_cfg.get("mode")
+    mode = env_cfg.goal.get("mode")
     if mode not in ("reach_above_object", "reach_above_object_with_yaw"):
         raise ValueError(f"Unsupported VALP goal mode: {mode}")
 
     if obs is None:
         obs, _ = env.reset()
 
-    target_object = goal_cfg["object"]
-    z_offset = float(goal_cfg.get("z_offset", 0.12))
-    tolerance = float(goal_cfg.get("tolerance", 0.025))
-    yaw_tolerance = float(goal_cfg.get("yaw_tolerance", 0.08))
-    max_steps = int(goal_cfg.get("drive_steps", 80))
-    settle_steps = int(goal_cfg.get("settle_steps", 4))
-    ik_action_scale = float(goal_cfg.get("ik_action_scale", 0.5))
-    yaw_action_scale = float(goal_cfg.get("yaw_action_scale", 0.5))
-    max_action = float(goal_cfg.get("max_action", 0.25))
-    max_rot_action = float(goal_cfg.get("max_rot_action", 0.25))
-    link_name = goal_cfg.get("link_name", "base_link")
-    yaw_action_index = int(goal_cfg.get("yaw_action_index", 5))
+    target_object = env_cfg.goal["object"]
+    z_offset = float(env_cfg.goal.get("z_offset", 0.12))
+    tolerance = float(env_cfg.goal.get("tolerance", 0.025))
+    yaw_tolerance = float(env_cfg.goal.get("yaw_tolerance", 0.08))
+    max_steps = int(env_cfg.goal.get("drive_steps", 80))
+    settle_steps = int(env_cfg.goal.get("settle_steps", 4))
+    ik_action_scale = float(env_cfg.goal.get("ik_action_scale", 0.5))
+    yaw_action_scale = float(env_cfg.goal.get("yaw_action_scale", 0.5))
+    max_action = float(env_cfg.goal.get("max_action", 0.25))
+    max_rot_action = float(env_cfg.goal.get("max_rot_action", 0.25))
+    link_name = env_cfg.goal.get("link_name", "base_link")
+    yaw_action_index = int(env_cfg.goal.get("yaw_action_index", 5))
 
     action_dim = 7
     target_positions = _compute_reach_goal_positions(env, target_object, z_offset)
     actions = torch.zeros(env.num_envs, action_dim, device=env.device)
 
     if mode == "reach_above_object_with_yaw":
-        yaw_source = goal_cfg.get("yaw_source", "object_axis")
+        yaw_source = env_cfg.goal.get("yaw_source", "object_axis")
         if yaw_source == "object_axis":
-            target_yaw = _object_axis_yaw(env, target_object, goal_cfg.get("object_yaw_axis", "x"))
+            target_yaw = _object_axis_yaw(env, target_object, env_cfg.goal.get("object_yaw_axis", "x"))
         elif yaw_source == "constant":
             target_yaw = torch.full(
-                (env.num_envs,), float(goal_cfg.get("target_yaw", 0.0)), device=env.device
+                (env.num_envs,), float(env_cfg.goal.get("target_yaw", 0.0)), device=env.device
             )
         else:
             raise ValueError(f"Unsupported yaw_source: {yaw_source}")
-        target_yaw = _wrap_to_pi(target_yaw + float(goal_cfg.get("yaw_offset", 0.0)))
+        target_yaw = _wrap_to_pi(target_yaw + float(env_cfg.goal.get("yaw_offset", 0.0)))
     else:
         target_yaw = None
 
@@ -168,6 +167,7 @@ def drive_to_valp_goal(env, env_cfg, obs: dict | None = None) -> dict:
 
 def generate_goal_images(env, env_cfg, obs: dict | None = None) -> dict[str, Path]:
     """Generate and cache one canonical pair of goal images for a WM task."""
+    
     paths = goal_image_paths(env_cfg)
 
     task_name = getattr(env_cfg, "_task_name")
@@ -179,8 +179,6 @@ def generate_goal_images(env, env_cfg, obs: dict | None = None) -> dict[str, Pat
     _save_rgb_image(goal_obs["image_obs"][external_key][0], paths["external"])
     _save_rgb_image(goal_obs["image_obs"][wrist_key][0], paths["wrist"])
     return paths
-
-
 
 
 def set_client_goal_images(client, env, env_cfg, obs: dict | None, instruction: str) -> dict:
