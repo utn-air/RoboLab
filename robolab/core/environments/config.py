@@ -145,8 +145,8 @@ def generate_task_env_cfg(task_class: Task,
             self.instruction = task_class.instruction
             self.terminations = task_class.terminations()
             self.contact_object_list = task_class.contact_object_list
-            if getattr(task_class, "valp_goal", None) is not None:
-                self.valp_goal = task_class.valp_goal
+            if getattr(task_class, "goal", None) is not None:
+                self.goal = task_class.goal
             if getattr(task_class, "episode_steps", None) is not None:
                 self.episode_steps = task_class.episode_steps
 
