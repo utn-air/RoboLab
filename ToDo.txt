@@ -21,7 +21,6 @@ PROTOCOL_BUFFERS_PYTHON_IMPLEMENTATION=python \
     --remote-port 8000
 
 TODO:
-    - fix right_camera
     - remove recording of goal
     - Fix robot controller and see what is body_offset
 

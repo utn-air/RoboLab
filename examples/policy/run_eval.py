@@ -160,7 +160,7 @@ def main():
                 remote_host=args_cli.remote_host,
                 remote_port=args_cli.remote_port,
             )
-            args_cli.output_folder_name = f"_{policy_client.metadata()['modelname']}"
+            args_cli.output_folder_name = f"{policy_client.metadata()['modelname']}"
             policy_client.close()
         else:
             args_cli.output_folder_name = get_timestamp() + f"_{args_cli.policy}"
