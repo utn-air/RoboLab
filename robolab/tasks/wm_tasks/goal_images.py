@@ -45,12 +45,6 @@ def _save_rgb_image(image: torch.Tensor, path: Path) -> None:
         raise OSError(f"Failed to write goal image: {path}")
 
 
-def _load_rgb_image(path: Path) -> torch.Tensor:
-    image_np = cv2.imread(str(path), cv2.IMREAD_COLOR)
-    if image_np is None:
-        raise FileNotFoundError(f"Could not read goal image: {path}")
-    image_np = cv2.cvtColor(image_np, cv2.COLOR_BGR2RGB)
-    return torch.from_numpy(image_np.copy())
 
 
 def _compute_reach_goal_positions(env, target_object: str, z_offset: float) -> torch.Tensor:
@@ -181,23 +175,6 @@ def generate_goal_images(env, env_cfg, obs: dict | None = None):
     _save_rgb_image(goal_obs["image_obs"][wrist_key][0], paths["wrist"])
     return
 
-
-def set_client_goal_images(
-    client,
-    env,
-    env_cfg,
-    instruction: str,
-) -> dict:
-    """Load cached goal images, set them on the policy client, and reset env."""
-
-    paths = goal_image_paths(env_cfg)
-    
-    external_goal = _load_rgb_image(paths["external"])
-    wrist_goal = _load_rgb_image(paths["wrist"])
-
-    for env_id in range(env.num_envs):
-        client.set_goal_images(external_goal, wrist_goal, env_id=env_id, instruction=instruction)
-    return obs
 
 
 def main() -> int:

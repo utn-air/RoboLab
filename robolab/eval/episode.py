@@ -55,7 +55,36 @@ from robolab.core.utils.video_utils import VideoWriter
 from robolab.core.world.world_state import get_world
 from robolab.eval.base_client import InferenceClient
 
-from robolab.tasks.wm_tasks.goal_images import set_client_goal_images
+
+def _load_rgb_image(path: Path) -> torch.Tensor:
+    image_np = cv2.imread(str(path), cv2.IMREAD_COLOR)
+    if image_np is None:
+        raise FileNotFoundError(f"Could not read goal image: {path}")
+    image_np = cv2.cvtColor(image_np, cv2.COLOR_BGR2RGB)
+    return torch.from_numpy(image_np.copy())
+
+def set_client_goal_images(
+    client,
+    env,
+    env_cfg,
+    instruction: str,
+):
+    """Load cached goal images, set them on the policy client, and reset env."""
+    
+    REPO_ROOT = Path(__file__).resolve().parents[3]
+    WM_GOAL_DIR = REPO_ROOT / "assets" / "wm_tasks"
+    
+    external_key = env_cfg.goal.get("external_camera", "over_shoulder_right_camera")
+    wrist_key = env_cfg.goal.get("wrist_camera", "wrist_cam")
+    task_name = getattr(env_cfg, "_task_name", env_cfg.__class__.__name__)
+    
+    external_goal = _load_rgb_image(WM_GOAL_DIR / task_name / f"{external_key}.png")
+    wrist_goal = _load_rgb_image(WM_GOAL_DIR / task_name / f"{wrist_key}.png")
+
+    for env_id in range(env.num_envs):
+        client.set_goal_images(external_goal, wrist_goal, env_id=env_id, instruction=instruction)
+    
+    return
 
 def run_episode(env, env_cfg, episode, client: InferenceClient, *, headless=False, save_videos=True, video_mode="all"):
     """Run a policy-controlled episode across all parallel envs.
@@ -83,7 +112,7 @@ def run_episode(env, env_cfg, episode, client: InferenceClient, *, headless=Fals
 
     obs, _ = env.reset()
     obs, _ = env.reset()
-    max_steps = getattr(env_cfg, "episode_steps", None) or env.max_episode_length
+    max_steps = getattr(env_cfg, "episode_steps", None)
     video_fps = 1 / (env_cfg.sim.render_interval * env_cfg.sim.dt) # Hz
     instruction = env_cfg.instruction
     # Pull action dim from the env's action manager (IsaacLab canonical),
