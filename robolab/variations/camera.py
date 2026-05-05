@@ -32,8 +32,8 @@ class OverShoulderLeftCameraCfg:
     )
 @configclass
 class OverShoulderRightCameraCfg:
-    external_right_cam = TiledCameraCfg(
-        prim_path="{ENV_REGEX_NS}/external_right_cam",
+    over_shoulder_right_camera = TiledCameraCfg(
+        prim_path="{ENV_REGEX_NS}/over_shoulder_right_camera",
         height=720,
         width=1280,
         data_types=["rgb"],
@@ -55,34 +55,34 @@ class OverShoulderRightCameraCfg:
     )
 
 
-@configclass
-class OverShoulderRightCameraCfg:
-    """Right over-shoulder camera, matching DROID exterior_image_2_left placement.
+# @configclass
+# class OverShoulderRightCameraCfg:
+#     """Right over-shoulder camera, matching DROID exterior_image_2_left placement.
 
-    Mirror of OverShoulderLeftCameraCfg across the XZ plane (Y → -Y).
-    Mounted to the right of the robot workspace at (0.05, -0.57, 0.66).
-    Look direction: (0.628, +0.490, -0.606) — looking left-and-down toward workspace.
-    Up direction in world: (0.477, +0.372, +0.796) — Z component positive (upright image).
+#     Mirror of OverShoulderLeftCameraCfg across the XZ plane (Y → -Y).
+#     Mounted to the right of the robot workspace at (0.05, -0.57, 0.66).
+#     Look direction: (0.628, +0.490, -0.606) — looking left-and-down toward workspace.
+#     Up direction in world: (0.477, +0.372, +0.796) — Z component positive (upright image).
 
-    Derivation: the correct XZ mirror requires det(R) = +1. The rotation matrix columns are
-    the XZ-mirrored left-camera basis vectors with the right-vector sign corrected for
-    right-handedness. Converting that matrix to quaternion gives (0.805, 0.399, -0.195, -0.393).
-    """
-    over_shoulder_right_camera = TiledCameraCfg(
-        prim_path="{ENV_REGEX_NS}/over_shoulder_right_camera",
-        height=720,
-        width=1280,
-        data_types=["rgb"],
-        spawn=sim_utils.PinholeCameraCfg(
-            focal_length=2.1,
-            focus_distance=28.0,
-            horizontal_aperture=5.376,
-            vertical_aperture=3.024,
-        ),
-        offset=TiledCameraCfg.OffsetCfg(
-            pos=(0.05, -0.57, 0.66), rot=(0.805, 0.399, -0.195, -0.393), convention="opengl"
-        ),
-    )
+#     Derivation: the correct XZ mirror requires det(R) = +1. The rotation matrix columns are
+#     the XZ-mirrored left-camera basis vectors with the right-vector sign corrected for
+#     right-handedness. Converting that matrix to quaternion gives (0.805, 0.399, -0.195, -0.393).
+#     """
+#     over_shoulder_right_camera = TiledCameraCfg(
+#         prim_path="{ENV_REGEX_NS}/over_shoulder_right_camera",
+#         height=720,
+#         width=1280,
+#         data_types=["rgb"],
+#         spawn=sim_utils.PinholeCameraCfg(
+#             focal_length=2.1,
+#             focus_distance=28.0,
+#             horizontal_aperture=5.376,
+#             vertical_aperture=3.024,
+#         ),
+#         offset=TiledCameraCfg.OffsetCfg(
+#             pos=(0.05, -0.57, 0.66), rot=(0.805, 0.399, -0.195, -0.393), convention="opengl"
+#         ),
+#     )
 
 
 @configclass

@@ -41,6 +41,12 @@ try:
 except ImportError:
     pass
 
+try:
+    from .valp import VALPDroidEEClient
+    POLICY_REGISTRY["valp"] = VALPDroidEEClient
+except ImportError:
+    pass
+
 
 def create_client(name: str, **kwargs: Any) -> InferenceClient:
     """Construct the inference client for a given backend name.

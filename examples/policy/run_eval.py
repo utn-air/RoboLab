@@ -154,13 +154,13 @@ def main():
     """Main function."""
     if args_cli.output_folder_name is None:
         if args_cli.policy == "valp":
-            from robolab.inference.valp import VALPDroidEEClient
+            from robolab_policy_client.valp import VALPDroidEEClient
 
             policy_client = VALPDroidEEClient(
                 remote_host=args_cli.remote_host,
                 remote_port=args_cli.remote_port,
             )
-            args_cli.output_folder_name = f"_{policy_client.metadata()['model_name']}"
+            args_cli.output_folder_name = f"_{policy_client.metadata()['modelname']}"
             policy_client.close()
         else:
             args_cli.output_folder_name = get_timestamp() + f"_{args_cli.policy}"

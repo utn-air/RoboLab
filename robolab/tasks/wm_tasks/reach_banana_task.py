@@ -73,7 +73,7 @@ class ReachBananaTask(Task):
         "tolerance": 0.025,
         "drive_steps": 80,
         "settle_steps": 4,
-        "external_camera": "external_right_cam",
+        "external_camera": "over_shoulder_right_camera",
         "wrist_camera": "wrist_cam",
     }
     subtasks = [

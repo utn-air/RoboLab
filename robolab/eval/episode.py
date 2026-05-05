@@ -97,7 +97,7 @@ def run_episode(env, env_cfg, episode, client: InferenceClient, *, headless=Fals
     subtask_status = []
 
     clients = [client] * env.num_envs
-    if backend == "valp":
+    if hasattr(client, "set_goal_images"):
         obs = set_client_goal_images(client, env, env_cfg, obs, instruction)
         # set different initial config
         # actions = torch.tensor([[0.0, 0.0, 0.0, 0.0, 0.0, -1.5, 0.0]], device=env.device).repeat(env.num_envs, 1)

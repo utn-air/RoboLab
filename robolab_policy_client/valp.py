@@ -9,7 +9,7 @@ from pathlib import Path
 
 import numpy as np
 
-from .base_client import InferenceClient
+from robolab.eval.base_client import InferenceClient
 
 ################################ CLIENT ############################################
 
@@ -42,6 +42,7 @@ class VALPDroidEEClient(InferenceClient):
         remote_host: str = "localhost",
         remote_port: int = 8000,
     ) -> None:
+        super().__init__()
         self.remote_host = remote_host
         self.remote_port = int(remote_port)
         self.sock = self._connect()
@@ -64,8 +65,10 @@ class VALPDroidEEClient(InferenceClient):
             raise RuntimeError(f"VALP server error:\n{error}")
         return response
 
-    def reset(self):
-        self._request({"method": "reset"})
+    def reset(self, *, env_id: int | None = None):
+        if env_id is None:
+            self._request({"method": "reset"})
+        super().reset(env_id=env_id)
 
     def close(self):
         try:
@@ -92,23 +95,11 @@ class VALPDroidEEClient(InferenceClient):
             }
         )
 
-    def infer(self, obs: dict, instruction: str, *, env_id: int = 0) -> dict:
-        proc_obs = self._extract_observation(obs, env_id=env_id)
-        
-        return self._request(
-            {
-                "method": "infer",
-                "obs": proc_obs,
-                "instruction": instruction,
-                "env_id": env_id,
-            }
-        )
-
     def _extract_observation(self, obs_dict: dict, *, env_id: int) -> dict:
         from scipy.spatial.transform import Rotation
 
         robot_state = obs_dict["proprio_obs"]
-        external_image = obs_dict["image_obs"]["external_right_cam"][env_id].clone().detach().cpu()
+        external_image = obs_dict["image_obs"]["over_shoulder_right_camera"][env_id].clone().detach().cpu()
         wrist_image = obs_dict["image_obs"]["wrist_cam"][env_id].clone().detach().cpu()
         ee_pos = robot_state["ee_pos"][env_id].clone().detach().cpu().numpy()
         ee_quat = robot_state["ee_quat"][env_id].clone().detach().cpu().numpy()
@@ -120,7 +111,35 @@ class VALPDroidEEClient(InferenceClient):
             "external_image": external_image,
             "wrist_image": wrist_image,
             "ee_pose": ee_pose,
+            "env_id": env_id,
         }
+
+    def _pack_request(self, extracted_obs: dict, instruction: str) -> dict:
+        return {
+            "method": "infer",
+            "obs": {
+                "external_image": extracted_obs["external_image"],
+                "wrist_image": extracted_obs["wrist_image"],
+                "ee_pose": extracted_obs["ee_pose"],
+            },
+            "instruction": instruction,
+            "env_id": extracted_obs["env_id"],
+        }
+
+    def _query_server(self, request: dict) -> dict:
+        return self._request(request)
+
+    def _unpack_response(self, response: dict) -> np.ndarray:
+        action = response.get("action")
+        if action is None:
+            action = response.get("actions")
+        if action is None:
+            raise KeyError("VALP response did not contain 'action' or 'actions'.")
+
+        action = np.asarray(action, dtype=np.float32)
+        if action.ndim == 1:
+            action = action[None, :]
+        return action
     
     def metadata(self):
         return self._request({"method": "metadata"})
