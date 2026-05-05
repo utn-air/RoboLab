@@ -161,9 +161,6 @@ def drive_to_valp_goal(env, env_cfg, obs: dict | None = None) -> dict:
     actions.zero_()
     for _ in range(settle_steps):
         obs, _, _, _, _ = env.step(actions)
-
-    env.reset_eval_state()
-
     return obs
 
 
@@ -189,15 +186,14 @@ def set_client_goal_images(client, env, env_cfg, obs: dict | None, instruction: 
     paths = goal_image_paths(env_cfg)
     if not all(path.exists() for path in paths.values()):
         paths = generate_goal_images(env, env_cfg, obs=obs)
-
+    env.reset_eval_state()
+    obs, _ = env.reset()
+    
     external_goal = _load_rgb_image(paths["external"])
     wrist_goal = _load_rgb_image(paths["wrist"])
 
     for env_id in range(env.num_envs):
         client.set_goal_images(external_goal, wrist_goal, env_id=env_id, instruction=instruction)
-
-    env.reset_eval_state()
-    obs, _ = env.reset()
     return obs
 
 
