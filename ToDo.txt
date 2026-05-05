@@ -21,7 +21,10 @@ PROTOCOL_BUFFERS_PYTHON_IMPLEMENTATION=python \
     --remote-port 8000
 
 TODO:
+    - fix right_camera
+    - remove recording of goal
     - Fix robot controller and see what is body_offset
+
     - define benchmark tasks:
         1. Change positions of object - 10
         2. Randomise items - 20
