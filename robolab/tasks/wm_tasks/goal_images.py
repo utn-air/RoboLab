@@ -164,10 +164,12 @@ def drive_to_valp_goal(env, env_cfg, obs: dict | None = None) -> dict:
     return obs
 
 
-def generate_goal_images(env, env_cfg, obs: dict | None = None) -> dict[str, Path]:
+def generate_goal_images(env, env_cfg, obs: dict | None = None):
     """Generate and cache one canonical pair of goal images for a WM task."""
     
     paths = goal_image_paths(env_cfg)
+    if all(path.exists() for path in paths.values()):
+        return
 
     task_name = getattr(env_cfg, "_task_name")
     print(f"\033[96m[RoboLab] Generating goal images for {task_name}\033[0m")
@@ -177,17 +179,18 @@ def generate_goal_images(env, env_cfg, obs: dict | None = None) -> dict[str, Pat
     wrist_key = env_cfg.goal.get("wrist_camera", "wrist_cam")
     _save_rgb_image(goal_obs["image_obs"][external_key][0], paths["external"])
     _save_rgb_image(goal_obs["image_obs"][wrist_key][0], paths["wrist"])
-    return paths
+    return
 
 
-def set_client_goal_images(client, env, env_cfg, obs: dict | None, instruction: str) -> dict:
-    """Ensure cached images exist, load them, set them on the client, and reset env."""
-    
+def set_client_goal_images(
+    client,
+    env,
+    env_cfg,
+    instruction: str,
+) -> dict:
+    """Load cached goal images, set them on the policy client, and reset env."""
+
     paths = goal_image_paths(env_cfg)
-    if not all(path.exists() for path in paths.values()):
-        paths = generate_goal_images(env, env_cfg, obs=obs)
-    env.reset_eval_state()
-    obs, _ = env.reset()
     
     external_goal = _load_rgb_image(paths["external"])
     wrist_goal = _load_rgb_image(paths["wrist"])

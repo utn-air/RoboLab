@@ -21,8 +21,8 @@ PROTOCOL_BUFFERS_PYTHON_IMPLEMENTATION=python \
     --remote-port 8000
 
 TODO:
-    - remove recording of goal
-    - Fix robot controller and see what is body_offset
+    - create a separate env for goal
+    - fix robot controller and see what is body_offset
 
     - define benchmark tasks:
         1. Change positions of object - 10
