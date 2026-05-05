@@ -45,8 +45,6 @@ def _save_rgb_image(image: torch.Tensor, path: Path) -> None:
         raise OSError(f"Failed to write goal image: {path}")
 
 
-
-
 def _compute_reach_goal_positions(env, target_object: str, z_offset: float) -> torch.Tensor:
     from robolab.core.world.world_state import get_world
 

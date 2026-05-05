@@ -19,6 +19,7 @@ from collections import defaultdict
 import cv2
 from tqdm import tqdm
 import torch
+from pathlib import Path
 
 logger = logging.getLogger(__name__)
 
@@ -69,9 +70,9 @@ def set_client_goal_images(
     env_cfg,
     instruction: str,
 ):
-    """Load cached goal images, set them on the policy client, and reset env."""
+    """Load cached goal images and set them on the policy client."""
     
-    REPO_ROOT = Path(__file__).resolve().parents[3]
+    REPO_ROOT = Path(__file__).resolve().parents[2]
     WM_GOAL_DIR = REPO_ROOT / "assets" / "wm_tasks"
     
     external_key = env_cfg.goal.get("external_camera", "over_shoulder_right_camera")
@@ -127,7 +128,7 @@ def run_episode(env, env_cfg, episode, client: InferenceClient, *, headless=Fals
 
     clients = [client] * env.num_envs
     if hasattr(client, "set_goal_images"):
-        obs = set_client_goal_images(client, env, env_cfg, obs, instruction)
+        set_client_goal_images(client, env, env_cfg, instruction)
         # set different initial config
         # actions = torch.tensor([[0.0, 0.0, 0.0, 0.0, 0.0, -1.5, 0.0]], device=env.device).repeat(env.num_envs, 1)
         # env.step(actions)  # step to update visuals after setting goal images
