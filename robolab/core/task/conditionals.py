@@ -110,6 +110,32 @@ def pick_and_place_on_surface(
 #########################################################
 
 @atomic
+def reach_object(
+    env,
+    object: str,
+    z_offset: float = 0.12,
+    tolerance: float = 0.04,
+    link_name: str = "base_link",
+    env_id: int | None = None,
+):
+    world = get_world(env)
+
+    if env_id is not None:
+        corners, centroid = world.get_bbox(object, env_id=env_id)
+        target = torch.tensor(centroid, dtype=torch.float32, device=env.device)
+        target[2] = max(corner[2] for corner in corners) + z_offset
+        target = target + env.scene.env_origins[env_id]
+        gripper_pos = world.get_articulation_link_pose("robot", link_name, env_id=env_id)[:3]
+        return torch.linalg.norm(gripper_pos - target).item() <= tolerance
+
+    corners, centroid = world.get_bbox(object, env_id=None)
+    target = centroid.clone()
+    target[:, 2] = corners[:, :, 2].max(dim=1).values + z_offset
+    target = target + env.scene.env_origins
+    gripper_pos = world.get_articulation_link_pose("robot", link_name, env_id=None)[:, :3]
+    return torch.linalg.norm(gripper_pos - target, dim=1) <= tolerance
+
+@atomic
 def object_in_contact(
     env,
     object1: str | list[str],
