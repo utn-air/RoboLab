@@ -34,7 +34,7 @@ class ReachBananaTask(Task):
         "specific": "Move the robot gripper to a position just above the yellow banana without grasping it",
     }
     # episode_length_s: int = 20
-    episode_steps: int = 100
+    episode_steps: int = 20
     attributes = ["reach", "goal"]
     goal = {
         "mode": "reach",

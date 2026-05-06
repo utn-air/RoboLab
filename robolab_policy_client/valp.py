@@ -98,12 +98,16 @@ class VALPDroidEEClient(InferenceClient):
     def _extract_observation(self, obs_dict: dict, *, env_id: int) -> dict:
         from scipy.spatial.transform import Rotation
 
-        robot_state = obs_dict["proprio_obs"]
         external_image = obs_dict["image_obs"]["over_shoulder_right_camera"][env_id].clone().detach().cpu()
         wrist_image = obs_dict["image_obs"]["wrist_cam"][env_id].clone().detach().cpu()
+
+        robot_state = obs_dict["proprio_obs"]
+        # EE position
         ee_pos = robot_state["ee_pos"][env_id].clone().detach().cpu().numpy()
+        # EE orientation
         ee_quat = robot_state["ee_quat"][env_id].clone().detach().cpu().numpy()
         ee_rpy = Rotation.from_quat(ee_quat[[1, 2, 3, 0]]).as_euler("xyz", degrees=False)
+        # gripper state
         gripper_pos = robot_state["gripper_pos"][env_id].clone().detach().cpu().numpy()
         ee_pose = np.concatenate([ee_pos, ee_rpy, gripper_pos], axis=0).astype(np.float32)
 

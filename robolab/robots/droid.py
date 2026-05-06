@@ -14,8 +14,10 @@ from isaaclab.envs import ManagerBasedRLEnv
 from isaaclab.envs.mdp.actions.actions_cfg import (
     BinaryJointPositionActionCfg,
     DifferentialInverseKinematicsActionCfg,
+    RelativeJointPositionActionCfg,
 )
 from isaaclab.envs.mdp.actions.binary_joint_actions import BinaryJointPositionAction
+from isaaclab.envs.mdp.actions.joint_actions import RelativeJointPositionAction
 from isaaclab.managers import ObservationGroupCfg as ObsGroup
 from isaaclab.managers import ObservationTermCfg as ObsTerm
 from isaaclab.managers import SceneEntityCfg
@@ -251,6 +253,29 @@ class BinaryJointPositionZeroToOneActionCfg(BinaryJointPositionActionCfg):
     """
 
     class_type = BinaryJointPositionZeroToOneAction
+
+
+class StepRelativeJointPositionAction(RelativeJointPositionAction):
+    """Apply a relative joint delta once per env step and hold it across decimation."""
+
+    def __init__(self, cfg: RelativeJointPositionActionCfg, env: ManagerBasedRLEnv):
+        super().__init__(cfg, env)
+        self._reference_joint_pos = torch.zeros_like(self.raw_actions)
+
+    def process_actions(self, actions: torch.Tensor):
+        super().process_actions(actions)
+        self._reference_joint_pos[:] = self._asset.data.joint_pos[:, self._joint_ids]
+
+    def apply_actions(self):
+        joint_targets = self._reference_joint_pos + self.processed_actions
+        self._asset.set_joint_position_target(joint_targets, joint_ids=self._joint_ids)
+
+
+@configclass
+class StepRelativeJointPositionActionCfg(RelativeJointPositionActionCfg):
+    class_type = StepRelativeJointPositionAction
+
+
 @configclass
 class DroidJointPositionActionCfg:
     body = mdp.JointPositionActionCfg(
@@ -289,7 +314,7 @@ class DroidIKActionCfg:
         body_offset=DifferentialInverseKinematicsActionCfg.OffsetCfg(pos=[0.0, 0.0, 0.0]),
     )
 
-    finger_joint = mdp.RelativeJointPositionActionCfg(
+    finger_joint = StepRelativeJointPositionActionCfg(
         asset_name="robot",
         joint_names=["finger_joint"],
         scale=np.pi / 4,
