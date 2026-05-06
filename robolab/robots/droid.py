@@ -200,7 +200,7 @@ def ee_pos(
     """Returns the end effector position (x, y, z) in the world frame."""
     robot = env.scene[asset_cfg.name]
     # Get the body index for the end effector link
-    ee_body_name = "base_link"  # Robotiq gripper base link
+    ee_body_name = "panda_link8"  # Panda end effector link
     body_idx = robot.data.body_names.index(ee_body_name)
     # Return position (shape: [num_envs, 3])
     return robot.data.body_pos_w[:, body_idx, :]
@@ -212,7 +212,7 @@ def ee_quat(
     """Returns the end effector orientation as quaternion (w, x, y, z) in the world frame."""
     robot = env.scene[asset_cfg.name]
     # Get the body index for the end effector link
-    ee_body_name = "base_link"  # Robotiq gripper base link
+    ee_body_name = "panda_link8"  # Panda end effector link
     body_idx = robot.data.body_names.index(ee_body_name)
     # Return quaternion (shape: [num_envs, 4])
     return robot.data.body_quat_w[:, body_idx, :]
@@ -306,7 +306,7 @@ class DroidIKActionCfg:
     body = DifferentialInverseKinematicsActionCfg(
         asset_name="robot",
         joint_names=["panda_joint.*"],
-        body_name="base_link",
+        body_name="panda_link8",
         controller=DifferentialIKControllerCfg(command_type="pose", 
                                                 use_relative_mode=True, 
                                                 ik_method="dls"),
