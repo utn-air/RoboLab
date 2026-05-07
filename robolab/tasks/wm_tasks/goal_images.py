@@ -55,35 +55,9 @@ def _compute_reach_goal_positions(env, target_object: str, z_offset: float) -> t
     return target_positions + env.scene.env_origins
 
 
-def _quat_to_yaw(quat: torch.Tensor) -> torch.Tensor:
-    """Return yaw from wxyz quaternions."""
-    w, x, y, z = quat[:, 0], quat[:, 1], quat[:, 2], quat[:, 3]
-    siny_cosp = 2.0 * (w * z + x * y)
-    cosy_cosp = 1.0 - 2.0 * (y * y + z * z)
-    return torch.atan2(siny_cosp, cosy_cosp)
 
 
-def _wrap_to_pi(angle: torch.Tensor) -> torch.Tensor:
-    return torch.atan2(torch.sin(angle), torch.cos(angle))
 
-
-def _object_axis_yaw(env, object_name: str, axis: str = "x") -> torch.Tensor:
-    """Estimate object yaw from a local axis projected into the world XY plane."""
-    from robolab.core.world.world_state import get_world
-
-    _, quat = get_world(env).get_pose(object_name, env_id=None)
-    w, x, y, z = quat[:, 0], quat[:, 1], quat[:, 2], quat[:, 3]
-
-    axis = axis.lower()
-    if axis == "x":
-        axis_world_x = 1.0 - 2.0 * (y * y + z * z)
-        axis_world_y = 2.0 * (x * y + w * z)
-    elif axis == "y":
-        axis_world_x = 2.0 * (x * y - w * z)
-        axis_world_y = 1.0 - 2.0 * (x * x + z * z)
-    else:
-        raise ValueError(f"Unsupported yaw axis '{axis}'. Use 'x' or 'y'.")
-    return torch.atan2(axis_world_y, axis_world_x)
 
 
 def drive_to_valp_goal(env, env_cfg, obs: dict | None = None) -> dict:
@@ -100,33 +74,17 @@ def drive_to_valp_goal(env, env_cfg, obs: dict | None = None) -> dict:
     target_object = env_cfg.goal["object"]
     z_offset = float(env_cfg.goal.get("z_offset", 0.12))
     tolerance = float(env_cfg.goal.get("tolerance", 0.025))
-    yaw_tolerance = float(env_cfg.goal.get("yaw_tolerance", 0.08))
     max_steps = int(env_cfg.goal.get("drive_steps", 80))
     settle_steps = int(env_cfg.goal.get("settle_steps", 4))
     ik_action_scale = float(env_cfg.goal.get("ik_action_scale", 0.5))
-    yaw_action_scale = float(env_cfg.goal.get("yaw_action_scale", 0.5))
     max_action = float(env_cfg.goal.get("max_action", 0.25))
     max_rot_action = float(env_cfg.goal.get("max_rot_action", 0.25))
     link_name = env_cfg.goal.get("link_name", "base_link")
-    yaw_action_index = int(env_cfg.goal.get("yaw_action_index", 5))
 
     action_dim = 7
     target_positions = _compute_reach_goal_positions(env, target_object, z_offset)
     actions = torch.zeros(env.num_envs, action_dim, device=env.device)
-
-    if mode == "reachandrotate":
-        yaw_source = env_cfg.goal.get("yaw_source", "object_axis")
-        if yaw_source == "object_axis":
-            target_yaw = _object_axis_yaw(env, target_object, env_cfg.goal.get("object_yaw_axis", "x"))
-        elif yaw_source == "constant":
-            target_yaw = torch.full(
-                (env.num_envs,), float(env_cfg.goal.get("target_yaw", 0.0)), device=env.device
-            )
-        else:
-            raise ValueError(f"Unsupported yaw_source: {yaw_source}")
-        target_yaw = _wrap_to_pi(target_yaw + float(env_cfg.goal.get("yaw_offset", 0.0)))
-    else:
-        target_yaw = None
+    
 
     for _ in range(max_steps):
         gripper_pose = get_world(env).get_articulation_link_pose("robot", link_name, env_id=None)
@@ -136,16 +94,7 @@ def drive_to_valp_goal(env, env_cfg, obs: dict | None = None) -> dict:
         actions.zero_()
         actions[:, :3] = torch.clamp(pos_error / max(ik_action_scale, 1e-6), -max_action, max_action)
 
-        yaw_done = True
-        if target_yaw is not None and yaw_action_index < action_dim:
-            gripper_yaw = _quat_to_yaw(gripper_pose[:, 3:7])
-            yaw_error = _wrap_to_pi(target_yaw - gripper_yaw)
-            yaw_done = yaw_error.abs().max().item() <= yaw_tolerance
-            actions[:, yaw_action_index] = torch.clamp(
-                yaw_error / max(yaw_action_scale, 1e-6), -max_rot_action, max_rot_action
-            )
-
-        if pos_done and yaw_done:
+        if pos_done:
             break
 
         obs, _, _, _, _ = env.step(actions)

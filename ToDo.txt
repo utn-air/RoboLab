@@ -24,7 +24,8 @@ TODO:
     - define termination condition properly
     - I want to:
         1. Change positions of reaching object - 10
-        2. Randomise items on the table and table textures - 20
+        2. Randomise items on the table and 
+        3. Randomise table textures - 20
         4. Randomise background - 50
         5. Randomise init gripper position - 4
     - fix robot controller and see what is body_offset
