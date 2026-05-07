@@ -25,7 +25,7 @@ class ReachForkBigTerminations:
 
 @dataclass
 class RotatedReachForkBigTask(Task):
-    contact_object_list = ["table, bowl, banana, bagel_07, coffee_can, banana_01, yogurt_cup, coffee_pot, ceramic_mug, pitcher, fork_big, spoon_big, apple_01, orange2, milk_carton, orange_juice_carton, bagel_01, bagel_02, plate_small, plate_large"]
+    contact_object_list = ["table", "bowl", "banana", "bagel_07", "coffee_can", "banana_01", "yogurt_cup", "coffee_pot", "ceramic_mug", "pitcher", "fork_big", "spoon_big", "apple_01", "orange2", "milk_carton", "orange_juice_carton", "bagel_01", "bagel_02", "plate_small", "plate_large"]
     scene = import_scene("breakfast_table.usda", contact_object_list)
     terminations = ReachForkBigTerminations
     instruction = {

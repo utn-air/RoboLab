@@ -16,9 +16,28 @@ RUN EVALUATIONS:
 PROTOCOL_BUFFERS_PYTHON_IMPLEMENTATION=python \
     /workspace/isaaclab/_isaac_sim/python.sh examples/policy/run_eval.py \
     --policy valp \
+    --num-runs 3 \
+    --num-envs 1 \
     --task ReachBananaTask \
     --remote-host localhost \
     --remote-port 8000
+
+# All model versions:
+# Stop any manually started VALP server first. This script starts each cfg,
+# runs 30 eval episodes, summarizes, kills that server, then moves to the next cfg.
+# Output folders are created by run_eval.py from hosted model metadata, e.g.
+# robolab/output/dual_dinov3, robolab/output/ind_vjepa, etc.
+# After each model, the sweep writes robolab/output/<modelname>_success_summary.txt,
+# zips robolab/output/<modelname>.zip, and removes the expanded output folder.
+bash examples/policy/run_reach_valp_eval_3x.sh
+bash examples/policy/run_reach_valp_model_sweep_3x.sh
+
+# more handy commands
+pkill -f "valp/inference/serve_policy.py"
+screen -S valp_sweep
+Ctrl-a d
+screen -r valp_sweep
+screen -ls
 
 TODO:
     - define termination condition properly
