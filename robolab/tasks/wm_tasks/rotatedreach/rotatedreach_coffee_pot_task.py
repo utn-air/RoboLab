@@ -19,13 +19,13 @@ class ReachCoffeePotTerminations:
     time_out = DoneTerm(func=mdp.time_out, time_out=True)
     success = DoneTerm(
         func=reach_object,
-        params={"object": "coffee_pot", "tolerance": 0.05},
+        params={"object": "coffee_pot", "tolerance": 0.08},
     )
 
 
 @dataclass
 class RotatedReachCoffeePotTask(Task):
-    contact_object_list = ["coffee_pot", "table"]
+    contact_object_list = ["table, bowl, banana, bagel_07, coffee_can, banana_01, yogurt_cup, coffee_pot, ceramic_mug, pitcher, fork_big, spoon_big, apple_01, orange2, milk_carton, orange_juice_carton, bagel_01, bagel_02, plate_small, plate_large"]
     scene = import_scene("breakfast_table.usda", contact_object_list)
     terminations = ReachCoffeePotTerminations
     instruction = {
@@ -49,7 +49,7 @@ class RotatedReachCoffeePotTask(Task):
             name="reach_above_coffee_pot",
             conditions={
                 "coffee_pot": [
-                    (partial(reach_object, object="coffee_pot", tolerance=0.04), 1.0)
+                    (partial(reach_object, object="coffee_pot", tolerance=0.08), 1.0)
                 ]
             },
             logical="all",

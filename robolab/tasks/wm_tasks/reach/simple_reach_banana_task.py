@@ -3,7 +3,6 @@
 
 from dataclasses import dataclass
 from functools import partial
-from math import pi
 
 import isaaclab.envs.mdp as mdp
 from isaaclab.managers import TerminationTermCfg as DoneTerm
@@ -20,13 +19,13 @@ class ReachBananaTerminations:
     time_out = DoneTerm(func=mdp.time_out, time_out=True)
     success = DoneTerm(
         func=reach_object,
-        params={"object": "banana", "tolerance": 0.05},
+        params={"object": "banana", "tolerance": 0.08},
     )
 
 
 @dataclass
-class RotatedReachBananaTask(Task):
-    contact_object_list = ["banana", "bowl", "table"]
+class SimpleReachBananaTask(Task):
+    contact_object_list = ["table, bowl, banana, bagel_07, coffee_can, banana_01, yogurt_cup, coffee_pot, ceramic_mug, pitcher, fork_big, spoon_big, apple_01, orange2, milk_carton, orange_juice_carton, bagel_01, bagel_02, plate_small, plate_large"]
     scene = import_scene("banana_bowl.usda", contact_object_list)
     terminations = ReachBananaTerminations
     instruction = {
@@ -38,9 +37,8 @@ class RotatedReachBananaTask(Task):
     episode_steps: int = 50
     attributes = ["reach", "goal"]
     goal = {
-        "mode": "reachandrotate",
+        "mode": "reach",
         "object": "banana",
-        "yaw_offset": pi/2,
         "tolerance": 0.025,
         "drive_steps": 80,
         "settle_steps": 4,
@@ -52,7 +50,7 @@ class RotatedReachBananaTask(Task):
             name="reach_above_banana",
             conditions={
                 "banana": [
-                    (partial(reach_object, object="banana", tolerance=0.04), 1.0)
+                    (partial(reach_object, object="banana", tolerance=0.08), 1.0)
                 ]
             },
             logical="all",
