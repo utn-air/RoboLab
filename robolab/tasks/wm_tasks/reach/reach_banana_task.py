@@ -19,7 +19,7 @@ class ReachBananaTerminations:
     time_out = DoneTerm(func=mdp.time_out, time_out=True)
     success = DoneTerm(
         func=reach_object,
-        params={"object": "banana", "tolerance": 0.1},
+        params={"object": "banana", "tolerance": 0.05},
     )
 
 
@@ -34,7 +34,7 @@ class ReachBananaTask(Task):
         "specific": "Move the robot gripper to a position just above the yellow banana without grasping it",
     }
     # episode_length_s: int = 20
-    episode_steps: int = 20
+    episode_steps: int = 50
     attributes = ["reach", "goal"]
     goal = {
         "mode": "reach",
