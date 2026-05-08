@@ -75,7 +75,7 @@ MODEL_NAME="$(hosted_model_name)"
 PROTOCOL_BUFFERS_PYTHON_IMPLEMENTATION=python \
     "$ISAAC_PYTHON" examples/policy/run_eval.py \
     --policy valp \
-    --num-runs 3 \
+    --num-runs 5 \
     --num-envs 1 \
     --task "${TASKS[@]}" \
     --remote-host "$REMOTE_HOST" \
@@ -84,5 +84,5 @@ PROTOCOL_BUFFERS_PYTHON_IMPLEMENTATION=python \
 
 "$ISAAC_PYTHON" analysis/summarize_eval_success.py \
     "robolab/output/$MODEL_NAME" \
-    --expected-runs 3 \
+    --expected-runs 5 \
     --task "${TASKS[@]}"

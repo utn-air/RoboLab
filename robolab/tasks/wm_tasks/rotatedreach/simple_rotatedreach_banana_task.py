@@ -20,7 +20,7 @@ class ReachBananaTerminations:
     time_out = DoneTerm(func=mdp.time_out, time_out=True)
     success = DoneTerm(
         func=reach_object,
-        params={"object": "banana", "tolerance": 0.08},
+        params={"object": "banana", "tolerance": 0.07},
     )
 
 
@@ -41,7 +41,7 @@ class SimpleRotatedReachBananaTask(Task):
         "mode": "reachandrotate",
         "object": "banana",
         "yaw_offset": pi/2,
-        "tolerance": 0.025,
+        "tolerance": 0.07,
         "drive_steps": 80,
         "settle_steps": 4,
         "external_camera": "over_shoulder_right_camera",
@@ -52,7 +52,7 @@ class SimpleRotatedReachBananaTask(Task):
             name="reach_above_banana",
             conditions={
                 "banana": [
-                    (partial(reach_object, object="banana", tolerance=0.08), 1.0)
+                    (partial(reach_object, object="banana", tolerance=0.07), 1.0)
                 ]
             },
             logical="all",

@@ -19,7 +19,7 @@ class ReachPitcherTerminations:
     time_out = DoneTerm(func=mdp.time_out, time_out=True)
     success = DoneTerm(
         func=reach_object,
-        params={"object": "pitcher", "tolerance": 0.08},
+        params={"object": "pitcher", "tolerance": 0.07},
     )
 
 
@@ -38,7 +38,7 @@ class ReachPitcherTask(Task):
     goal = {
         "mode": "reach",
         "object": "pitcher",
-        "tolerance": 0.025,
+        "tolerance": 0.07,
         "drive_steps": 80,
         "settle_steps": 4,
         "external_camera": "over_shoulder_right_camera",
@@ -49,7 +49,7 @@ class ReachPitcherTask(Task):
             name="reach_above_pitcher",
             conditions={
                 "pitcher": [
-                    (partial(reach_object, object="pitcher", tolerance=0.08), 1.0)
+                    (partial(reach_object, object="pitcher", tolerance=0.07), 1.0)
                 ]
             },
             logical="all",

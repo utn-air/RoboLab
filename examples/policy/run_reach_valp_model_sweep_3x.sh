@@ -124,7 +124,7 @@ archive_model_output() {
     echo "=== Writing success summary: $summary_file ==="
     "$ISAAC_PYTHON" analysis/summarize_eval_success.py \
         "$model_dir" \
-        --expected-runs 3 \
+        --expected-runs 5 \
         --task "${TASKS[@]}" | tee "$summary_file"
 
     echo "=== Zipping $model_dir -> $archive_file ==="
@@ -176,7 +176,7 @@ for cfg_file in "${MODEL_CONFIGS[@]}"; do
     model_name="$(hosted_model_name)"
     MODEL_NAMES+=("$model_name")
 
-    echo "=== Running 30 eval episodes for hosted model $model_name ==="
+    echo "=== Running 50 eval episodes for hosted model $model_name ==="
     REMOTE_HOST="$REMOTE_HOST" \
     REMOTE_PORT="$REMOTE_PORT" \
     HEADLESS="$HEADLESS" \

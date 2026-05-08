@@ -216,20 +216,6 @@ def main():
     #         generate_goal_images(goal_env, goal_env_cfg, obs=None)
     #         goal_env.close()
     
-    # Construct the inference client once for the whole evaluation run.
-    # For VALP this avoids reconnecting per task; we still reset state and
-    # set new goal images inside each run.
-    client = create_client(
-        args_cli.policy,
-        remote_host=args_cli.remote_host,
-        remote_port=args_cli.remote_port,
-        remote_uri=args_cli.remote_uri,
-        open_loop_horizon=args_cli.open_loop_horizon,
-        api_token=args_cli.remote_token,
-        binarize_gripper=args_cli.dz_binarize_gripper,
-        resize=args_cli.dz_resize,
-        cam2_source=args_cli.dz_cam2,
-    )
 
     for task_env in task_envs:
         scene_output_dir = os.path.join(output_dir, task_env)
@@ -247,6 +233,17 @@ def main():
             instruction_type=args_cli.instruction_type,
             policy=args_cli.policy)
 
+        client = create_client(
+            args_cli.policy,
+            remote_host=args_cli.remote_host,
+            remote_port=args_cli.remote_port,
+            remote_uri=args_cli.remote_uri,
+            open_loop_horizon=args_cli.open_loop_horizon,
+            api_token=args_cli.remote_token,
+            binarize_gripper=args_cli.dz_binarize_gripper,
+            resize=args_cli.dz_resize,
+            cam2_source=args_cli.dz_cam2,
+        )
         for run_idx in range(num_runs):
 
             # Check if all episodes in this run are already complete
@@ -290,11 +287,12 @@ def main():
 
             # Reset eval state for next run (unfreeze all envs)
             env.reset_eval_state()
-
+            
+        if hasattr(client, "close"):
+            client.close()
         env.close()
 
-    if hasattr(client, "close"):
-        client.close()
+
 
     # This will print the results to the terminal, summarized.
     # Alternatively, you can run `python analysis/read_results.py <output_dir>` to read the results from the file.

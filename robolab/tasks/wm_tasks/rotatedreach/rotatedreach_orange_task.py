@@ -19,7 +19,7 @@ class ReachOrangeTerminations:
     time_out = DoneTerm(func=mdp.time_out, time_out=True)
     success = DoneTerm(
         func=reach_object,
-        params={"object": "orange2", "tolerance": 0.05},
+        params={"object": "orange2", "tolerance": 0.07},
     )
 
 
@@ -38,7 +38,7 @@ class RotatedReachOrangeTask(Task):
     goal = {
         "mode": "reach",
         "object": "orange2",
-        "tolerance": 0.025,
+        "tolerance": 0.07,
         "drive_steps": 80,
         "settle_steps": 4,
         "external_camera": "over_shoulder_right_camera",
@@ -49,7 +49,7 @@ class RotatedReachOrangeTask(Task):
             name="reach_above_orange",
             conditions={
                 "orange2": [
-                    (partial(reach_object, object="orange2", tolerance=0.08), 1.0)
+                    (partial(reach_object, object="orange2", tolerance=0.07), 1.0)
                 ]
             },
             logical="all",

@@ -19,7 +19,7 @@ class ReachForkBigTerminations:
     time_out = DoneTerm(func=mdp.time_out, time_out=True)
     success = DoneTerm(
         func=reach_object,
-        params={"object": "fork_big", "tolerance": 0.08},
+        params={"object": "fork_big", "tolerance": 0.07},
     )
 
 
@@ -38,7 +38,7 @@ class ReachForkBigTask(Task):
     goal = {
         "mode": "reach",
         "object": "fork_big",
-        "tolerance": 0.025,
+        "tolerance": 0.07,
         "drive_steps": 80,
         "settle_steps": 4,
         "external_camera": "over_shoulder_right_camera",
@@ -49,7 +49,7 @@ class ReachForkBigTask(Task):
             name="reach_above_fork",
             conditions={
                 "fork_big": [
-                    (partial(reach_object, object="fork_big", tolerance=0.08), 1.0)
+                    (partial(reach_object, object="fork_big", tolerance=0.07), 1.0)
                 ]
             },
             logical="all",
