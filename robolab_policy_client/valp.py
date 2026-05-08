@@ -82,18 +82,19 @@ class VALPDroidEEClient(InferenceClient):
         wrist_image,
         *,
         env_id: int = 0,
-        instruction: str = "goal"
+        instruction: str = "goal",
+        run_idx: int | None = None,
     ):
-
-        self._request(
-            {
-                "method": "set_goal_images",
-                "external_image": external_image,
-                "wrist_image": wrist_image,
-                "env_id": env_id,
-                "instruction": instruction
-            }
-        )
+        payload = {
+            "method": "set_goal_images",
+            "external_image": external_image,
+            "wrist_image": wrist_image,
+            "env_id": env_id,
+            "instruction": instruction,
+        }
+        if run_idx is not None:
+            payload["run_idx"] = int(run_idx)
+        self._request(payload)
 
     def _extract_observation(self, obs_dict: dict, *, env_id: int) -> dict:
         from scipy.spatial.transform import Rotation

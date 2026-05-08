@@ -69,6 +69,8 @@ def set_client_goal_images(
     env,
     env_cfg,
     instruction: str,
+    *,
+    run_idx: int | None = None,
 ):
     """Load cached goal images and set them on the policy client."""
     
@@ -83,7 +85,13 @@ def set_client_goal_images(
     wrist_goal = _load_rgb_image(WM_GOAL_DIR / task_name / f"{wrist_key}.png")
 
     for env_id in range(env.num_envs):
-        client.set_goal_images(external_goal, wrist_goal, env_id=env_id, instruction=instruction)
+        client.set_goal_images(
+            external_goal,
+            wrist_goal,
+            env_id=env_id,
+            instruction=instruction,
+            run_idx=run_idx,
+        )
     
     return
 
@@ -128,7 +136,7 @@ def run_episode(env, env_cfg, episode, client: InferenceClient, *, headless=Fals
 
     clients = [client] * env.num_envs
     if hasattr(client, "set_goal_images"):
-        set_client_goal_images(client, env, env_cfg, instruction)
+        set_client_goal_images(client, env, env_cfg, instruction, run_idx=episode)
         # set different initial config
         # actions = torch.tensor([[0.0, 0.0, 0.0, 0.0, 0.0, -1.5, 0.0]], device=env.device).repeat(env.num_envs, 1)
         # env.step(actions)  # step to update visuals after setting goal images
