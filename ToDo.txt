@@ -29,8 +29,10 @@ PROTOCOL_BUFFERS_PYTHON_IMPLEMENTATION=python \
 # robolab/output/dual_dinov3, robolab/output/ind_vjepa, etc.
 # After each model, the sweep writes robolab/output/<modelname>_success_summary.txt,
 # zips robolab/output/<modelname>.zip, and removes the expanded output folder.
-HEADLESS=1 VIDEO_MODE=sensor bash examples/policy/run_reach_valp_eval_3x.sh
-HEADLESS=1 VIDEO_MODE=sensor bash examples/policy/run_reach_valp_model_sweep_3x.sh
+HEADLESS=1 VIDEO_MODE=sensor bash examples/policy/run_reach_valp_eval_5x.sh
+HEADLESS=1 VIDEO_MODE=sensor bash examples/policy/run_reach_valp_model_sweep_5x.sh
+HEADLESS=1 VIDEO_MODE=sensor bash examples/policy/run_reach_valp_model_sweep_224_5x.sh
+HEADLESS=1 VIDEO_MODE=sensor bash examples/policy/run_reach_valp_model_sweep_256_5x.sh
 
 # more handy commands
 pkill -f "valp/inference/serve_policy.py"

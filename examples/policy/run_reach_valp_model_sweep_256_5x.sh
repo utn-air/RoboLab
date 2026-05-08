@@ -3,23 +3,18 @@ set -euo pipefail
 
 ISAAC_PYTHON="${ISAAC_PYTHON:-/workspace/isaaclab/_isaac_sim/python.sh}"
 REMOTE_HOST="${REMOTE_HOST:-localhost}"
-REMOTE_PORT="${REMOTE_PORT:-8000}"
+REMOTE_PORT="${REMOTE_PORT:-8001}"
 SERVER_HOST="${SERVER_HOST:-0.0.0.0}"
 SERVER_START_TIMEOUT="${SERVER_START_TIMEOUT:-600}"
 OUTPUT_ROOT="${OUTPUT_ROOT:-robolab/output}"
 HEADLESS="${HEADLESS:-1}"
 VIDEO_MODE="${VIDEO_MODE:-sensor}"
 OUTPUT_FOLDER_NAME="${OUTPUT_FOLDER_NAME:-}"
-SERVER_LOG_DIR="${SERVER_LOG_DIR:-$OUTPUT_ROOT/valp_model_sweep_logs}"
+SERVER_LOG_DIR="${SERVER_LOG_DIR:-$OUTPUT_ROOT/valp_model_sweep_logs_${REMOTE_PORT}}"
 ARCHIVE_AFTER_MODEL="${ARCHIVE_AFTER_MODEL:-1}"
 DELETE_UNZIPPED_AFTER_ARCHIVE="${DELETE_UNZIPPED_AFTER_ARCHIVE:-1}"
 
 MODEL_CONFIGS=(
-    droid-224px-8f-dual.yaml
-    droid-224px-8f-ind.yaml
-    droid-224px-8f-right.yaml
-    droid-224px-8f-roboarena.yaml
-    droid-224px-8f-wrist.yaml
     droid-256px-8f-dual.yaml
     droid-256px-8f-ind.yaml
     droid-256px-8f-right.yaml
@@ -182,7 +177,7 @@ for cfg_file in "${MODEL_CONFIGS[@]}"; do
     HEADLESS="$HEADLESS" \
     VIDEO_MODE="$VIDEO_MODE" \
     OUTPUT_FOLDER_NAME="$OUTPUT_FOLDER_NAME" \
-        bash examples/policy/run_reach_valp_eval_3x.sh
+        bash examples/policy/run_reach_valp_eval_5x.sh
 
     archive_model_output "$model_name"
     cleanup_server
