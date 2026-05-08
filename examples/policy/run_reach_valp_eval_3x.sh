@@ -4,6 +4,20 @@ set -euo pipefail
 ISAAC_PYTHON="${ISAAC_PYTHON:-/workspace/isaaclab/_isaac_sim/python.sh}"
 REMOTE_HOST="${REMOTE_HOST:-localhost}"
 REMOTE_PORT="${REMOTE_PORT:-8000}"
+HEADLESS="${HEADLESS:-1}"
+VIDEO_MODE="${VIDEO_MODE:-sensor}"
+OUTPUT_FOLDER_NAME="${OUTPUT_FOLDER_NAME:-}"
+
+EXTRA_ARGS=()
+if [[ "$HEADLESS" == "1" ]]; then
+    EXTRA_ARGS+=(--headless)
+fi
+if [[ -n "$VIDEO_MODE" ]]; then
+    EXTRA_ARGS+=(--video-mode "$VIDEO_MODE")
+fi
+if [[ -n "$OUTPUT_FOLDER_NAME" ]]; then
+    EXTRA_ARGS+=(--output-folder-name "$OUTPUT_FOLDER_NAME")
+fi
 
 TASKS=(
     ReachAppleTask
@@ -65,7 +79,8 @@ PROTOCOL_BUFFERS_PYTHON_IMPLEMENTATION=python \
     --num-envs 1 \
     --task "${TASKS[@]}" \
     --remote-host "$REMOTE_HOST" \
-    --remote-port "$REMOTE_PORT"
+    --remote-port "$REMOTE_PORT" \
+    "${EXTRA_ARGS[@]}"
 
 "$ISAAC_PYTHON" analysis/summarize_eval_success.py \
     "robolab/output/$MODEL_NAME" \

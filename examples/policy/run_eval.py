@@ -107,7 +107,7 @@ parser.add_argument("--background-seed", "--background_seed", type=int, default=
 args_cli, _= parser.parse_known_args()
 
 # isaac webRTC live streaming settings
-args_cli.livestream = 2
+args_cli.livestream = 0 if args_cli.headless else 2
 args_cli.kit_args = DEFAULT_KIT_ARGS
 
 args_cli.enable_cameras = True
@@ -216,6 +216,21 @@ def main():
     #         generate_goal_images(goal_env, goal_env_cfg, obs=None)
     #         goal_env.close()
     
+    # Construct the inference client once for the whole evaluation run.
+    # For VALP this avoids reconnecting per task; we still reset state and
+    # set new goal images inside each run.
+    client = create_client(
+        args_cli.policy,
+        remote_host=args_cli.remote_host,
+        remote_port=args_cli.remote_port,
+        remote_uri=args_cli.remote_uri,
+        open_loop_horizon=args_cli.open_loop_horizon,
+        api_token=args_cli.remote_token,
+        binarize_gripper=args_cli.dz_binarize_gripper,
+        resize=args_cli.dz_resize,
+        cam2_source=args_cli.dz_cam2,
+    )
+
     for task_env in task_envs:
         scene_output_dir = os.path.join(output_dir, task_env)
         os.makedirs(scene_output_dir, exist_ok=True)
@@ -231,21 +246,6 @@ def main():
             use_fabric=True,
             instruction_type=args_cli.instruction_type,
             policy=args_cli.policy)
-
-        # Construct the inference client once per task; reuse across runs.
-        # CLI values of None are filtered out by create_client so the
-        # client's own defaults apply.
-        client = create_client(
-            args_cli.policy,
-            remote_host=args_cli.remote_host,
-            remote_port=args_cli.remote_port,
-            remote_uri=args_cli.remote_uri,
-            open_loop_horizon=args_cli.open_loop_horizon,
-            api_token=args_cli.remote_token,
-            binarize_gripper=args_cli.dz_binarize_gripper,
-            resize=args_cli.dz_resize,
-            cam2_source=args_cli.dz_cam2,
-        )
 
         for run_idx in range(num_runs):
 
@@ -292,6 +292,9 @@ def main():
             env.reset_eval_state()
 
         env.close()
+
+    if hasattr(client, "close"):
+        client.close()
 
     # This will print the results to the terminal, summarized.
     # Alternatively, you can run `python analysis/read_results.py <output_dir>` to read the results from the file.

@@ -7,6 +7,9 @@ REMOTE_PORT="${REMOTE_PORT:-8000}"
 SERVER_HOST="${SERVER_HOST:-0.0.0.0}"
 SERVER_START_TIMEOUT="${SERVER_START_TIMEOUT:-600}"
 OUTPUT_ROOT="${OUTPUT_ROOT:-robolab/output}"
+HEADLESS="${HEADLESS:-1}"
+VIDEO_MODE="${VIDEO_MODE:-sensor}"
+OUTPUT_FOLDER_NAME="${OUTPUT_FOLDER_NAME:-}"
 SERVER_LOG_DIR="${SERVER_LOG_DIR:-$OUTPUT_ROOT/valp_model_sweep_logs}"
 ARCHIVE_AFTER_MODEL="${ARCHIVE_AFTER_MODEL:-1}"
 DELETE_UNZIPPED_AFTER_ARCHIVE="${DELETE_UNZIPPED_AFTER_ARCHIVE:-1}"
@@ -176,6 +179,9 @@ for cfg_file in "${MODEL_CONFIGS[@]}"; do
     echo "=== Running 30 eval episodes for hosted model $model_name ==="
     REMOTE_HOST="$REMOTE_HOST" \
     REMOTE_PORT="$REMOTE_PORT" \
+    HEADLESS="$HEADLESS" \
+    VIDEO_MODE="$VIDEO_MODE" \
+    OUTPUT_FOLDER_NAME="$OUTPUT_FOLDER_NAME" \
         bash examples/policy/run_reach_valp_eval_3x.sh
 
     archive_model_output "$model_name"

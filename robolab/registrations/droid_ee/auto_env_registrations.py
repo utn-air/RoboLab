@@ -65,12 +65,13 @@ def auto_register_droid_ee_envs(task_dirs=DEFAULT_TASK_SUBFOLDERS, lighting_inte
     if cameras is None:
         cameras = WRIST_RIGHT
     ImageObsCfg = generate_image_obs_from_cameras(cameras)
-    ViewportCameraCfg = generate_image_obs_from_cameras([EgocentricMirroredCameraCfg])
+    # ViewportCameraCfg = generate_image_obs_from_cameras([EgocentricMirroredCameraCfg])
 
     ObservationCfg = generate_obs_cfg({
         "image_obs": ImageObsCfg(),
         "proprio_obs": ProprioceptionObservationCfg(),
-        "viewport_cam": ViewportCameraCfg()})
+        # "viewport_cam": ViewportCameraCfg()
+        })
 
     # WristCameraCfg is robot-mounted (wrist_cam is already attached via DroidCfg).
     # Including it as a scene mixin puts wrist_cam before robot in dataclass field
@@ -107,8 +108,7 @@ def auto_register_droid_ee_envs(task_dirs=DEFAULT_TASK_SUBFOLDERS, lighting_inte
         observations_cfg=ObservationCfg(),
         actions_cfg=DroidIKActionCfg(),
         robot_cfg=DroidCfg,
-        camera_cfg=[*scene_cameras, EgocentricMirroredCameraCfg],
-        # lighting_cfg=SphereLightCfg,
+        camera_cfg=[*scene_cameras], # EgocentricMirroredCameraCfg 
         background_cfg=background_cfg,
         contact_gripper=contact_gripper,
         dt=1 / (60 * 2),

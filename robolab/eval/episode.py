@@ -135,6 +135,8 @@ def run_episode(env, env_cfg, episode, client: InferenceClient, *, headless=Fals
     subtask_status = []
 
     clients = [client] * env.num_envs
+    if hasattr(client, "reset"):
+        client.reset()
     if hasattr(client, "set_goal_images"):
         set_client_goal_images(client, env, env_cfg, instruction, run_idx=episode)
         # set different initial config
