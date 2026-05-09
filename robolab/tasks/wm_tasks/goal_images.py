@@ -31,6 +31,7 @@ def goal_image_paths(env_cfg) -> dict[str, Path]:
     return {
         "external": root / f"{external_key}.png",
         "wrist": root / f"{wrist_key}.png",
+        "status": root / "status.txt",
     }
 
 
