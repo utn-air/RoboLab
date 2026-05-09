@@ -60,7 +60,7 @@ def drive_to_valp_goal(env, env_cfg, obs: dict | None = None) -> dict:
     from robolab.core.world.world_state import get_world
 
     mode = env_cfg.goal.get("mode")
-    
+
     if obs is None:
         obs, _ = env.reset()
 
@@ -78,17 +78,17 @@ def drive_to_valp_goal(env, env_cfg, obs: dict | None = None) -> dict:
     actions = torch.zeros(env.num_envs, action_dim, device=env.device)
 
     if mode == "reach":
-    target_positions = _compute_reach_goal_positions(env, target_object, z_offset)
-    for _ in range(max_steps):
-        gripper_pose = get_world(env).get_articulation_link_pose("robot", link_name, env_id=None)
-        pos_error = target_positions - gripper_pose[:, :3]
-        pos_done = torch.linalg.norm(pos_error, dim=1).max().item() <= tolerance
+        target_positions = _compute_reach_goal_positions(env, target_object, z_offset)
+        for _ in range(max_steps):
+            gripper_pose = get_world(env).get_articulation_link_pose("robot", link_name, env_id=None)
+            pos_error = target_positions - gripper_pose[:, :3]
+            pos_done = torch.linalg.norm(pos_error, dim=1).max().item() <= tolerance
 
-        actions.zero_()
-        actions[:, :3] = torch.clamp(pos_error / max(ik_action_scale, 1e-6), -max_action, max_action)
+            actions.zero_()
+            actions[:, :3] = torch.clamp(pos_error / max(ik_action_scale, 1e-6), -max_action, max_action)
 
-        if pos_done:
-            break
+            if pos_done:
+                break
     elif mode == "angledreach":
         raise NotImplementedError("Goal image generation for angled reach is not implemented yet.")
     else:
