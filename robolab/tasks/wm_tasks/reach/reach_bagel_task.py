@@ -44,7 +44,7 @@ class ReachBagelTask(Task):
         "mode": "reach",
         "object": "bagel_07",
         "z_offset": 0.15,
-        "drive_steps": 80,
+        "drive_steps": 30,
         "settle_steps": 4,
         "external_camera": "over_shoulder_right_camera",
         "wrist_camera": "wrist_cam",

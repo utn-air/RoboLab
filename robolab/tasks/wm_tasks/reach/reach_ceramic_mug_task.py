@@ -44,7 +44,7 @@ class ReachCeramicMugTask(Task):
         "mode": "reach",
         "object": "ceramic_mug",
         "z_offset": 0.20,
-        "drive_steps": 80,
+        "drive_steps": 30,
         "settle_steps": 4,
         "external_camera": "over_shoulder_right_camera",
         "wrist_camera": "wrist_cam",

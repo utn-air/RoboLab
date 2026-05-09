@@ -51,8 +51,7 @@ class AngledReachRedHammerTask(Task):
     goal = {
         "mode": "angled_reach",
         "object": "red_hammer",
-        "tolerance": 0.01,
-        "drive_steps": 80,
+        "drive_steps": 30,
         "settle_steps": 4,
         "external_camera": "over_shoulder_right_camera",
         "wrist_camera": "wrist_cam",

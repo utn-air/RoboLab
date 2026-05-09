@@ -72,8 +72,7 @@ def drive_to_valp_goal(env, env_cfg, obs: dict | None = None) -> dict:
     max_steps = int(env_cfg.goal.get("drive_steps", 80))
     settle_steps = int(env_cfg.goal.get("settle_steps", 4))
     ik_action_scale = float(env_cfg.goal.get("ik_action_scale", 0.5))
-    max_action = float(env_cfg.goal.get("max_action", 0.25))
-    max_rot_action = float(env_cfg.goal.get("max_rot_action", 0.25))
+    max_action = float(env_cfg.goal.get("max_action", 0.10))
     link_name = env_cfg.goal.get("link_name", "panda_link8")
 
     action_dim = 7
@@ -88,7 +87,7 @@ def drive_to_valp_goal(env, env_cfg, obs: dict | None = None) -> dict:
             pos_done = torch.linalg.norm(pos_error, dim=1).max().item() <= 0.001
 
             actions.zero_()
-            actions[:, :3] = torch.clamp(pos_error / max(ik_action_scale, 1e-6), -max_action, max_action)
+            actions[:, :3] = torch.clamp(pos_error, -max_action, max_action)
 
             if pos_done:
                 reached = True
