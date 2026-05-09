@@ -1,7 +1,7 @@
 
 
 # Start RoboLab Docker with the VALP image:
-./docker/run_docker.sh nisarga-valp
+./docker/run_docker.sh nisarga
 
 
 RUN EVALUATIONS:
@@ -42,8 +42,9 @@ screen -r valp_sweep
 screen -ls
 
 TODO:
-    - select nice rotate teach tasks scenes
-    - drive robot to goal positions
+    - select nice rotate teach tasks: 5
+    - drive robot to goal positions with rotation
+
     - Experiments:
         1. Change positions of reaching object - 10
         2. Randomise items on the table and 
