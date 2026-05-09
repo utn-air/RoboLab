@@ -129,7 +129,12 @@ def reach_object(
     target_pos = torch.tensor(target_ee_pose[:3], dtype=torch.float32, device=env.device)
     world = get_world(env)
 
-    gripper_pos = world.get_articulation_link_pose("robot", link_name, env_id=env_id)[:3]
+    gripper_pose = world.get_articulation_link_pose("robot", link_name, env_id=env_id)
+    if env_id is None:
+        gripper_pos = gripper_pose[:, :3]
+        return torch.linalg.norm(gripper_pos - target_pos, dim=1) <= tolerance
+
+    gripper_pos = gripper_pose[:3]
     return torch.linalg.norm(gripper_pos - target_pos).item() <= tolerance
 
 @atomic
