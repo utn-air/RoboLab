@@ -19,7 +19,7 @@ class AngledReachCanHandleTerminations:
     time_out = DoneTerm(func=mdp.time_out, time_out=True)
     success = DoneTerm(
         func=angled_reach_object,
-        params={"object": "can_01", "tolerance": 0.07},
+        params={"object": "milkjug_a01", "tolerance": 0.07},
     )
 
 
@@ -41,14 +41,14 @@ class AngledReachCanHandleTask(Task):
     terminations = AngledReachCanHandleTerminations
     instruction = {
         "default": "AngledReachCanHandle",
-        "vague": "Reach the can handle from the side",
-        "specific": "Move the robot gripper to a position next to the can facing the handle without grasping it",
+        "vague": "Reach the milk jug from the side",
+        "specific": "Move the robot gripper to a position next to the milk jug facing the handle without grasping it",
     }
     episode_steps: int = 50
     attributes = ["angled_reach", "goal"]
     goal = {
         "mode": "angled_reach",
-        "object": "can_01",
+        "object": "milkjug_a01",
         "tolerance": 0.07,
         "drive_steps": 80,
         "settle_steps": 4,
@@ -57,10 +57,10 @@ class AngledReachCanHandleTask(Task):
     }
     subtasks = [
         Subtask(
-            name="angled_reach_can_handle",
+            name="angled_reach_milkjug",
             conditions={
-                "can_01": [
-                    (partial(angled_reach_object, object="can_01", tolerance=0.07), 1.0)
+                "milkjug_a01": [
+                    (partial(angled_reach_object, object="milkjug_a01", tolerance=0.07), 1.0)
                 ]
             },
             logical="all",
