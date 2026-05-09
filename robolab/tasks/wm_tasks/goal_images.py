@@ -91,6 +91,8 @@ def drive_to_valp_goal(env, env_cfg, obs: dict | None = None) -> dict:
 
             if pos_done:
                 reached = True
+                last_dist = torch.linalg.norm(pos_error, dim=1).max().item()
+                last_gripper_pose = get_world(env).get_articulation_link_pose("robot", link_name, env_id=None)
                 break
             obs, _, _, _, _ = env.step(actions)
 
@@ -103,7 +105,9 @@ def drive_to_valp_goal(env, env_cfg, obs: dict | None = None) -> dict:
     for _ in range(settle_steps):
         obs, _, _, _, _ = env.step(actions)
 
-    return obs, reached
+    last_dist = torch.linalg.norm(pos_error, dim=1).max().item()
+    last_gripper_pose = get_world(env).get_articulation_link_pose("robot", link_name, env_id=None)
+    return obs, reached, last_dist, last_gripper_pose
 
 
 def generate_goal_images(env, env_cfg, obs: dict | None = None):
@@ -115,7 +119,7 @@ def generate_goal_images(env, env_cfg, obs: dict | None = None):
 
     task_name = getattr(env_cfg, "_task_name")
     print(f"\033[96m[RoboLab] Generating goal images for {task_name}\033[0m")
-    goal_obs, reached = drive_to_valp_goal(env, env_cfg, obs=obs)
+    goal_obs, reached, last_dist, last_gripper_pose = drive_to_valp_goal(env, env_cfg, obs=obs)
 
     # save images
     external_key = env_cfg.goal.get("external_camera", "over_shoulder_right_camera")
@@ -126,6 +130,9 @@ def generate_goal_images(env, env_cfg, obs: dict | None = None):
     # save status in txt
     with open(paths["status"], "w") as f:
         f.write("succeeded" if reached else "failed")
+        f.write(f"\nLast distance: {last_dist}")
+        f.write(f"\nLast gripper pose: {last_gripper_pose}")
+
     
     return
 
