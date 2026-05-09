@@ -45,14 +45,14 @@ def _save_rgb_image(image: torch.Tensor, path: Path) -> None:
         raise OSError(f"Failed to write goal image: {path}")
 
 
-def _compute_reach_goal_positions(env, target_object: str) -> torch.Tensor:
+def _compute_reach_goal_positions(env, target_object: str, z_offset: float) -> torch.Tensor:
     from robolab.core.world.world_state import get_world
 
     # target position
     world = get_world(env)
     corners, centroid = world.get_bbox(target_object, env_id=None)
     target_positions = centroid.clone()
-    target_positions[:, 2] = corners[:, :, 2].max(dim=1).values
+    target_positions[:, 2] = corners[:, :, 2].max(dim=1).values + z_offset
     return target_positions + env.scene.env_origins
 
 
@@ -67,7 +67,6 @@ def drive_to_valp_goal(env, env_cfg, obs: dict | None = None) -> dict:
         obs, _ = env.reset()
 
     target_object = env_cfg.goal["object"]
-    tolerance = float(env_cfg.goal.get("tolerance", 0.025))
     max_steps = int(env_cfg.goal.get("drive_steps", 80))
     settle_steps = int(env_cfg.goal.get("settle_steps", 4))
     ik_action_scale = float(env_cfg.goal.get("ik_action_scale", 0.5))
@@ -79,11 +78,12 @@ def drive_to_valp_goal(env, env_cfg, obs: dict | None = None) -> dict:
     actions = torch.zeros(env.num_envs, action_dim, device=env.device)
 
     if mode == "reach":
-        target_positions = _compute_reach_goal_positions(env, target_object)
+        z_offset = float(env_cfg.goal.get("z_offset", 0.10))
+        target_positions = _compute_reach_goal_positions(env, target_object, z_offset)
         for _ in range(max_steps):
             gripper_pose = get_world(env).get_articulation_link_pose("robot", link_name, env_id=None)
             pos_error = target_positions - gripper_pose[:, :3]
-            pos_done = torch.linalg.norm(pos_error, dim=1).max().item() <= tolerance
+            pos_done = torch.linalg.norm(pos_error, dim=1).max().item() <= 0.001
 
             actions.zero_()
             actions[:, :3] = torch.clamp(pos_error / max(ik_action_scale, 1e-6), -max_action, max_action)

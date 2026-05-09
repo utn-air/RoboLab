@@ -19,7 +19,7 @@ class ReachCeramicMugTerminations:
     time_out = DoneTerm(func=mdp.time_out, time_out=True)
     success = DoneTerm(
         func=reach_object,
-        params={"object": "ceramic_mug", "tolerance": 0.05},
+        params={"object": "ceramic_mug", "z_offset": 0.10, "tolerance": 0.05},
     )
 
 
@@ -38,7 +38,7 @@ class ReachCeramicMugTask(Task):
     goal = {
         "mode": "reach",
         "object": "ceramic_mug",
-        "tolerance": 0.01,
+        "z_offset": 0.10,
         "drive_steps": 80,
         "settle_steps": 4,
         "external_camera": "over_shoulder_right_camera",
@@ -49,7 +49,7 @@ class ReachCeramicMugTask(Task):
             name="reach_above_ceramic_mug",
             conditions={
                 "ceramic_mug": [
-                    (partial(reach_object, object="ceramic_mug", tolerance=0.05), 1.0)
+                    (partial(reach_object, object="ceramic_mug", z_offset=0.10, tolerance=0.05), 1.0)
                 ]
             },
             logical="all",

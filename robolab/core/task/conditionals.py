@@ -113,6 +113,7 @@ def pick_and_place_on_surface(
 def reach_object(
     env,
     object: str,
+    z_offset: float = 0.10,
     tolerance: float = 0.04,
     link_name: str = "panda_link8",
     env_id: int | None = None,
@@ -122,7 +123,7 @@ def reach_object(
     world = get_world(env)
     corners, centroid = world.get_bbox(object, env_id=env_id)
     target = centroid.clone()
-    target[:, 2] = corners[:, :, 2].max(dim=1).values 
+    target[:, 2] = corners[:, :, 2].max(dim=1).values + z_offset  
     target = target + env.scene.env_origins
 
     # gripper distance to target
