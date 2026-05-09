@@ -89,7 +89,7 @@ def drive_to_valp_goal(env, env_cfg, obs: dict | None = None) -> dict:
 
             if pos_done:
                 break
-    elif mode == "angledreach":
+    elif mode == "angled_reach":
         raise NotImplementedError("Goal image generation for angled reach is not implemented yet.")
     else:
         raise ValueError(f"Unsupported goal mode: {mode}")

@@ -34,6 +34,11 @@ HEADLESS=1 VIDEO_MODE=sensor bash examples/policy/run_reach_valp_model_sweep_5x.
 HEADLESS=1 VIDEO_MODE=sensor bash examples/policy/run_reach_valp_model_sweep_224_5x.sh
 HEADLESS=1 VIDEO_MODE=sensor bash examples/policy/run_reach_valp_model_sweep_256_5x.sh
 
+/workspace/isaaclab/_isaac_sim/python.sh robolab/tasks/wm_tasks/goal_images.py \
+  --task AngledReachKetchupTask \
+  --task-dirs wm_tasks \
+  --headless
+
 # more handy commands
 pkill -f "valp/inference/serve_policy.py"
 screen -S valp_sweep
