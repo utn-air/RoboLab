@@ -34,7 +34,7 @@ TASKS=(
     ReachCoffeePotTask
     ReachForkBigTask
     ReachOrangeTask
-    ReachPitcherTask
+    ReachMilkCartonTask
     ReachSpoonBigTask
     ReachYogurtCupTask
 )

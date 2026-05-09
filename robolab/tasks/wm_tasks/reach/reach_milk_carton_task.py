@@ -16,34 +16,34 @@ from robolab.core.task.subtask import Subtask
 from robolab.core.task.task import Task
 
 
-STATUS_PATH = Path(ASSET_DIR) / "wm_tasks" / "ReachPitcherTask" / "status.json"
+STATUS_PATH = Path(ASSET_DIR) / "wm_tasks" / "ReachMilkCartonTask" / "status.json"
 
 
 @configclass
-class ReachPitcherTerminations:
+class ReachMilkCartonTerminations:
     time_out = DoneTerm(func=mdp.time_out, time_out=True)
     success = DoneTerm(
         func=reach_object,
-        params={"object": "pitcher", "tolerance": 0.05, "status_path": STATUS_PATH},
+        params={"object": "milk_carton", "tolerance": 0.05, "status_path": STATUS_PATH},
     )
 
 
 @dataclass
-class ReachPitcherTask(Task):
+class ReachMilkCartonTask(Task):
     contact_object_list = ["table", "bowl", "banana", "bagel_07", "coffee_can", "banana_01", "yogurt_cup", "coffee_pot", "ceramic_mug", "pitcher", "fork_big", "spoon_big", "apple_01", "orange2", "milk_carton", "orange_juice_carton", "bagel_01", "bagel_02", "plate_small", "plate_large"]
     scene = import_scene("breakfast_table.usda", contact_object_list)
-    terminations = ReachPitcherTerminations
+    terminations = ReachMilkCartonTerminations
     instruction = {
-        "default": "ReachPitcher",
-        "vague": "Reach the pitcher",
-        "specific": "Move the robot gripper to a position just above the pitcher without grasping it",
+        "default": "ReachMilkCarton",
+        "vague": "Reach the milk carton",
+        "specific": "Move the robot gripper to a position just above the milk carton without grasping it",
     }
     episode_steps: int = 50
     attributes = ["reach", "goal"]
     goal = {
         "mode": "reach",
-        "object": "pitcher",
-        "z_offset": 0.15,
+        "object": "milk_carton",
+        "z_offset": 0.25,
         "drive_steps": 80,
         "settle_steps": 4,
         "external_camera": "over_shoulder_right_camera",
@@ -51,10 +51,10 @@ class ReachPitcherTask(Task):
     }
     subtasks = [
         Subtask(
-            name="reach_above_pitcher",
+            name="reach_above_milk_carton",
             conditions={
-                "pitcher": [
-                    (partial(reach_object, object="pitcher", tolerance=0.05, status_path=STATUS_PATH), 1.0)
+                "milk_carton": [
+                    (partial(reach_object, object="milk_carton", tolerance=0.05, status_path=STATUS_PATH), 1.0)
                 ]
             },
             logical="all",

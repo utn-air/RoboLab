@@ -43,7 +43,7 @@ class ReachCeramicMugTask(Task):
     goal = {
         "mode": "reach",
         "object": "ceramic_mug",
-        "z_offset": 0.15,
+        "z_offset": 0.25,
         "drive_steps": 80,
         "settle_steps": 4,
         "external_camera": "over_shoulder_right_camera",
