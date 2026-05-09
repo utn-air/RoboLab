@@ -43,7 +43,7 @@ class ReachCoffeeCanTask(Task):
     goal = {
         "mode": "reach",
         "object": "coffee_can",
-        "z_offset": 0.25,
+        "z_offset": 0.20,
         "drive_steps": 80,
         "settle_steps": 4,
         "external_camera": "over_shoulder_right_camera",
