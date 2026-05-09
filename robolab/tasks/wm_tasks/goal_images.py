@@ -11,6 +11,7 @@ goal images under ``assets/wm_tasks``.
 from __future__ import annotations
 
 import argparse
+import json
 import sys
 from pathlib import Path
 
@@ -31,7 +32,7 @@ def goal_image_paths(env_cfg) -> dict[str, Path]:
     return {
         "external": root / f"{external_key}.png",
         "wrist": root / f"{wrist_key}.png",
-        "status": root / "status.txt",
+        "status": root / "status.json",
     }
 
 
@@ -127,11 +128,17 @@ def generate_goal_images(env, env_cfg, obs: dict | None = None):
     _save_rgb_image(goal_obs["image_obs"][external_key][0], paths["external"])
     _save_rgb_image(goal_obs["image_obs"][wrist_key][0], paths["wrist"])
     
-    # save status in txt
+    # save status in json
+    ee_pose = last_gripper_pose.detach().cpu()
+    ee_pose = [float(x) for x in ee_pose.tolist()]
+    status_payload = {
+        "reached": bool(reached),
+        "last_distance": float(last_dist),
+        "last_ee_pose": ee_pose,
+    }
+
     with open(paths["status"], "w") as f:
-        f.write("succeeded" if reached else "failed")
-        f.write(f"\nLast distance: {last_dist}")
-        f.write(f"\nLast gripper pose: {last_gripper_pose}")
+        json.dump(status_payload, f, indent=2)
 
     
     return
