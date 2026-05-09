@@ -48,6 +48,7 @@ def _save_rgb_image(image: torch.Tensor, path: Path) -> None:
 def _compute_reach_goal_positions(env, target_object: str) -> torch.Tensor:
     from robolab.core.world.world_state import get_world
 
+    # target position
     world = get_world(env)
     corners, centroid = world.get_bbox(target_object, env_id=None)
     target_positions = centroid.clone()
@@ -60,6 +61,7 @@ def drive_to_valp_goal(env, env_cfg, obs: dict | None = None) -> dict:
     from robolab.core.world.world_state import get_world
 
     mode = env_cfg.goal.get("mode")
+    reached = False
 
     if obs is None:
         obs, _ = env.reset()
@@ -87,18 +89,20 @@ def drive_to_valp_goal(env, env_cfg, obs: dict | None = None) -> dict:
             actions[:, :3] = torch.clamp(pos_error / max(ik_action_scale, 1e-6), -max_action, max_action)
 
             if pos_done:
+                reached = True
                 break
+            obs, _, _, _, _ = env.step(actions)
+
     elif mode == "angled_reach":
         raise NotImplementedError("Goal image generation for angled reach is not implemented yet.")
     else:
         raise ValueError(f"Unsupported goal mode: {mode}")
 
-        obs, _, _, _, _ = env.step(actions)
-
     actions.zero_()
     for _ in range(settle_steps):
         obs, _, _, _, _ = env.step(actions)
-    return obs
+
+    return obs, reached
 
 
 def generate_goal_images(env, env_cfg, obs: dict | None = None):
@@ -110,12 +114,18 @@ def generate_goal_images(env, env_cfg, obs: dict | None = None):
 
     task_name = getattr(env_cfg, "_task_name")
     print(f"\033[96m[RoboLab] Generating goal images for {task_name}\033[0m")
-    goal_obs = drive_to_valp_goal(env, env_cfg, obs=obs)
+    goal_obs, reached = drive_to_valp_goal(env, env_cfg, obs=obs)
 
+    # save images
     external_key = env_cfg.goal.get("external_camera", "over_shoulder_right_camera")
     wrist_key = env_cfg.goal.get("wrist_camera", "wrist_cam")
     _save_rgb_image(goal_obs["image_obs"][external_key][0], paths["external"])
     _save_rgb_image(goal_obs["image_obs"][wrist_key][0], paths["wrist"])
+    
+    # save status in txt
+    with open(paths["status"], "w") as f:
+        f.write("succeeded" if reached else "failed")
+    
     return
 
 

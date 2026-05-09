@@ -117,21 +117,16 @@ def reach_object(
     link_name: str = "panda_link8",
     env_id: int | None = None,
 ):
+
+    # target position
     world = get_world(env)
-
-    if env_id is not None:
-        corners, centroid = world.get_bbox(object, env_id=env_id)
-        target = torch.tensor(centroid, dtype=torch.float32, device=env.device)
-        target[2] = max(corner[2] for corner in corners) + z_offset
-        target = target + env.scene.env_origins[env_id]
-        gripper_pos = world.get_articulation_link_pose("robot", link_name, env_id=env_id)[:3]
-        return torch.linalg.norm(gripper_pos - target).item() <= tolerance
-
-    corners, centroid = world.get_bbox(object, env_id=None)
+    corners, centroid = world.get_bbox(object, env_id=env_id)
     target = centroid.clone()
-    target[:, 2] = corners[:, :, 2].max(dim=1).values + z_offset
+    target[:, 2] = corners[:, :, 2].max(dim=1).values 
     target = target + env.scene.env_origins
-    gripper_pos = world.get_articulation_link_pose("robot", link_name, env_id=None)[:, :3]
+
+    # gripper distance to target
+    gripper_pos = world.get_articulation_link_pose("robot", link_name, env_id=env_id)[:, :3]
     return torch.linalg.norm(gripper_pos - target, dim=1) <= tolerance
 
 @atomic
