@@ -55,19 +55,12 @@ def _compute_reach_goal_positions(env, target_object: str, z_offset: float) -> t
     return target_positions + env.scene.env_origins
 
 
-
-
-
-
-
 def drive_to_valp_goal(env, env_cfg, obs: dict | None = None) -> dict:
     """Drive the robot to the task's configured goal pose and return latest obs."""
     from robolab.core.world.world_state import get_world
 
     mode = env_cfg.goal.get("mode")
-    if mode not in ("reach", "reachandrotate"):
-        raise ValueError(f"Unsupported goal mode: {mode}")
-
+    
     if obs is None:
         obs, _ = env.reset()
 
@@ -79,13 +72,13 @@ def drive_to_valp_goal(env, env_cfg, obs: dict | None = None) -> dict:
     ik_action_scale = float(env_cfg.goal.get("ik_action_scale", 0.5))
     max_action = float(env_cfg.goal.get("max_action", 0.25))
     max_rot_action = float(env_cfg.goal.get("max_rot_action", 0.25))
-    link_name = env_cfg.goal.get("link_name", "base_link")
+    link_name = env_cfg.goal.get("link_name", "panda_link8")
 
     action_dim = 7
-    target_positions = _compute_reach_goal_positions(env, target_object, z_offset)
     actions = torch.zeros(env.num_envs, action_dim, device=env.device)
-    
 
+    if mode == "reach":
+    target_positions = _compute_reach_goal_positions(env, target_object, z_offset)
     for _ in range(max_steps):
         gripper_pose = get_world(env).get_articulation_link_pose("robot", link_name, env_id=None)
         pos_error = target_positions - gripper_pose[:, :3]
@@ -96,6 +89,10 @@ def drive_to_valp_goal(env, env_cfg, obs: dict | None = None) -> dict:
 
         if pos_done:
             break
+    elif mode == "angledreach":
+        raise NotImplementedError("Goal image generation for angled reach is not implemented yet.")
+    else:
+        raise ValueError(f"Unsupported goal mode: {mode}")
 
         obs, _, _, _, _ = env.step(actions)
 
