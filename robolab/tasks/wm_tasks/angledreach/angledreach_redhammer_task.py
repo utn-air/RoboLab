@@ -15,16 +15,16 @@ from robolab.core.task.task import Task
 
 
 @configclass
-class HoldRedHammerTerminations:
+class AngledReachRedHammerTerminations:
     time_out = DoneTerm(func=mdp.time_out, time_out=True)
     success = DoneTerm(
-        func=object_grabbed,
-        params={"object": "red_hammer"},
+        func=angled_reach_object,
+        params={"object": "red_hammer", "tolerance": 0.05},
     )
 
 
 @dataclass
-class HoldRedHammerTask(Task):
+class AngledReachRedHammerTask(Task):
     contact_object_list = [
         "table",
         "clamp",
@@ -39,18 +39,18 @@ class HoldRedHammerTask(Task):
         "wood_hammer",
     ]
     scene = import_scene("tools_sorting.usda", contact_object_list)
-    terminations = HoldRedHammerTerminations
+    terminations = AngledReachRedHammerTerminations
     instruction = {
-        "default": "HoldRedHammer",
-        "vague": "Hold the red hammer",
-        "specific": "Grasp the red hammer and keep it in the gripper",
+        "default": "AngledReachRedHammer",
+        "vague": "Reach the red hammer from the side",
+        "specific": "Move the robot gripper to a position next to the red hammer facing it without grasping it",
     }
     episode_steps: int = 60
-    attributes = ["grasp", "goal", "tools"]
+    attributes = ["angled_reach", "goal"]
     goal = {
-        "mode": "reach",
+        "mode": "angled_reach",
         "object": "red_hammer",
-        "tolerance": 0.07,
+        "tolerance": 0.01,
         "drive_steps": 80,
         "settle_steps": 4,
         "external_camera": "over_shoulder_right_camera",
@@ -58,11 +58,10 @@ class HoldRedHammerTask(Task):
     }
     subtasks = [
         Subtask(
-            name="hold_red_hammer",
+            name="angled_reach_red_hammer",
             conditions={
                 "red_hammer": [
-                    (partial(reach_object, object="red_hammer", tolerance=0.07), 0.5),
-                    (partial(object_grabbed, object="red_hammer"), 1.0),
+                    (partial(angled_reach_object, object="red_hammer", tolerance=0.05), 1.0),
                 ]
             },
             logical="all",

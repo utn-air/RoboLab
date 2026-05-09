@@ -19,7 +19,7 @@ class ReachCoffeeCanTerminations:
     time_out = DoneTerm(func=mdp.time_out, time_out=True)
     success = DoneTerm(
         func=reach_object,
-        params={"object": "coffee_can", "tolerance": 0.07},
+        params={"object": "coffee_can", "tolerance": 0.05},
     )
 
 
@@ -38,7 +38,7 @@ class ReachCoffeeCanTask(Task):
     goal = {
         "mode": "reach",
         "object": "coffee_can",
-        "tolerance": 0.07,
+        "tolerance": 0.01,
         "drive_steps": 80,
         "settle_steps": 4,
         "external_camera": "over_shoulder_right_camera",
@@ -49,7 +49,7 @@ class ReachCoffeeCanTask(Task):
             name="reach_above_coffee_can",
             conditions={
                 "coffee_can": [
-                    (partial(reach_object, object="coffee_can", tolerance=0.07), 1.0)
+                    (partial(reach_object, object="coffee_can", tolerance=0.05), 1.0)
                 ]
             },
             logical="all",

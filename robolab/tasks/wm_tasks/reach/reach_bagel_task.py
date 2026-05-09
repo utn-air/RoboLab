@@ -19,7 +19,7 @@ class ReachBagelTerminations:
     time_out = DoneTerm(func=mdp.time_out, time_out=True)
     success = DoneTerm(
         func=reach_object,
-        params={"object": "bagel_07", "tolerance": 0.07},
+        params={"object": "bagel_07", "tolerance": 0.05},
     )
 
 
@@ -38,7 +38,7 @@ class ReachBagelTask(Task):
     goal = {
         "mode": "reach",
         "object": "bagel_07",
-        "tolerance": 0.07,
+        "tolerance": 0.01,
         "drive_steps": 80,
         "settle_steps": 4,
         "external_camera": "over_shoulder_right_camera",
@@ -49,7 +49,7 @@ class ReachBagelTask(Task):
             name="reach_above_bagel",
             conditions={
                 "bagel_07": [
-                    (partial(reach_object, object="bagel_07", tolerance=0.07), 1.0)
+                    (partial(reach_object, object="bagel_07", tolerance=0.05), 1.0)
                 ]
             },
             logical="all",

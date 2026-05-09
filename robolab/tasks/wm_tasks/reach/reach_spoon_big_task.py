@@ -19,7 +19,7 @@ class ReachSpoonBigTerminations:
     time_out = DoneTerm(func=mdp.time_out, time_out=True)
     success = DoneTerm(
         func=reach_object,
-        params={"object": "spoon_big", "tolerance": 0.07},
+        params={"object": "spoon_big", "tolerance": 0.05},
     )
 
 
@@ -38,7 +38,7 @@ class ReachSpoonBigTask(Task):
     goal = {
         "mode": "reach",
         "object": "spoon_big",
-        "tolerance": 0.07,
+        "tolerance": 0.01,
         "drive_steps": 80,
         "settle_steps": 4,
         "external_camera": "over_shoulder_right_camera",
@@ -49,7 +49,7 @@ class ReachSpoonBigTask(Task):
             name="reach_above_spoon",
             conditions={
                 "spoon_big": [
-                    (partial(reach_object, object="spoon_big", tolerance=0.07), 1.0)
+                    (partial(reach_object, object="spoon_big", tolerance=0.05), 1.0)
                 ]
             },
             logical="all",

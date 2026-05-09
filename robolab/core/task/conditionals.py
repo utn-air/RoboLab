@@ -113,9 +113,8 @@ def pick_and_place_on_surface(
 def reach_object(
     env,
     object: str,
-    z_offset: float = 0.12,
     tolerance: float = 0.04,
-    link_name: str = "base_link",
+    link_name: str = "panda_link8",
     env_id: int | None = None,
 ):
     world = get_world(env)

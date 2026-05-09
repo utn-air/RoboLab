@@ -19,7 +19,7 @@ class AngledReachCanHandleTerminations:
     time_out = DoneTerm(func=mdp.time_out, time_out=True)
     success = DoneTerm(
         func=angled_reach_object,
-        params={"object": "milkjug_a01", "tolerance": 0.07},
+        params={"object": "milkjug_a01", "tolerance": 0.05},
     )
 
 
@@ -49,7 +49,7 @@ class AngledReachCanHandleTask(Task):
     goal = {
         "mode": "angled_reach",
         "object": "milkjug_a01",
-        "tolerance": 0.07,
+        "tolerance": 0.01,
         "drive_steps": 80,
         "settle_steps": 4,
         "external_camera": "over_shoulder_right_camera",
@@ -60,7 +60,7 @@ class AngledReachCanHandleTask(Task):
             name="angled_reach_milkjug",
             conditions={
                 "milkjug_a01": [
-                    (partial(angled_reach_object, object="milkjug_a01", tolerance=0.07), 1.0)
+                    (partial(angled_reach_object, object="milkjug_a01", tolerance=0.05), 1.0)
                 ]
             },
             logical="all",
