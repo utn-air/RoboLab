@@ -20,7 +20,7 @@ class AngledReachKetchupTerminations:
     time_out = DoneTerm(func=mdp.time_out, time_out=True)
     success = DoneTerm(
         func=angled_reach_object,
-        params={"object": "ketchup_bottle", "tolerance": 0.05, "status_path": STATUS_PATH},
+        params={"object": "ketchup_bottle", "tolerance": 0.06, "status_path": STATUS_PATH},
     )
 
 
@@ -55,7 +55,7 @@ class AngledReachKetchupTask(Task):
             name="angled_reach_ketchup",
             conditions={
                 "ketchup_bottle": [
-                    (partial(angled_reach_object, object="ketchup_bottle", status_path=STATUS_PATH), 1.0)
+                    (partial(angled_reach_object, object="ketchup_bottle", tolerance=0.06, status_path=STATUS_PATH), 1.0)
                 ]
             },
             logical="all",

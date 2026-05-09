@@ -24,7 +24,7 @@ class ReachAppleTerminations:
     time_out = DoneTerm(func=mdp.time_out, time_out=True)
     success = DoneTerm(
         func=reach_object,
-        params={"object": "apple_01", "tolerance": 0.05, "status_path": STATUS_PATH},
+        params={"object": "apple_01", "tolerance": 0.06, "status_path": STATUS_PATH},
     )
 
 
@@ -54,7 +54,7 @@ class ReachAppleTask(Task):
             name="reach_above_apple",
             conditions={
                 "apple_01": [
-                    (partial(reach_object, object="apple_01", tolerance=0.05, status_path=STATUS_PATH), 1.0)
+                    (partial(reach_object, object="apple_01", tolerance=0.06, status_path=STATUS_PATH), 1.0)
                 ]
             },
             logical="all",

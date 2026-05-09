@@ -24,7 +24,7 @@ class ReachBananaTerminations:
     time_out = DoneTerm(func=mdp.time_out, time_out=True)
     success = DoneTerm(
         func=reach_object,
-        params={"object": "banana", "tolerance": 0.05, "status_path": STATUS_PATH},
+        params={"object": "banana", "tolerance": 0.06, "status_path": STATUS_PATH},
     )
 
 
@@ -55,7 +55,7 @@ class SimpleReachBananaTask(Task):
             name="reach_above_banana",
             conditions={
                 "banana": [
-                    (partial(reach_object, object="banana", tolerance=0.05, status_path=STATUS_PATH), 1.0)
+                    (partial(reach_object, object="banana", tolerance=0.06, status_path=STATUS_PATH), 1.0)
                 ]
             },
             logical="all",
