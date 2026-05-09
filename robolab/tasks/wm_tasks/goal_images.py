@@ -130,6 +130,8 @@ def generate_goal_images(env, env_cfg, obs: dict | None = None):
     
     # save status in json
     ee_pose = last_gripper_pose.detach().cpu()
+    if ee_pose.ndim > 1:
+        ee_pose = ee_pose[0]
     ee_pose = [float(x) for x in ee_pose.tolist()]
     status_payload = {
         "reached": bool(reached),
