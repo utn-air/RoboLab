@@ -47,13 +47,12 @@ screen -r valp_sweep
 screen -ls
 
 TODO:
-    - dt and max action steps
-    - select nice rotate teach tasks: 5
+    - select nice rotate reach tasks: 5
     - drive robot to goal positions with rotation
 
     - Experiments:
-        1. Change positions of reaching object - 10
-        2. Randomise items on the table and 
+        1. DONE: Change positions of reaching object - 10
+        2. DONE: Randomise items on the table and 
         3. Randomise table textures - 20
         4. Randomise background - 50
         5. Randomise init gripper position - 4

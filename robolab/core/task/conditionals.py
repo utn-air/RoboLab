@@ -122,6 +122,11 @@ def reach_object(
 ):
 
     status_path = Path(status_path)
+    if not status_path.exists():
+        if env_id is None:
+            return torch.zeros(env.num_envs, dtype=torch.bool, device=env.device)
+        return False
+
     with status_path.open("r", encoding="utf-8") as handle:
         status_payload = json.load(handle)
     target_ee_pose = status_payload.get("last_ee_pose")
