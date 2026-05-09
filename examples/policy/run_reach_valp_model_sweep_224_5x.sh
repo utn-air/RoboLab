@@ -23,11 +23,11 @@ MODEL_CONFIGS=(
 )
 
 TASKS=(
+    ReachCoffeePotTask
     ReachAppleTask
     ReachBagelTask
     ReachCeramicMugTask
     ReachCoffeeCanTask
-    ReachCoffeePotTask
     ReachForkBigTask
     ReachOrangeTask
     ReachMilkCartonTask

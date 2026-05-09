@@ -20,11 +20,11 @@ if [[ -n "$OUTPUT_FOLDER_NAME" ]]; then
 fi
 
 TASKS=(
+    ReachCoffeePotTask
     ReachAppleTask
     ReachBagelTask
     ReachCeramicMugTask
     ReachCoffeeCanTask
-    ReachCoffeePotTask
     ReachForkBigTask
     ReachOrangeTask
     ReachMilkCartonTask
