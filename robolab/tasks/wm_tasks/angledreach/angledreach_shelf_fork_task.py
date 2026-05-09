@@ -13,19 +13,19 @@ from robolab.core.task.conditionals import angled_reach_object
 from robolab.core.task.subtask import Subtask
 from robolab.core.task.task import Task
 
-STATUS_PATH = Path(ASSET_DIR) / "wm_tasks" / "AngledReachCanHandleTask" / "status.json"
+STATUS_PATH = Path(ASSET_DIR) / "wm_tasks" / "AngledReachShelfForkTask" / "status.json"
 
 @configclass
-class AngledReachCanHandleTerminations:
+class AngledReachShelfForkTerminations:
     time_out = DoneTerm(func=mdp.time_out, time_out=True)
     success = DoneTerm(
         func=angled_reach_object,
-        params={"object": "milkjug_a01", "tolerance": 0.05, "status_path": STATUS_PATH},
+        params={"object": "fork_big", "tolerance": 0.05, "status_path": STATUS_PATH},
     )
 
 
 @dataclass
-class AngledReachCanHandleTask(Task):
+class AngledReachShelfForkTask(Task):
     contact_object_list = [
         "table",
         "sm_rack_m01",
@@ -39,17 +39,17 @@ class AngledReachCanHandleTask(Task):
         "gardenplanter_large",
     ]
     scene = import_scene("front_of_shelf.usda", contact_object_list)
-    terminations = AngledReachCanHandleTerminations
+    terminations = AngledReachShelfForkTerminations
     instruction = {
-        "default": "AngledReachCanHandle",
-        "vague": "Reach the milk jug from the side",
-        "specific": "Move the robot gripper to a position next to the milk jug facing the handle without grasping it",
+        "default": "AngledReachShelfFork",
+        "vague": "Reach the fork on the second shelf with pitched approach",
+        "specific": "Move the robot gripper to the fork on the second shelf facing the handle without grasping it",
     }
     episode_steps: int = 50
     attributes = ["angled_reach", "goal"]
     goal = {
         "mode": "angled_reach",
-        "object": "milkjug_a01",
+        "object": "fork_big",
         "tolerance": 0.01,
         "drive_steps": 80,
         "settle_steps": 4,
@@ -58,10 +58,10 @@ class AngledReachCanHandleTask(Task):
     }
     subtasks = [
         Subtask(
-            name="angled_reach_milkjug",
+            name="angled_reach_fork_big",
             conditions={
-                "milkjug_a01": [
-                    (partial(angled_reach_object, object="milkjug_a01", status_path=STATUS_PATH), 1.0)
+                "fork_big": [
+                    (partial(angled_reach_object, object="fork_big", status_path=STATUS_PATH), 1.0)
                 ]
             },
             logical="all",

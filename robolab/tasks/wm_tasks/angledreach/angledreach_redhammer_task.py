@@ -13,13 +13,14 @@ from robolab.core.task.conditionals import object_grabbed, reach_object
 from robolab.core.task.subtask import Subtask
 from robolab.core.task.task import Task
 
+STATUS_PATH = Path(ASSET_DIR) / "wm_tasks" / "AngledReachRedHammerTask" / "status.json"
 
 @configclass
 class AngledReachRedHammerTerminations:
     time_out = DoneTerm(func=mdp.time_out, time_out=True)
     success = DoneTerm(
         func=angled_reach_object,
-        params={"object": "red_hammer", "tolerance": 0.05},
+        params={"object": "red_hammer", "tolerance": 0.05, "status_path": STATUS_PATH},
     )
 
 
@@ -61,7 +62,7 @@ class AngledReachRedHammerTask(Task):
             name="angled_reach_red_hammer",
             conditions={
                 "red_hammer": [
-                    (partial(angled_reach_object, object="red_hammer", tolerance=0.05), 1.0),
+                    (partial(angled_reach_object, object="red_hammer", tolerance=0.05, status_path=STATUS_PATH), 1.0),
                 ]
             },
             logical="all",

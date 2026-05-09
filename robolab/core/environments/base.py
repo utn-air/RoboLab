@@ -81,6 +81,7 @@ def create_recorder_config(
         dataset_export_dir_path=export_dir,
         dataset_filename=filename
     )
+    config.dataset_export_mode = DatasetExportMode.EXPORT_ALL
 
     # Conditionally add policy observations
     if include_policy_observations:

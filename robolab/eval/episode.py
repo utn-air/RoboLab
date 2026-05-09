@@ -122,6 +122,7 @@ def run_episode(env, env_cfg, episode, client: InferenceClient, *, headless=Fals
     obs, _ = env.reset()
     obs, _ = env.reset()
     max_steps = getattr(env_cfg, "episode_steps", None)
+    # max_steps = env.max_episode_length
     video_fps = 1 / (env_cfg.sim.render_interval * env_cfg.sim.dt) # Hz
     instruction = env_cfg.instruction
     # Pull action dim from the env's action manager (IsaacLab canonical),
@@ -233,6 +234,15 @@ def run_episode(env, env_cfg, episode, client: InferenceClient, *, headless=Fals
             client.reset()
         except Exception:
             logger.exception("Failed to reset client after episode")
+
+    if env.recorder_manager is not None and hasattr(env.recorder_manager, "export_episodes"):
+        if env.active_env_ids:
+            try:
+                env.recorder_manager.export_episodes(env_ids=env.active_env_ids)
+                if hasattr(env.recorder_manager, "clear"):
+                    env.recorder_manager.clear(env_ids=env.active_env_ids)
+            except Exception:
+                logger.exception("Failed to export recordings for timed-out envs")
 
     timing = timer.to_dict(actual_steps)
     return env.get_env_results(), subtask_status, timing

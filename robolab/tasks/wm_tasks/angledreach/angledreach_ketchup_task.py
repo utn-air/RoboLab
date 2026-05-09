@@ -13,13 +13,14 @@ from robolab.core.task.conditionals import angled_reach_object
 from robolab.core.task.subtask import Subtask
 from robolab.core.task.task import Task
 
+STATUS_PATH = Path(ASSET_DIR) / "wm_tasks" / "AngledReachKetchupTask" / "status.json"
 
 @configclass
 class AngledReachKetchupTerminations:
     time_out = DoneTerm(func=mdp.time_out, time_out=True)
     success = DoneTerm(
         func=angled_reach_object,
-        params={"object": "ketchup_bottle", "tolerance": 0.05},
+        params={"object": "ketchup_bottle", "tolerance": 0.05, "status_path": STATUS_PATH},
     )
 
 
@@ -55,7 +56,7 @@ class AngledReachKetchupTask(Task):
             name="angled_reach_ketchup",
             conditions={
                 "ketchup_bottle": [
-                    (partial(angled_reach_object, object="ketchup_bottle", tolerance=0.05), 1.0)
+                    (partial(angled_reach_object, object="ketchup_bottle", status_path=STATUS_PATH), 1.0)
                 ]
             },
             logical="all",
