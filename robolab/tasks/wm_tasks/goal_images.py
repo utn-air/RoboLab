@@ -80,7 +80,7 @@ def drive_to_valp_goal(env, env_cfg, obs: dict | None = None) -> dict:
     actions = torch.zeros(env.num_envs, action_dim, device=env.device)
 
     if mode == "reach":
-        z_offset = float(env_cfg.goal.get("z_offset", 0.10))
+        z_offset = float(env_cfg.goal.get("z_offset", 0.15))
         target_positions = _compute_reach_goal_positions(env, target_object, z_offset)
         for _ in range(max_steps):
             gripper_pose = get_world(env).get_articulation_link_pose("robot", link_name, env_id=None)

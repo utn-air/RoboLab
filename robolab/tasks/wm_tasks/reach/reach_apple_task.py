@@ -43,7 +43,7 @@ class ReachAppleTask(Task):
     goal = {
         "mode": "reach",
         "object": "apple_01",
-        "z_offset": 0.10,
+        "z_offset": 0.15,
         "drive_steps": 80,
         "settle_steps": 4,
         "external_camera": "over_shoulder_right_camera",
