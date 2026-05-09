@@ -14,6 +14,8 @@ All @atomic conditionals support env_id parameter:
 """
 
 from functools import partial
+import json
+from pathlib import Path
 from typing import Literal, Optional, Union
 
 import torch
@@ -113,22 +115,22 @@ def pick_and_place_on_surface(
 def reach_object(
     env,
     object: str,
-    z_offset: float = 0.10,
     tolerance: float = 0.04,
     link_name: str = "panda_link8",
+    status_path: str | Path | None = None,
     env_id: int | None = None,
 ):
 
-    # target position
-    world = get_world(env)
-    corners, centroid = world.get_bbox(object, env_id=env_id)
-    target = centroid.clone()
-    target[:, 2] = corners[:, :, 2].max(dim=1).values + z_offset  
-    target = target + env.scene.env_origins
+    status_path = Path(status_path)
+    with status_path.open("r", encoding="utf-8") as handle:
+        status_payload = json.load(handle)
+    target_ee_pose = status_payload.get("last_ee_pose")
 
-    # gripper distance to target
-    gripper_pos = world.get_articulation_link_pose("robot", link_name, env_id=env_id)[:, :3]
-    return torch.linalg.norm(gripper_pos - target, dim=1) <= tolerance
+    target_pos = torch.tensor(target_ee_pose[:3], dtype=torch.float32, device=env.device)
+    world = get_world(env)
+
+    gripper_pos = world.get_articulation_link_pose("robot", link_name, env_id=env_id)[:3]
+    return torch.linalg.norm(gripper_pos - target_pos).item() <= tolerance
 
 @atomic
 def object_in_contact(

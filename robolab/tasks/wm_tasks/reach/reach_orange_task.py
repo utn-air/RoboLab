@@ -3,15 +3,20 @@
 
 from dataclasses import dataclass
 from functools import partial
+from pathlib import Path
 
 import isaaclab.envs.mdp as mdp
 from isaaclab.managers import TerminationTermCfg as DoneTerm
 from isaaclab.utils import configclass
 
+from robolab.constants import ASSET_DIR
 from robolab.core.scenes.utils import import_scene
 from robolab.core.task.conditionals import reach_object
 from robolab.core.task.subtask import Subtask
 from robolab.core.task.task import Task
+
+
+STATUS_PATH = Path(ASSET_DIR) / "wm_tasks" / "ReachOrangeTask" / "status.json"
 
 
 @configclass
@@ -19,7 +24,7 @@ class ReachOrangeTerminations:
     time_out = DoneTerm(func=mdp.time_out, time_out=True)
     success = DoneTerm(
         func=reach_object,
-        params={"object": "orange2", "z_offset": 0.10, "tolerance": 0.05},
+        params={"object": "orange2", "tolerance": 0.05, "status_path": STATUS_PATH},
     )
 
 
@@ -49,7 +54,7 @@ class ReachOrangeTask(Task):
             name="reach_above_orange",
             conditions={
                 "orange2": [
-                    (partial(reach_object, object="orange2", z_offset=0.10, tolerance=0.05), 1.0)
+                    (partial(reach_object, object="orange2", tolerance=0.05, status_path=STATUS_PATH), 1.0)
                 ]
             },
             logical="all",

@@ -47,6 +47,7 @@ screen -r valp_sweep
 screen -ls
 
 TODO:
+    - dt and max action steps
     - select nice rotate teach tasks: 5
     - drive robot to goal positions with rotation
 
