@@ -3,11 +3,13 @@
 
 from dataclasses import dataclass
 from functools import partial
+from pathlib import Path
 
 import isaaclab.envs.mdp as mdp
 from isaaclab.managers import TerminationTermCfg as DoneTerm
 from isaaclab.utils import configclass
 
+from robolab.constants import ASSET_DIR
 from robolab.core.scenes.utils import import_scene
 from robolab.core.task.conditionals import object_grabbed, reach_object
 from robolab.core.task.subtask import Subtask

@@ -3,6 +3,9 @@
 # Start RoboLab Docker with the VALP image:
 ./docker/run_docker.sh nisarga
 
+RUN ENV:
+PROTOCOL_BUFFERS_PYTHON_IMPLEMENTATION=python \
+    /workspace/isaaclab/_isaac_sim/python.sh examples/demo/run_env.py 
 
 RUN EVALUATIONS:
 
@@ -44,9 +47,10 @@ screen -r valp_sweep
 screen -ls
 
 TODO:
-    - drive robot to goal positions with rotation: interactive sim mode
+    - take goal images for angled reach with ee_pose via interactive sim mode
     - Experiments:
         3. Randomise table textures - 20
         4. Randomise background - 50
         5. Randomise init gripper position - 4
     - Grasp, pickup, place substasks 
+    - planning: action std deviation sampling based on loss

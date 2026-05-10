@@ -17,6 +17,7 @@ Usage:
 """
 
 import os
+import argparse
 
 import cv2  # Must import this before isaaclab. Do not remove
 from isaaclab.app import AppLauncher
@@ -60,12 +61,13 @@ from robolab.core.environments.runtime import create_env  # noqa
 from robolab.core.observations.observation_utils import generate_image_obs_from_cameras, generate_obs_cfg  # noqa
 from robolab.robots.droid import (  # noqa
     DroidCfg,
-    DroidJointPositionActionCfg,
+    DroidIKActionCfg,
     ProprioceptionObservationCfg,
     contact_gripper,
 )
-from robolab.variations.camera import OverShoulderLeftCameraCfg  # noqa
-from robolab.variations.lighting import SphereLightCfg  # noqa
+from robolab.variations.backgrounds import HomeOfficeBackgroundCfg
+from robolab.registrations.droid_jointpos.camera_presets import WRIST_RIGHT
+# from robolab.variations.lighting import SphereLightCfg  # noqa
 
 
 def main():
@@ -74,22 +76,23 @@ def main():
     num_episodes = 2
     env = None
 
-    ImageObsCfg = generate_image_obs_from_cameras([OverShoulderLeftCameraCfg])
+    ImageObsCfg = generate_image_obs_from_cameras(WRIST_RIGHT)
     ObservationCfg = generate_obs_cfg({
         "image_obs": ImageObsCfg(),
         "proprio_obs": ProprioceptionObservationCfg(),
+        "viewport_cam": ImageObsCfg()
     })
 
     # # Setup environment
     EnvCfg, _ = generate_env_cfg_from_task(
-        task_file_path=f"{TASK_DIR}/randomize_initial_pose/rubiks_cube_and_banana_uniform_10cm.py",
-        env_name="SauceBottles",
+        task_file_path=f"{TASK_DIR}/wm_tasks/angledreach/angledreach_canhandle_task.py",
+        env_name="DroidAngledReachCanHandleEnv",
         robot_cfg=DroidCfg,
-        camera_cfg=OverShoulderLeftCameraCfg,
-        lighting_cfg=SphereLightCfg,
-        background_cfg=CustomBackgroundCfg,
+        camera_cfg=WRIST_RIGHT,
+        # lighting_cfg=SphereLightCfg,
+        background_cfg=HomeOfficeBackgroundCfg,
         contact_gripper=contact_gripper,
-        actions_cfg=DroidJointPositionActionCfg(),
+        actions_cfg=DroidIKActionCfg(),
         observations_cfg=ObservationCfg(),
         dt=1 / (60 * 2),
         render_interval=8,
@@ -123,18 +126,15 @@ def main():
                         save_videos=args_cli.save_videos,
                         headless=args_cli.headless)
 
-
             # # Policy (import from policy.episode import run_episode)
             # from policy.episode import run_episode
             # run_episode(env=env,
             #             env_cfg=env_cfg,
             #             save_videos=args_cli.save_videos,
             #             headless=args_cli.headless)
-
-
             # run_empty_episode(env, num_envs=args_cli.num_envs, num_steps=10)
 
-        print("Episodes complete. Press Ctrl+C to close the environment.")
+        print("Press Ctrl+C to close the environment.")
         while simulation_app.is_running():
             simulation_app.update()
 
