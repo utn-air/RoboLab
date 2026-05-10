@@ -6,7 +6,7 @@ REMOTE_HOST="${REMOTE_HOST:-localhost}"
 REMOTE_PORT="${REMOTE_PORT:-8000}"
 SERVER_HOST="${SERVER_HOST:-0.0.0.0}"
 SERVER_START_TIMEOUT="${SERVER_START_TIMEOUT:-600}"
-OUTPUT_ROOT="${OUTPUT_ROOT:-robolab/output}"
+OUTPUT_ROOT="${OUTPUT_ROOT:-/workspace/robolab/output}"
 HEADLESS="${HEADLESS:-1}"
 VIDEO_MODE="${VIDEO_MODE:-sensor}"
 OUTPUT_FOLDER_NAME="${OUTPUT_FOLDER_NAME:-}"
@@ -105,7 +105,6 @@ print(response["modelname"])
 archive_model_output() {
     local model_name="$1"
     local model_dir="$OUTPUT_ROOT/$model_name"
-    local summary_file="$OUTPUT_ROOT/${model_name}_success_summary.txt"
     local archive_file="$OUTPUT_ROOT/${model_name}.zip"
 
     if [[ "$ARCHIVE_AFTER_MODEL" != "1" ]]; then
@@ -117,17 +116,12 @@ archive_model_output() {
         return 1
     fi
 
-    echo "=== Writing success summary: $summary_file ==="
-    "$ISAAC_PYTHON" analysis/summarize_eval_success.py \
-        "$model_dir" \
-        --expected-runs 5 \
-        --task "${TASKS[@]}" | tee "$summary_file"
 
     echo "=== Zipping $model_dir -> $archive_file ==="
     rm -f "$archive_file"
     (
         cd "$OUTPUT_ROOT"
-        zip -qr "$(basename "$archive_file")" "$model_name" "$(basename "$summary_file")"
+        zip -qr "$(basename "$archive_file")" "$model_name"
     )
 
     if [[ "$DELETE_UNZIPPED_AFTER_ARCHIVE" == "1" ]]; then
@@ -182,15 +176,4 @@ for cfg_file in "${MODEL_CONFIGS[@]}"; do
 
     archive_model_output "$model_name"
     cleanup_server
-done
-
-echo
-echo "=== Final per-model summary files ==="
-for model_name in "${MODEL_NAMES[@]}"; do
-    echo
-    echo "[$model_name]"
-    cat "$OUTPUT_ROOT/${model_name}_success_summary.txt"
-    if [[ "$ARCHIVE_AFTER_MODEL" == "1" ]]; then
-        echo "Archive: $OUTPUT_ROOT/${model_name}.zip"
-    fi
 done

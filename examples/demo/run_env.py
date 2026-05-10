@@ -105,6 +105,7 @@ def main():
     )
 
     env_cfg = EnvCfg()
+    print(f"Generated environment config")
 
     try:
         env, _ = create_env(scene=env_cfg,
@@ -113,6 +114,7 @@ def main():
                          use_fabric=True)
 
         output_dir = os.path.join(env.output_dir, get_timestamp())
+        print(f"Saving episode videos to: {output_dir}")
         for i in range(num_episodes):
             env.output_dir = os.path.join(output_dir, f"episode_{i}")
 

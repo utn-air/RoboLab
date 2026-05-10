@@ -81,8 +81,3 @@ PROTOCOL_BUFFERS_PYTHON_IMPLEMENTATION=python \
     --remote-host "$REMOTE_HOST" \
     --remote-port "$REMOTE_PORT" \
     "${EXTRA_ARGS[@]}"
-
-"$ISAAC_PYTHON" analysis/summarize_eval_success.py \
-    "robolab/output/$MODEL_NAME" \
-    --expected-runs 5 \
-    --task "${TASKS[@]}"
