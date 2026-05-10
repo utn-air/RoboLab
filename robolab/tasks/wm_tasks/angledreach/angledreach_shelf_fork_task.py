@@ -20,7 +20,10 @@ class AngledReachShelfForkTerminations:
     time_out = DoneTerm(func=mdp.time_out, time_out=True)
     success = DoneTerm(
         func=angled_reach_object,
-        params={"object": "fork_big", "tolerance": 0.06, "status_path": STATUS_PATH},
+        params={"object": "fork_big", 
+                "pos_tolerance": 0.10, 
+                "angle_tolerance": 0.20, 
+                "status_path": STATUS_PATH},
     )
 
 
@@ -60,7 +63,12 @@ class AngledReachShelfForkTask(Task):
             name="angled_reach_fork_big",
             conditions={
                 "fork_big": [
-                    (partial(angled_reach_object, object="fork_big", tolerance=0.06, status_path=STATUS_PATH), 1.0)
+                    (partial(angled_reach_object, 
+                            object="fork_big", 
+                            pos_tolerance=0.10, 
+                            angle_tolerance=0.20, 
+                            status_path=STATUS_PATH),
+                    1.0)
                 ]
             },
             logical="all",

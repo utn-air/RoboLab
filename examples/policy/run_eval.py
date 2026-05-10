@@ -196,25 +196,25 @@ def main():
 
     episode_results_file, episode_results = init_experiment(output_dir)
 
-    if args_cli.policy == "valp":
-        from robolab.tasks.wm_tasks.goal_images import generate_goal_images # noqa
-        for task_env in task_envs:
-            goal_gen_output_dir = os.path.join(output_dir, f"GoalGen_{task_env}")
-            os.makedirs(goal_gen_output_dir, exist_ok=True)
-            set_output_dir(goal_gen_output_dir)
+    # if args_cli.policy == "valp":
+    #     from robolab.tasks.wm_tasks.goal_images import generate_goal_images # noqa
+    #     for task_env in task_envs:
+    #         goal_gen_output_dir = os.path.join(output_dir, f"GoalGen_{task_env}")
+    #         os.makedirs(goal_gen_output_dir, exist_ok=True)
+    #         set_output_dir(goal_gen_output_dir)
 
-            goal_env = None
-            print(f"\033[96m[RoboLab] Preparing VALP goal images in `{task_env}`\033[0m")
-            goal_env, goal_env_cfg = create_env(
-                task_env,
-                device=args_cli.device,
-                num_envs=num_envs,
-                use_fabric=True,
-                instruction_type=args_cli.instruction_type,
-                policy=args_cli.policy,
-            )
-            generate_goal_images(goal_env, goal_env_cfg, obs=None)
-            goal_env.close()
+    #         goal_env = None
+    #         print(f"\033[96m[RoboLab] Preparing VALP goal images in `{task_env}`\033[0m")
+    #         goal_env, goal_env_cfg = create_env(
+    #             task_env,
+    #             device=args_cli.device,
+    #             num_envs=num_envs,
+    #             use_fabric=True,
+    #             instruction_type=args_cli.instruction_type,
+    #             policy=args_cli.policy,
+    #         )
+    #         generate_goal_images(goal_env, goal_env_cfg, obs=None)
+    #         goal_env.close()
     
 
     for task_env in task_envs:

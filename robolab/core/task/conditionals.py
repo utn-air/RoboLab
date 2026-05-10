@@ -127,13 +127,14 @@ def reach_object(
             return torch.zeros(env.num_envs, dtype=torch.bool, device=env.device)
         return False
 
+    # target ee_pose
     with status_path.open("r", encoding="utf-8") as handle:
         status_payload = json.load(handle)
     target_ee_pose = status_payload.get("last_ee_pose")
-
     target_pos = torch.tensor(target_ee_pose[:3], dtype=torch.float32, device=env.device)
-    world = get_world(env)
 
+    # current gripper pose
+    world = get_world(env)
     gripper_pose = world.get_articulation_link_pose("robot", link_name, env_id=env_id)
     if env_id is None:
         gripper_pos = gripper_pose[:, :3]
@@ -142,6 +143,102 @@ def reach_object(
     gripper_pos = gripper_pose[:3]
     return torch.linalg.norm(gripper_pos - target_pos).item() <= tolerance
 
+import json
+from pathlib import Path
+import torch
+
+
+def quat_angle_error_wxyz(q_current: torch.Tensor, q_target: torch.Tensor) -> torch.Tensor:
+    """
+    Returns angular distance in radians between quaternions in wxyz format.
+
+    q_current:
+        shape (..., 4)
+    q_target:
+        shape (4,) or (..., 4)
+    """
+
+    q_current = torch.nn.functional.normalize(q_current, dim=-1)
+    q_target = torch.nn.functional.normalize(q_target, dim=-1)
+
+    dot = torch.sum(q_current * q_target, dim=-1)
+
+    # q and -q are equivalent orientations
+    dot = torch.abs(dot)
+
+    # Numerical safety
+    dot = torch.clamp(dot, -1.0, 1.0)
+
+    return 2.0 * torch.acos(dot)
+
+
+@atomic
+def angled_reach_object(
+    env,
+    object: str,
+    pos_tolerance: float = 0.04,
+    angle_tolerance: float = 0.20,  # radians, ~11.5 degrees
+    link_name: str = "panda_link8",
+    status_path: str | Path | None = None,
+    env_id: int | None = None,
+):
+    if status_path is None:
+        if env_id is None:
+            return torch.zeros(env.num_envs, dtype=torch.bool, device=env.device)
+        return False
+
+    status_path = Path(status_path)
+
+    if not status_path.exists():
+        if env_id is None:
+            return torch.zeros(env.num_envs, dtype=torch.bool, device=env.device)
+        return False
+
+    # Target EE pose: assumed [x, y, z, qw, qx, qy, qz]
+    with status_path.open("r", encoding="utf-8") as handle:
+        status_payload = json.load(handle)
+
+    target_ee_pose = status_payload.get("last_ee_pose")
+    target_pos = torch.tensor(
+        target_ee_pose[:3],
+        dtype=torch.float32,
+        device=env.device,
+    )
+
+    target_quat = torch.tensor(
+        target_ee_pose[3:7],
+        dtype=torch.float32,
+        device=env.device,
+    )
+
+    # Current gripper pose: assumed [x, y, z, qw, qx, qy, qz]
+    world = get_world(env)
+    gripper_pose = world.get_articulation_link_pose(
+        "robot",
+        link_name,
+        env_id=env_id,
+    )
+
+    if env_id is None:
+        gripper_pos = gripper_pose[:, :3]
+        gripper_quat = gripper_pose[:, 3:7]
+
+        pos_ok = torch.linalg.norm(gripper_pos - target_pos, dim=1) <= pos_tolerance
+        angle_error = quat_angle_error_wxyz(gripper_quat, target_quat)
+        angle_ok = angle_error <= angle_tolerance
+
+        return pos_ok & angle_ok
+
+    gripper_pos = gripper_pose[:3]
+    gripper_quat = gripper_pose[3:7]
+
+    pos_ok = torch.linalg.norm(gripper_pos - target_pos).item() <= pos_tolerance
+    angle_error = quat_angle_error_wxyz(gripper_quat, target_quat).item()
+    angle_ok = angle_error <= angle_tolerance
+
+    return pos_ok and angle_ok
+
+    
 @atomic
 def object_in_contact(
     env,

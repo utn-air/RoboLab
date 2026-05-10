@@ -44,13 +44,9 @@ screen -r valp_sweep
 screen -ls
 
 TODO:
-    - select nice rotate reach tasks: 5
-    - drive robot to goal positions with rotation
-
+    - drive robot to goal positions with rotation: interactive sim mode
     - Experiments:
-        1. DONE: Change positions of reaching object - 10
-        2. DONE: Randomise items on the table 
         3. Randomise table textures - 20
         4. Randomise background - 50
         5. Randomise init gripper position - 4
-    - substasks and number of steps switch
+    - Grasp, pickup, place substasks 

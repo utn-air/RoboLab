@@ -20,7 +20,10 @@ class AngledReachRedHammerTerminations:
     time_out = DoneTerm(func=mdp.time_out, time_out=True)
     success = DoneTerm(
         func=angled_reach_object,
-        params={"object": "red_hammer", "tolerance": 0.06, "status_path": STATUS_PATH},
+        params={"object": "red_hammer", 
+                "pos_tolerance": 0.10, 
+                "angle_tolerance": 0.20, 
+                "status_path": STATUS_PATH},
     )
 
 
@@ -61,7 +64,12 @@ class AngledReachRedHammerTask(Task):
             name="angled_reach_red_hammer",
             conditions={
                 "red_hammer": [
-                    (partial(angled_reach_object, object="red_hammer", tolerance=0.06, status_path=STATUS_PATH), 1.0),
+                    (partial(angled_reach_object, 
+                            object="red_hammer", 
+                            pos_tolerance=0.10, 
+                            angle_tolerance=0.20, 
+                            status_path=STATUS_PATH),
+                    1.0)
                 ]
             },
             logical="all",

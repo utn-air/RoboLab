@@ -20,7 +20,10 @@ class AngledReachCanHandleTerminations:
     time_out = DoneTerm(func=mdp.time_out, time_out=True)
     success = DoneTerm(
         func=angled_reach_object,
-        params={"object": "milkjug_a01", "tolerance": 0.06, "status_path": STATUS_PATH},
+        params={"object": "milkjug_a01", 
+                "pos_tolerance": 0.10, 
+                "angle_tolerance": 0.20,
+                 "status_path": STATUS_PATH},
     )
 
 
@@ -60,7 +63,12 @@ class AngledReachCanHandleTask(Task):
             name="angled_reach_milkjug",
             conditions={
                 "milkjug_a01": [
-                    (partial(angled_reach_object, object="milkjug_a01", tolerance=0.06, status_path=STATUS_PATH), 1.0)
+                    (partial(angled_reach_object, 
+                            object="milkjug_a01", 
+                            pos_tolerance=0.10, 
+                            angle_tolerance=0.20, 
+                            status_path=STATUS_PATH),
+                    1.0)
                 ]
             },
             logical="all",
