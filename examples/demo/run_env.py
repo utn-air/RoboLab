@@ -63,6 +63,7 @@ from robolab.robots.droid import (  # noqa
     DroidCfg,
     DroidIKActionCfg,
     ProprioceptionObservationCfg,
+    WristCameraCfg,
     contact_gripper,
 )
 from robolab.variations.backgrounds import HomeOfficeBackgroundCfg
@@ -77,6 +78,9 @@ def main():
     env = None
 
     ImageObsCfg = generate_image_obs_from_cameras(WRIST_RIGHT)
+    # WristCameraCfg is already mounted in DroidCfg; keep it in observations
+    # but exclude it from scene camera mixins to preserve spawn ordering.
+    scene_cameras = [c for c in WRIST_RIGHT if c is not WristCameraCfg]
     ObservationCfg = generate_obs_cfg({
         "image_obs": ImageObsCfg(),
         "proprio_obs": ProprioceptionObservationCfg(),
@@ -85,10 +89,10 @@ def main():
 
     # # Setup environment
     EnvCfg, _ = generate_env_cfg_from_task(
-        task_file_path=f"{TASK_DIR}/wm_tasks/angledreach/angledreach_canhandle_task.py",
+        task_file_path=f"{TASK_DIR}/wm_tasks/reach/reach_apple_task.py",
         env_name="DroidAngledReachCanHandleEnv",
         robot_cfg=DroidCfg,
-        camera_cfg=WRIST_RIGHT,
+        camera_cfg=scene_cameras,
         # lighting_cfg=SphereLightCfg,
         background_cfg=HomeOfficeBackgroundCfg,
         contact_gripper=contact_gripper,
@@ -105,38 +109,19 @@ def main():
     )
 
     env_cfg = EnvCfg()
+    env_cfg.sim.device = args_cli.device
     print(f"Generated environment config")
+
+    # Livestream mode runs without a local desktop window.
+    effective_headless = bool(args_cli.headless) or bool(args_cli.livestream)
 
     try:
         env, _ = create_env(scene=env_cfg,
                          device=args_cli.device,
                          num_envs=args_cli.num_envs,
                          use_fabric=True)
+        print("create_env returned", flush=True)
 
-        output_dir = os.path.join(env.output_dir, get_timestamp())
-        print(f"Saving episode videos to: {output_dir}")
-        for i in range(num_episodes):
-            env.output_dir = os.path.join(output_dir, f"episode_{i}")
-
-            # # Pre-recorded episode
-            # run_prerecorded_episode(env,
-            #             save_videos=args_cli.save_videos,
-            #             headless=args_cli.headless)
-
-            # Just toggle the gripper episode
-            run_gripper_toggle_episode(env,
-                        save_videos=args_cli.save_videos,
-                        headless=args_cli.headless)
-
-            # # Policy (import from policy.episode import run_episode)
-            # from policy.episode import run_episode
-            # run_episode(env=env,
-            #             env_cfg=env_cfg,
-            #             save_videos=args_cli.save_videos,
-            #             headless=args_cli.headless)
-            # run_empty_episode(env, num_envs=args_cli.num_envs, num_steps=10)
-
-        print("Press Ctrl+C to close the environment.")
         while simulation_app.is_running():
             simulation_app.update()
 

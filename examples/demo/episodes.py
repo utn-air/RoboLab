@@ -50,8 +50,8 @@ def run_gripper_toggle_episode(env, save_videos=True, headless=False, num_steps=
         # Set actions
         gripper_width = 0.0 if toggle_gripper else 0.785398163
 
-        # Create gripper action tensor on CUDA
-        gripper_action = torch.tensor([gripper_width], device='cuda:0')
+        # Match the environment device to avoid cross-device tensor errors.
+        gripper_action = torch.tensor([gripper_width], device=current_joint_pos.device)
 
         # Concatenate current joint positions with gripper width
         actions = torch.cat([current_joint_pos, gripper_action]).unsqueeze(0)

@@ -4,8 +4,7 @@
 ./docker/run_docker.sh nisarga
 
 RUN ENV:
-PROTOCOL_BUFFERS_PYTHON_IMPLEMENTATION=python \
-    /workspace/isaaclab/_isaac_sim/python.sh examples/demo/run_env.py 
+python examples/demo/run_env.py --device cuda:1
 
 RUN EVALUATIONS:
 
