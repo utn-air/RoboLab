@@ -63,6 +63,58 @@ cleanup_server() {
     SERVER_PID=""
 }
 
+cfg_model_name() {
+    local cfg_file="$1"
+
+    awk '
+        function trim(s) {
+            gsub(/^[[:space:]]+|[[:space:]]+$/, "", s)
+            return s
+        }
+
+        function strip_quotes(s) {
+            first = substr(s, 1, 1)
+            last = substr(s, length(s), 1)
+
+            if ((first == "\"" && last == "\"") || (first == "'"'"'" && last == "'"'"'")) {
+                return substr(s, 2, length(s) - 2)
+            }
+
+            return s
+        }
+
+        /^[[:space:]]*log[[:space:]]*:[[:space:]]*($|#)/ {
+            in_log = 1
+            next
+        }
+
+        in_log && /^[^[:space:]#][^:]*[[:space:]]*:/ {
+            exit 1
+        }
+
+        in_log && /^[[:space:]]*modelname[[:space:]]*:/ {
+            sub(/^[[:space:]]*modelname[[:space:]]*:[[:space:]]*/, "")
+            sub(/[[:space:]]+#.*$/, "")
+
+            value = strip_quotes(trim($0))
+
+            if (value == "") {
+                exit 1
+            }
+
+            print value
+            found = 1
+            exit
+        }
+
+        END {
+            if (!found) {
+                exit 1
+            }
+        }
+    ' "$cfg_file"
+}
+
 hosted_model_name() {
     PROTOCOL_BUFFERS_PYTHON_IMPLEMENTATION=python \
     REMOTE_HOST="$REMOTE_HOST" \
@@ -140,7 +192,54 @@ fi
 
 mkdir -p "$SERVER_LOG_DIR"
 
+FILTERED_MODEL_CONFIGS=()
+
 for cfg_file in "${MODEL_CONFIGS[@]}"; do
+    if ! model_name="$(cfg_model_name "/workspace/robolab/valp/configs/inference/vjepa2-ac-vitg/$cfg_file")"; then
+        echo "Could not find modelname in config file: $cfg_file"
+        exit 1
+    fi
+
+    if [[ -z "$model_name" ]]; then
+        echo "Empty modelname in config file: $cfg_file"
+        exit 1
+    fi
+
+    archive_file="$OUTPUT_ROOT/${model_name}.zip"
+
+    if [[ -f "$archive_file" ]]; then
+        echo "=== Removing $cfg_file from MODEL_CONFIGS because archive already exists: $archive_file ==="
+        continue
+    fi
+
+    FILTERED_MODEL_CONFIGS+=("$cfg_file")
+done
+
+MODEL_CONFIGS=("${FILTERED_MODEL_CONFIGS[@]}")
+unset FILTERED_MODEL_CONFIGS
+
+if ((${#MODEL_CONFIGS[@]} == 0)); then
+    echo "All model configs already have archives in $OUTPUT_ROOT. Nothing to run."
+    exit 0
+fi
+
+
+for cfg_file in "${MODEL_CONFIGS[@]}"; do
+    cfg_path="/workspace/robolab/valp/configs/inference/vjepa2-ac-vitg/$cfg_file"
+
+    if ! cfg_model_name_value="$(cfg_model_name "$cfg_path")"; then
+        echo "Could not find modelname in config file: $cfg_file"
+        exit 1
+    fi
+
+    archive_file="$OUTPUT_ROOT/${cfg_model_name_value}.zip"
+
+    if [[ -f "$archive_file" ]]; then
+        echo
+        echo "=== Skipping $cfg_file because archive now exists: $archive_file ==="
+        continue
+    fi
+
     cfg_name="${cfg_file%.yaml}"
     server_log="$SERVER_LOG_DIR/${cfg_name}_serve_policy.log"
 
@@ -162,6 +261,15 @@ for cfg_file in "${MODEL_CONFIGS[@]}"; do
     fi
 
     model_name="$(hosted_model_name)"
+
+    if [[ "$model_name" != "$cfg_model_name_value" ]]; then
+        echo "Config/server model name mismatch for $cfg_file."
+        echo "Config log.modelname: $cfg_model_name_value"
+        echo "Hosted modelname: $model_name"
+        cleanup_server
+        exit 1
+    fi
+
     MODEL_NAMES+=("$model_name")
 
     echo "=== Running 50 eval episodes for hosted model $model_name ==="
