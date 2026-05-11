@@ -10,6 +10,7 @@ OUTPUT_ROOT="${OUTPUT_ROOT:-/workspace/robolab/output}"
 HEADLESS="${HEADLESS:-1}"
 VIDEO_MODE="${VIDEO_MODE:-sensor}"
 OUTPUT_FOLDER_NAME="${OUTPUT_FOLDER_NAME:-}"
+DEVICE="${DEVICE:-cuda:1}"
 SERVER_LOG_DIR="${SERVER_LOG_DIR:-$OUTPUT_ROOT/valp_model_sweep_logs_${REMOTE_PORT}}"
 ARCHIVE_AFTER_MODEL="${ARCHIVE_AFTER_MODEL:-1}"
 DELETE_UNZIPPED_AFTER_ARCHIVE="${DELETE_UNZIPPED_AFTER_ARCHIVE:-1}"
@@ -278,6 +279,7 @@ for cfg_file in "${MODEL_CONFIGS[@]}"; do
     HEADLESS="$HEADLESS" \
     VIDEO_MODE="$VIDEO_MODE" \
     OUTPUT_FOLDER_NAME="$OUTPUT_FOLDER_NAME" \
+    DEVICE="$DEVICE" \
         bash examples/policy/run_reach_valp_eval_5x.sh
 
     archive_model_output "$model_name"

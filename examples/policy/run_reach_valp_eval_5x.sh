@@ -7,6 +7,7 @@ REMOTE_PORT="${REMOTE_PORT:-8000}"
 HEADLESS="${HEADLESS:-1}"
 VIDEO_MODE="${VIDEO_MODE:-sensor}"
 OUTPUT_FOLDER_NAME="${OUTPUT_FOLDER_NAME:-}"
+DEVICE="${DEVICE:-cuda:0}"
 
 EXTRA_ARGS=()
 if [[ "$HEADLESS" == "1" ]]; then
@@ -77,6 +78,7 @@ PROTOCOL_BUFFERS_PYTHON_IMPLEMENTATION=python \
     --policy valp \
     --num-runs 5 \
     --num-envs 1 \
+    --device "$DEVICE" \
     --task "${TASKS[@]}" \
     --remote-host "$REMOTE_HOST" \
     --remote-port "$REMOTE_PORT" \
