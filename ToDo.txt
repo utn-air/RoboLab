@@ -26,9 +26,8 @@ PROTOCOL_BUFFERS_PYTHON_IMPLEMENTATION=python \
 HEADLESS=1 VIDEO_MODE=sensor bash examples/policy/run_reach_valp_model_sweep_224_5x.sh
 HEADLESS=1 VIDEO_MODE=sensor bash examples/policy/run_reach_valp_model_sweep_256_5x.sh
 
-SWEEP_TERMINAL_LOG=output/sweep_224.log \
-HEADLESS=1 VIDEO_MODE=sensor bash examples/policy/run_reach_valp_model_sweep_224_5x.sh > /dev/null 2>&1
-
+mkdir -p output && HEADLESS=1 VIDEO_MODE=sensor bash examples/policy/run_reach_valp_model_sweep_224_5x.sh > output/sweep_224.log 2>&1
+mkdir -p output && HEADLESS=1 VIDEO_MODE=sensor bash examples/policy/run_reach_valp_model_sweep_256_5x.sh > output/sweep_256.log 2>&1
 
 chown -R 10175:101010 /workspace/robolab/output && chmod -R u+rw /workspace/robolab/output
 
