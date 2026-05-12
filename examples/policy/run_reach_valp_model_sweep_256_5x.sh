@@ -62,6 +62,14 @@ cleanup_server() {
         wait "$SERVER_PID" 2>/dev/null || true
     fi
     SERVER_PID=""
+    
+    # Wait for port to be released
+    local max_wait=30
+    local elapsed=0
+    while port_open && (( elapsed < max_wait )); do
+        sleep 1
+        ((elapsed++))
+    done
 }
 
 cfg_model_name() {
@@ -246,6 +254,11 @@ for cfg_file in "${MODEL_CONFIGS[@]}"; do
 
     echo
     echo "=== Starting VALP server: $cfg_file ==="
+    
+    # Ensure any stray serve_policy processes are killed
+    pkill -f "valp/inference/serve_policy.py" || true
+    sleep 2
+    
     PROTOCOL_BUFFERS_PYTHON_IMPLEMENTATION=python \
         "$ISAAC_PYTHON" valp/inference/serve_policy.py \
         --cfg-file "$cfg_file" \

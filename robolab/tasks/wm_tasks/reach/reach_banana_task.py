@@ -16,7 +16,7 @@ from robolab.core.task.subtask import Subtask
 from robolab.core.task.task import Task
 
 
-STATUS_PATH = Path(ASSET_DIR) / "wm_tasks" / "SimpleReachBananaTask" / "status.json"
+STATUS_PATH = Path(ASSET_DIR) / "wm_tasks" / "ReachBananaTask" / "status.json"
 
 
 @configclass
@@ -29,16 +29,15 @@ class ReachBananaTerminations:
 
 
 @dataclass
-class SimpleReachBananaTask(Task):
-    contact_object_list = ["table", "bowl", "banana"]
-    scene = import_scene("banana_bowl.usda", contact_object_list)
+class ReachBananaTask(Task):
+    contact_object_list = ["table", "bowl", "banana", "bagel_07", "coffee_can", "banana_01", "yogurt_cup", "coffee_pot", "ceramic_mug", "pitcher", "fork_big", "spoon_big", "apple_01", "orange2", "milk_carton", "orange_juice_carton", "bagel_01", "bagel_02", "plate_small", "plate_large"]
+    scene = import_scene("breakfast_table.usda", contact_object_list)
     terminations = ReachBananaTerminations
     instruction = {
         "default": "ReachBanana",
-        "vague": "Reach the fruit",
-        "specific": "Move the robot gripper to a position just above the yellow banana without grasping it",
+        "vague": "Reach the banana",
+        "specific": "Move the robot gripper to a position just above the banana without grasping it",
     }
-    # episode_length_s: int = 20
     episode_steps: int = 50
     attributes = ["reach", "goal"]
     goal = {

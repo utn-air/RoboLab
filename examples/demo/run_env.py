@@ -89,7 +89,7 @@ def main():
 
     # # Setup environment
     EnvCfg, _ = generate_env_cfg_from_task(
-        task_file_path=f"{TASK_DIR}/wm_tasks/reach/reach_apple_task.py",
+        task_file_path=f"{TASK_DIR}/wm_tasks/angledreach/angledreach_redhammer_task.py",
         env_name="DroidAngledReachCanHandleEnv",
         robot_cfg=DroidCfg,
         camera_cfg=scene_cameras,
