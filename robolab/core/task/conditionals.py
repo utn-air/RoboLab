@@ -138,7 +138,6 @@ def reach_object(
     gripper_pose = world.get_articulation_link_pose("robot", link_name, env_id=env_id)
     if env_id is None:
         gripper_pos = gripper_pose[:, :3]
-        print(torch.linalg.norm(gripper_pos - target_pos, dim=1))
         return torch.linalg.norm(gripper_pos - target_pos, dim=1) <= tolerance
 
     gripper_pos = gripper_pose[:3]
@@ -183,17 +182,12 @@ def angled_reach_object(
     status_path: str | Path | None = None,
     env_id: int | None = None,
 ):
-    if status_path is None:
+    if not Path(status_path).exists():
         if env_id is None:
             return torch.zeros(env.num_envs, dtype=torch.bool, device=env.device)
         return False
 
     status_path = Path(status_path)
-
-    if not status_path.exists():
-        if env_id is None:
-            return torch.zeros(env.num_envs, dtype=torch.bool, device=env.device)
-        return False
 
     # Target EE pose: assumed [x, y, z, qw, qx, qy, qz]
     with status_path.open("r", encoding="utf-8") as handle:

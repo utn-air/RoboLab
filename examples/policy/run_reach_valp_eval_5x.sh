@@ -7,6 +7,9 @@ REMOTE_PORT="${REMOTE_PORT:-8000}"
 HEADLESS="${HEADLESS:-1}"
 VIDEO_MODE="${VIDEO_MODE:-sensor}"
 OUTPUT_FOLDER_NAME="${OUTPUT_FOLDER_NAME:-}"
+if [[ -n "${PHYSICAL_GPU:-}" && -z "${CUDA_VISIBLE_DEVICES:-}" ]]; then
+    export CUDA_VISIBLE_DEVICES="$PHYSICAL_GPU"
+fi
 DEVICE="${DEVICE:-cuda:0}"
 
 EXTRA_ARGS=()
@@ -72,6 +75,12 @@ print(response["modelname"])
 }
 
 MODEL_NAME="$(hosted_model_name)"
+
+if [[ -n "${CUDA_VISIBLE_DEVICES:-}" ]]; then
+    echo "=== Eval GPU visibility: CUDA_VISIBLE_DEVICES=$CUDA_VISIBLE_DEVICES, DEVICE=$DEVICE ==="
+else
+    echo "=== Eval device: DEVICE=$DEVICE (CUDA_VISIBLE_DEVICES unset) ==="
+fi
 
 PROTOCOL_BUFFERS_PYTHON_IMPLEMENTATION=python \
     "$ISAAC_PYTHON" examples/policy/run_eval.py \
