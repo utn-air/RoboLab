@@ -40,12 +40,16 @@ with zipfile.ZipFile(zip_path, "r") as zip_file:
 				with zip_file.open(item) as file:
 					with h5py.File(file, "r") as hdf5_file:
 						print(f"{hdf5_file['data']['demo_0'].keys()}")
-						position = hdf5_file['data']['demo_0']['ee_pose']['position'][-1]
-						orientation = hdf5_file['data']['demo_0']['ee_pose']['orientation'][-1]
+						position = hdf5_file['data']['demo_0']['ee_pose']['position']
+						orientation = hdf5_file['data']['demo_0']['ee_pose']['orientation']
 
-						# euclidean distance to goal
-						distance = ((position[0] - goal_posiiton[0]) **2 + (position[1] - goal_posiiton[1]) ** 2 + (position[2] - goal_posiiton[2]) ** 2)
-						print(f"Final position: {position}, distance to goal: {distance}")
+						# euclidean distances to goal
+						for i in range(position.shape[0]):
+							current_position = position[i]
+							distance = ((current_position[0] - goal_posiiton[0]) **2 + (current_position[1] - goal_posiiton[1]) ** 2 + (current_position[2] - goal_posiiton[2]) ** 2)
+							# take sqrt to get actual euclidean distance
+							distance = distance ** 0.5
+							print(f"Final position: {current_position}, distance to goal: {distance}")
 
 						
 

@@ -1,5 +1,3 @@
-
-
 # Start RoboLab Docker with the VALP image:
 ./docker/run_docker.sh nisarga
 
@@ -46,7 +44,6 @@ screen -r valp_sweep
 screen -ls
 
 TODO:
-    - Change ReachMilkCartoonTask
     - take goal images for angled reach with ee_pose via interactive sim mode
     - write a script to get numbers for the table
     - Experiments:
