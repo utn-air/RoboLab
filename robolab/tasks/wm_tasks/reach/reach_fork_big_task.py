@@ -24,7 +24,7 @@ class ReachForkBigTerminations:
     time_out = DoneTerm(func=mdp.time_out, time_out=True)
     success = DoneTerm(
         func=reach_object,
-        params={"object": "fork_big", "tolerance": 0.06, "status_path": STATUS_PATH},
+        params={"object": "fork_big", "tolerance": 0.05, "status_path": STATUS_PATH},
     )
 
 
@@ -54,7 +54,7 @@ class ReachForkBigTask(Task):
             name="reach_above_fork",
             conditions={
                 "fork_big": [
-                    (partial(reach_object, object="fork_big", tolerance=0.06, status_path=STATUS_PATH), 1.0)
+                    (partial(reach_object, object="fork_big", tolerance=0.05, status_path=STATUS_PATH), 1.0)
                 ]
             },
             logical="all",

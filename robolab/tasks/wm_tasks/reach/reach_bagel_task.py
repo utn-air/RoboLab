@@ -24,7 +24,7 @@ class ReachBagelTerminations:
     time_out = DoneTerm(func=mdp.time_out, time_out=True)
     success = DoneTerm(
         func=reach_object,
-        params={"object": "bagel_07", "tolerance": 0.06, "status_path": STATUS_PATH},
+        params={"object": "bagel_07", "tolerance": 0.05, "status_path": STATUS_PATH},
     )
 
 
@@ -54,7 +54,7 @@ class ReachBagelTask(Task):
             name="reach_above_bagel",
             conditions={
                 "bagel_07": [
-                    (partial(reach_object, object="bagel_07", tolerance=0.06, status_path=STATUS_PATH), 1.0)
+                    (partial(reach_object, object="bagel_07", tolerance=0.05, status_path=STATUS_PATH), 1.0)
                 ]
             },
             logical="all",

@@ -54,7 +54,7 @@ class ReachCoffeePotTask(Task):
             name="reach_above_coffee_pot",
             conditions={
                 "coffee_pot": [
-                    (partial(reach_object, object="coffee_pot", tolerance=0.06, status_path=STATUS_PATH), 1.0)
+                    (partial(reach_object, object="coffee_pot", tolerance=0.05, status_path=STATUS_PATH), 1.0)
                 ]
             },
             logical="all",

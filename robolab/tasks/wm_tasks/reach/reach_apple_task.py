@@ -54,7 +54,7 @@ class ReachAppleTask(Task):
             name="reach_above_apple",
             conditions={
                 "apple_01": [
-                    (partial(reach_object, object="apple_01", tolerance=0.06, status_path=STATUS_PATH), 1.0)
+                    (partial(reach_object, object="apple_01", tolerance=0.05, status_path=STATUS_PATH), 1.0)
                 ]
             },
             logical="all",

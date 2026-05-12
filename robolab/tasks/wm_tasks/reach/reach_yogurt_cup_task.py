@@ -24,7 +24,7 @@ class ReachYogurtCupTerminations:
     time_out = DoneTerm(func=mdp.time_out, time_out=True)
     success = DoneTerm(
         func=reach_object,
-        params={"object": "yogurt_cup", "tolerance": 0.06, "status_path": STATUS_PATH},
+        params={"object": "yogurt_cup", "tolerance": 0.05, "status_path": STATUS_PATH},
     )
 
 
@@ -54,7 +54,7 @@ class ReachYogurtCupTask(Task):
             name="reach_above_yogurt_cup",
             conditions={
                 "yogurt_cup": [
-                    (partial(reach_object, object="yogurt_cup", tolerance=0.06, status_path=STATUS_PATH), 1.0)
+                    (partial(reach_object, object="yogurt_cup", tolerance=0.05, status_path=STATUS_PATH), 1.0)
                 ]
             },
             logical="all",
