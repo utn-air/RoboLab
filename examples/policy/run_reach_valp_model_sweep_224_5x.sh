@@ -69,7 +69,7 @@ cleanup_server() {
     local elapsed=0
     while port_open && (( elapsed < max_wait )); do
         sleep 1
-        ((elapsed++))
+        ((++elapsed))
     done
 }
 
@@ -182,7 +182,7 @@ archive_model_output() {
     rm -f "$archive_file"
     (
         cd "$OUTPUT_ROOT"
-        zip -qr "$(basename "$archive_file")" "$model_name"
+        zip -r -q "$(basename "$archive_file")" "$model_name"
     )
 
     if [[ "$DELETE_UNZIPPED_AFTER_ARCHIVE" == "1" ]]; then
@@ -198,7 +198,7 @@ trap 'cleanup_server; exit 143' TERM
 if port_open; then
     echo "Port $REMOTE_HOST:$REMOTE_PORT is already open."
     echo "Stop the existing VALP server before running the model sweep, so each cfg is evaluated against the intended hosted model."
-    exit 1
+    pkill -f "valp/inference/serve_policy.py.*--port $REMOTE_PORT" || true
 fi
 
 mkdir -p "$SERVER_LOG_DIR"
@@ -257,7 +257,7 @@ for cfg_file in "${MODEL_CONFIGS[@]}"; do
     echo "=== Starting VALP server: $cfg_file ==="
     
     # Ensure any stray serve_policy processes are killed
-    pkill -f "valp/inference/serve_policy.py" || true
+    pkill -f "valp/inference/serve_policy.py.*--port $REMOTE_PORT" || true
     sleep 2
     
     PROTOCOL_BUFFERS_PYTHON_IMPLEMENTATION=python \
