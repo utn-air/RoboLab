@@ -273,13 +273,12 @@ class PostStepEndEffectorPoseRecorderCfg(RecorderTermCfg):
 
     Attributes:
         robot_cfg_name: Name of the robot articulation in the scene. Default: "robot"
-        ee_body_name: Name of the end effector body to record. Default: "base_link"
-            (for DROID, this matches Gripper/Robotiq_2F_85/base_link)
+        ee_body_name: Name of the end effector body to record. Default: "panda_link8"
     """
 
     class_type: type[RecorderTerm] = PostStepEndEffectorPoseRecorder
     robot_cfg_name: str = "robot"
-    ee_body_name: str = "base_link"
+    ee_body_name: str = "panda_link8"
 
 
 @configclass

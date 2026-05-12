@@ -138,6 +138,7 @@ def reach_object(
     gripper_pose = world.get_articulation_link_pose("robot", link_name, env_id=env_id)
     if env_id is None:
         gripper_pos = gripper_pose[:, :3]
+        print(torch.linalg.norm(gripper_pos - target_pos, dim=1))
         return torch.linalg.norm(gripper_pos - target_pos, dim=1) <= tolerance
 
     gripper_pos = gripper_pose[:3]

@@ -17,10 +17,10 @@ zip_path = "/workspace/robolab/output/dual_dinov3.zip"
 
 zip_path = Path(zip_path)
 
-current_task = "ReachYogurtCupTask" #"ReachCoffeeCanTask" # "ReachOrangeTask"
-goal_posiiton = [0.3478515148162842, -0.17459048330783844, 0.21515005826950073]
-				# [0.6726567149162292, 0.36861035227775574, 0.3434607684612274]
-				# [0.5479271411895752, -0.11910949647426605, 0.24504002928733826]
+current_task = "ReachCoffeePotTask" 
+goal_posiiton = [0.7417680025100708,
+    0.25261884927749634,
+    0.30434298515319824]
 
 with zipfile.ZipFile(zip_path, "r") as zip_file:
 	for item in zip_file.infolist():
@@ -34,7 +34,7 @@ with zipfile.ZipFile(zip_path, "r") as zip_file:
 			split_filename = item.filename.split("/")
 			filename = split_filename[-1]
 			
-			if split_filename[1] == current_task and filename.startswith("run_"):
+			if split_filename[2] == current_task and filename.startswith("run_"):
 				print(f"File: {item.filename}")
 				
 				with zip_file.open(item) as file:

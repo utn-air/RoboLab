@@ -24,7 +24,7 @@ class ReachAppleTerminations:
     time_out = DoneTerm(func=mdp.time_out, time_out=True)
     success = DoneTerm(
         func=reach_object,
-        params={"object": "apple_01", "tolerance": 0.06, "status_path": STATUS_PATH},
+        params={"object": "apple_01", "tolerance": 0.05, "status_path": STATUS_PATH},
     )
 
 

@@ -27,11 +27,11 @@ TASKS=(
     ReachCoffeePotTask
     ReachAppleTask
     ReachBagelTask
+    ReachBananaTask
     ReachCeramicMugTask
     ReachCoffeeCanTask
     ReachForkBigTask
     ReachOrangeTask
-    ReachMilkCartonTask
     ReachSpoonBigTask
     ReachYogurtCupTask
 )
