@@ -7,9 +7,6 @@ REMOTE_PORT="${REMOTE_PORT:-8000}"
 HEADLESS="${HEADLESS:-1}"
 VIDEO_MODE="${VIDEO_MODE:-sensor}"
 OUTPUT_FOLDER_NAME="${OUTPUT_FOLDER_NAME:-}"
-if [[ -n "${PHYSICAL_GPU:-}" && -z "${CUDA_VISIBLE_DEVICES:-}" ]]; then
-    export CUDA_VISIBLE_DEVICES="$PHYSICAL_GPU"
-fi
 DEVICE="${DEVICE:-cuda:0}"
 
 EXTRA_ARGS=()
@@ -24,12 +21,12 @@ if [[ -n "$OUTPUT_FOLDER_NAME" ]]; then
 fi
 
 TASKS=(
-    ReachCoffeePotTask
     ReachAppleTask
     ReachBagelTask
     ReachBananaTask
     ReachCeramicMugTask
     ReachCoffeeCanTask
+    ReachCoffeePotTask
     ReachForkBigTask
     ReachOrangeTask
     ReachSpoonBigTask

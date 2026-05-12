@@ -38,7 +38,7 @@ class ReachForkBigTask(Task):
         "vague": "Reach the fork",
         "specific": "Move the robot gripper to a position just above the fork without grasping it",
     }
-    episode_steps: int = 50
+    episode_steps: int = 100
     attributes = ["reach", "goal"]
     goal = {
         "mode": "reach",

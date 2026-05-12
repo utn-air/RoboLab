@@ -38,7 +38,7 @@ class ReachBagelTask(Task):
         "vague": "Reach the bagel",
         "specific": "Move the robot gripper to a position just above the bagel without grasping it",
     }
-    episode_steps: int = 50
+    episode_steps: int = 100
     attributes = ["reach", "goal"]
     goal = {
         "mode": "reach",
