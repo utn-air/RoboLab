@@ -43,7 +43,7 @@ class ReachBananaTask(Task):
     goal = {
         "mode": "reach",
         "object": "banana_01",
-        "z_offset": 0.07,
+        "z_offset": 0.09,
         "drive_steps": 50,
         "settle_steps": 4,
         "external_camera": "over_shoulder_right_camera",
