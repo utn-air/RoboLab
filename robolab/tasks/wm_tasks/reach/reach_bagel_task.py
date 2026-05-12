@@ -43,7 +43,7 @@ class ReachBagelTask(Task):
     goal = {
         "mode": "reach",
         "object": "bagel_07",
-        "z_offset": 0.15,
+        "z_offset": 0.17,
         "drive_steps": 50,
         "settle_steps": 4,
         "external_camera": "over_shoulder_right_camera",

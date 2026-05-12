@@ -27,8 +27,9 @@ TASKS=(
     ReachCeramicMugTask
     ReachCoffeeCanTask
     ReachCoffeePotTask
-    ReachForkBigTask
+    ReachOrangeJuiceCartonTask
     ReachOrangeTask
+    ReachPitcherTask
     ReachSpoonBigTask
     ReachYogurtCupTask
 )

@@ -16,33 +16,33 @@ from robolab.core.task.subtask import Subtask
 from robolab.core.task.task import Task
 
 
-STATUS_PATH = Path(ASSET_DIR) / "wm_tasks" / "ReachCoffeePotTask" / "status.json"
+STATUS_PATH = Path(ASSET_DIR) / "wm_tasks" / "ReachOrangeJuiceCartonTask" / "status.json"
 
 
 @configclass
-class ReachCoffeePotTerminations:
+class ReachOrangeJuiceCartonTerminations:
     time_out = DoneTerm(func=mdp.time_out, time_out=True)
     success = DoneTerm(
         func=reach_object,
-        params={"object": "coffee_pot", "tolerance": 0.05, "status_path": STATUS_PATH},
+        params={"object": "orange_juice_carton", "tolerance": 0.05, "status_path": STATUS_PATH},
     )
 
 
 @dataclass
-class ReachCoffeePotTask(Task):
+class ReachOrangeJuiceCartonTask(Task):
     contact_object_list = ["table", "bowl", "banana", "bagel_07", "coffee_can", "banana_01", "yogurt_cup", "coffee_pot", "ceramic_mug", "pitcher", "fork_big", "spoon_big", "apple_01", "orange2", "milk_carton", "orange_juice_carton", "bagel_01", "bagel_02", "plate_small", "plate_large"]
     scene = import_scene("breakfast_table.usda", contact_object_list)
-    terminations = ReachCoffeePotTerminations
+    terminations = ReachOrangeJuiceCartonTerminations
     instruction = {
-        "default": "ReachCoffeePot",
-        "vague": "Reach the coffee pot",
-        "specific": "Move the robot gripper to a position just above the coffee pot without grasping it",
+        "default": "ReachOrangeJuiceCarton",
+        "vague": "Reach the orange juice carton",
+        "specific": "Move the robot gripper to a position just above the orange juice carton without grasping it",
     }
     episode_steps: int = 100
     attributes = ["reach", "goal"]
     goal = {
         "mode": "reach",
-        "object": "coffee_pot",
+        "object": "orange_juice_carton",
         "z_offset": 0.17,
         "drive_steps": 50,
         "settle_steps": 4,
@@ -51,10 +51,10 @@ class ReachCoffeePotTask(Task):
     }
     subtasks = [
         Subtask(
-            name="reach_above_coffee_pot",
+            name="reach_above_orange_juice_carton",
             conditions={
-                "coffee_pot": [
-                    (partial(reach_object, object="coffee_pot", tolerance=0.05, status_path=STATUS_PATH), 1.0)
+                "orange_juice_carton": [
+                    (partial(reach_object, object="orange_juice_carton", tolerance=0.05, status_path=STATUS_PATH), 1.0)
                 ]
             },
             logical="all",

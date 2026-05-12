@@ -16,34 +16,34 @@ from robolab.core.task.subtask import Subtask
 from robolab.core.task.task import Task
 
 
-STATUS_PATH = Path(ASSET_DIR) / "wm_tasks" / "ReachForkBigTask" / "status.json"
+STATUS_PATH = Path(ASSET_DIR) / "wm_tasks" / "ReachPitcherTask" / "status.json"
 
 
 @configclass
-class ReachForkBigTerminations:
+class ReachPitcherTerminations:
     time_out = DoneTerm(func=mdp.time_out, time_out=True)
     success = DoneTerm(
         func=reach_object,
-        params={"object": "fork_big", "tolerance": 0.05, "status_path": STATUS_PATH},
+        params={"object": "pitcher", "tolerance": 0.05, "status_path": STATUS_PATH},
     )
 
 
 @dataclass
-class ReachForkBigTask(Task):
+class ReachPitcherTask(Task):
     contact_object_list = ["table", "bowl", "banana", "bagel_07", "coffee_can", "banana_01", "yogurt_cup", "coffee_pot", "ceramic_mug", "pitcher", "fork_big", "spoon_big", "apple_01", "orange2", "milk_carton", "orange_juice_carton", "bagel_01", "bagel_02", "plate_small", "plate_large"]
     scene = import_scene("breakfast_table.usda", contact_object_list)
-    terminations = ReachForkBigTerminations
+    terminations = ReachPitcherTerminations
     instruction = {
-        "default": "ReachFork",
-        "vague": "Reach the fork",
-        "specific": "Move the robot gripper to a position just above the fork without grasping it",
+        "default": "ReachPitcher",
+        "vague": "Reach the pitcher",
+        "specific": "Move the robot gripper to a position just above the pitcher without grasping it",
     }
     episode_steps: int = 100
     attributes = ["reach", "goal"]
     goal = {
         "mode": "reach",
-        "object": "fork_big",
-        "z_offset": 0.15,
+        "object": "pitcher",
+        "z_offset": 0.17,
         "drive_steps": 50,
         "settle_steps": 4,
         "external_camera": "over_shoulder_right_camera",
@@ -51,10 +51,10 @@ class ReachForkBigTask(Task):
     }
     subtasks = [
         Subtask(
-            name="reach_above_fork",
+            name="reach_above_pitcher",
             conditions={
-                "fork_big": [
-                    (partial(reach_object, object="fork_big", tolerance=0.05, status_path=STATUS_PATH), 1.0)
+                "pitcher": [
+                    (partial(reach_object, object="pitcher", tolerance=0.05, status_path=STATUS_PATH), 1.0)
                 ]
             },
             logical="all",
