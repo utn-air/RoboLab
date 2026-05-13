@@ -35,23 +35,21 @@ class AngledReachShelfForkTask(Task):
         "table",
         "sm_rack_m01",
         "spatula_05",
+        "spatula_14",
         "spoon_big",
         "spoon_small",
         "fork_big",
         "fork_small",
-        "milkjug_a01",
-        "blackandbrassbowl_large",
-        "gardenplanter_large",
     ]
-    scene = import_scene("front_of_shelf.usda", contact_object_list)
+    scene = import_scene("cutlery_shelf.usda", contact_object_list)
     terminations = AngledReachShelfForkTerminations
     instruction = {
         "default": "AngledReachShelfFork",
-        "vague": "Reach the fork on the second shelf with pitched approach",
-        "specific": "Move the robot gripper to the fork on the second shelf facing the handle without grasping it",
+        "vague": "Reach the fork on the upper shelf with a pitched approach",
+        "specific": "Move the robot gripper toward the fork on the upper shelf with the wrist pitched down into the shelf opening, facing the handle without grasping it",
     }
     episode_steps: int = 50
-    attributes = ["angled_reach", "goal"]
+    attributes = ["angled_reach", "dominant_pitch", "goal"]
     goal = {
         "mode": "angled_reach",
         "object": "fork_big",

@@ -37,7 +37,7 @@ parser.add_argument("--num_envs",
 parser.add_argument(
     "--task-file",
     type=str,
-    default="robolab/tasks/wm_tasks/angledreach/angledreach_redhammer_task.py",
+    default="robolab/tasks/wm_tasks/angledreach/angledreach_drill_task.py",
     help="Task file to open for manual goal capture.",
 )
 parser.add_argument(

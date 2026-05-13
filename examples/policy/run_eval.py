@@ -132,6 +132,7 @@ robolab.constants.DEBUG = args_cli.enable_debug
 
 if args_cli.policy == "valp":
     from robolab.registrations.droid_ee.auto_env_registrations import auto_register_droid_ee_envs  # noqa
+    # from robolab.registrations.droid_ee.auto_env_registrations_angled import auto_register_droid_ee_envs 
     auto_register_droid_ee_envs(task_dirs=args_cli.task_dirs, task=args_cli.task)
 else:
     # Run automatic factory generation before main

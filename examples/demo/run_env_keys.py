@@ -4,136 +4,217 @@
 # SPDX-License-Identifier: BSD-3-Clause
 
 """
-Demo for running a generated environment configuration.
+Keyboard-driven manual goal capture for a generated DROID environment.
 
-This script demonstrates how to create an environment from a task file
-and run episodes with gripper toggling or policy control.
+This applies small relative end-effector jog commands from stdin and overwrites
+the cached goal files after each command:
+
+    assets/wm_tasks/<TaskName>/over_shoulder_right_camera.png
+    assets/wm_tasks/<TaskName>/wrist_cam.png
+    assets/wm_tasks/<TaskName>/status.json
 
 Usage:
-    $ python run_env.py
+    $ python examples/demo/run_env_keys.py --headless
 
-    Run headless:
-    $ python run_env.py --headless
+    Capture a different angled task:
+    $ python examples/demo/run_env_keys.py --headless --task AngledReachShelfForkTask
+
+Press Ctrl+C or q when the saved pose/images look good.
 """
 
-import os
 import argparse
+import json
 
 import cv2  # Must import this before isaaclab. Do not remove
 from isaaclab.app import AppLauncher
 
 DEFAULT_KIT_ARGS = "--/app/livestream/publicEndpointAddress=172.29.5.11  --/app/livestream/port=49100"
-DEFAULT_VIEWER_EYE = (0.05, 0.57, 0.66)
-DEFAULT_VIEWER_LOOKAT = (0.55, 0.19, 0.17)
 
-# add argparse arguments
-parser = argparse.ArgumentParser(description="Demo on using the mimic joints for Robotiq 140 gripper.")
-parser.add_argument("--num_envs", 
-                    type=int, 
-                    default=1, 
-                    help="Number of environments to spawn.")
+parser = argparse.ArgumentParser(description="Keyboard EE jogger for manual DROID goal capture.")
+parser.add_argument(
+    "--num_envs",
+    type=int,
+    default=1,
+    help="Number of environments to spawn.",
+)
+parser.add_argument(
+    "--task",
+    type=str,
+    default="AngledReachDrillTask",
+    help="Registered angled task to open.",
+)
+parser.add_argument(
+    "--task-dirs",
+    nargs="+",
+    default=["wm_tasks/angledreach"],
+    help="Task folders passed to the angled EE registrar.",
+)
+parser.add_argument(
+    "--pos-step",
+    type=float,
+    default=0.015,
+    help="Translation jog size in meters before the IK action scale is applied.",
+)
+parser.add_argument(
+    "--rot-step",
+    type=float,
+    default=0.08,
+    help="Rotation jog size in radians before the IK action scale is applied.",
+)
+parser.add_argument(
+    "--settle-steps",
+    type=int,
+    default=1,
+    help="Zero-action steps after each key command before saving images.",
+)
+parser.add_argument(
+    "--force-livestream",
+    action="store_true",
+    help="Force WebRTC livestream mode in addition to terminal control.",
+)
 
-# append AppLauncher cli args
 AppLauncher.add_app_launcher_args(parser)
-
-# parse the arguments
 args_cli = parser.parse_args()
 
-# isaac webRTC live streaming settings
-args_cli.livestream = 2
-args_cli.kit_args = DEFAULT_KIT_ARGS
+if args_cli.force_livestream:
+    args_cli.livestream = 2
+    args_cli.kit_args = DEFAULT_KIT_ARGS
 
-# enable cameras and video saving
 args_cli.enable_cameras = True
 args_cli.activate_contact_sensors = True
-args_cli.save_videos = True
+args_cli.save_videos = False
 
-# launch omniverse app
 app_launcher = AppLauncher(args_cli)
 simulation_app = app_launcher.app
 
-import tyro
-from episodes import run_empty_episode, run_gripper_toggle_episode, run_prerecorded_episode
+import torch
 
-from robolab.constants import DEFAULT_OUTPUT_DIR, PACKAGE_DIR, TASK_DIR, get_timestamp
-from robolab.core.environments.config import generate_env_cfg_from_task  # noqa
 from robolab.core.environments.runtime import create_env  # noqa
-from robolab.core.observations.observation_utils import generate_image_obs_from_cameras, generate_obs_cfg  # noqa
-from robolab.robots.droid import (  # noqa
-    DroidCfg,
-    DroidIKActionCfg,
-    ProprioceptionObservationCfg,
-    WristCameraCfg,
-    contact_gripper,
-)
-from robolab.variations.backgrounds import HomeOfficeBackgroundCfg
-from robolab.registrations.droid_jointpos.camera_presets import WRIST_RIGHT
-# from robolab.variations.lighting import SphereLightCfg  # noqa
+from robolab.core.world.world_state import get_world
+from robolab.tasks.wm_tasks.goal_images import _save_rgb_image, goal_image_paths
+
+
+SIMPLE_HELP = """
+Type one key, then Enter.
+  w/s: +x/-x    a/d: +y/-y    r/f: +z/-z
+  i/k: roll     j/l: pitch    u/o: yaw
+  .: save       x: reset      q: quit
+"""
+
+
+def _simple_zero_action(env):
+    return torch.zeros(env.num_envs, 7, dtype=torch.float32, device=env.device)
+
+
+def _simple_action(env, key: str):
+    action = _simple_zero_action(env)
+    commands = {
+        "w": (0, args_cli.pos_step),
+        "s": (0, -args_cli.pos_step),
+        "a": (1, args_cli.pos_step),
+        "d": (1, -args_cli.pos_step),
+        "r": (2, args_cli.pos_step),
+        "f": (2, -args_cli.pos_step),
+        "i": (3, args_cli.rot_step),
+        "k": (3, -args_cli.rot_step),
+        "j": (4, args_cli.rot_step),
+        "l": (4, -args_cli.rot_step),
+        "u": (5, args_cli.rot_step),
+        "o": (5, -args_cli.rot_step),
+    }
+    if key not in commands:
+        return None
+    idx, value = commands[key]
+    action[:, idx] = value
+    return action
+
+
+def _simple_save(env, env_cfg, obs, label: str):
+    paths = goal_image_paths(env_cfg)
+    external_key = env_cfg.goal.get("external_camera", "over_shoulder_right_camera")
+    wrist_key = env_cfg.goal.get("wrist_camera", "wrist_cam")
+    image_obs = obs["image_obs"]
+
+    _save_rgb_image(image_obs[external_key][0], paths["external"])
+    _save_rgb_image(image_obs[wrist_key][0], paths["wrist"])
+
+    link_name = env_cfg.goal.get("link_name", "panda_link8")
+    ee_pose = get_world(env).get_articulation_link_pose("robot", link_name, env_id=None)[0]
+    ee_pose = [float(x) for x in ee_pose.detach().cpu().tolist()]
+    with paths["status"].open("w", encoding="utf-8") as handle:
+        json.dump(
+            {
+                "reached": True,
+                "manual_capture": True,
+                "last_distance": 0.0,
+                "last_ee_pose": ee_pose,
+            },
+            handle,
+            indent=2,
+        )
+    print(f"saved {label}: {paths['status'].parent}", flush=True)
+    return obs
 
 
 def main():
-    """Main function."""
+    from robolab.core.environments.factory import get_envs
+    from robolab.registrations.droid_ee.auto_env_registrations_angled import auto_register_droid_ee_envs
 
-    num_episodes = 2
     env = None
-
-    ImageObsCfg = generate_image_obs_from_cameras(WRIST_RIGHT)
-    # WristCameraCfg is already mounted in DroidCfg; keep it in observations
-    # but exclude it from scene camera mixins to preserve spawn ordering.
-    scene_cameras = [c for c in WRIST_RIGHT if c is not WristCameraCfg]
-    ObservationCfg = generate_obs_cfg({
-        "image_obs": ImageObsCfg(),
-        "proprio_obs": ProprioceptionObservationCfg(),
-        "viewport_cam": ImageObsCfg()
-    })
-
-    # # Setup environment
-    EnvCfg, _ = generate_env_cfg_from_task(
-        task_file_path=f"{TASK_DIR}/wm_tasks/angledreach/angledreach_redhammer_task.py",
-        env_name="DroidAngledReachCanHandleEnv",
-        robot_cfg=DroidCfg,
-        camera_cfg=scene_cameras,
-        # lighting_cfg=SphereLightCfg,
-        background_cfg=HomeOfficeBackgroundCfg,
-        contact_gripper=contact_gripper,
-        actions_cfg=DroidIKActionCfg(),
-        observations_cfg=ObservationCfg(),
-        dt=1 / (60 * 2),
-        render_interval=8,
-        decimation=8,
-        eye=DEFAULT_VIEWER_EYE,
-        lookat=DEFAULT_VIEWER_LOOKAT,
-        env_spacing=2.0,
-        num_envs=1,
-        seed=0,
-    )
-
-    env_cfg = EnvCfg()
-    env_cfg.sim.device = args_cli.device
-    print(f"Generated environment config")
-
-    # Livestream mode runs without a local desktop window.
-    effective_headless = bool(args_cli.headless) or bool(args_cli.livestream)
-
     try:
-        env, _ = create_env(scene=env_cfg,
-                         device=args_cli.device,
-                         num_envs=args_cli.num_envs,
-                         use_fabric=True)
-        print("create_env returned", flush=True)
+        auto_register_droid_ee_envs(task_dirs=args_cli.task_dirs, task=args_cli.task)
+        task_envs = get_envs(task=args_cli.task)
+        if not task_envs:
+            raise RuntimeError(f"No registered env found for task {args_cli.task!r}")
 
-        while simulation_app.is_running():
-            simulation_app.update()
+        env, env_cfg = create_env(
+            task_envs[0],
+            device=args_cli.device,
+            num_envs=args_cli.num_envs,
+            use_fabric=True,
+            policy="valp",
+        )
+        obs, _ = env.reset()
+        obs, _, _, _, _ = env.step(_simple_zero_action(env))
+        print(SIMPLE_HELP, flush=True)
+        _simple_save(env, env_cfg, obs, "initial")
+
+        while True:
+            key = input("key> ").strip().lower()
+            if not key:
+                continue
+            key = key[0]
+            if key == "q":
+                break
+            if key == "h":
+                print(SIMPLE_HELP, flush=True)
+                continue
+            if key == "x":
+                obs, _ = env.reset()
+                obs, _, _, _, _ = env.step(_simple_zero_action(env))
+                _simple_save(env, env_cfg, obs, "reset")
+                continue
+            if key == ".":
+                _simple_save(env, env_cfg, obs, "current")
+                continue
+
+            action = _simple_action(env, key)
+            if action is None:
+                print("unknown key; type h for help", flush=True)
+                continue
+
+            obs, _, _, _, _ = env.step(action)
+            for _ in range(max(0, args_cli.settle_steps)):
+                obs, _, _, _, _ = env.step(_simple_zero_action(env))
+            _simple_save(env, env_cfg, obs, key)
 
     except KeyboardInterrupt:
-        print("Ctrl+C received. Closing environment.")
-
+        print("\nCtrl+C received. Closing environment.", flush=True)
     finally:
         if env is not None:
             env.close()
         simulation_app.close()
-    return
+
 
 if __name__ == "__main__":
     main()
-    # args = tyro.cli(main)

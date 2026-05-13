@@ -33,20 +33,24 @@ class AngledReachKetchupTerminations:
 class AngledReachKetchupTask(Task):
     contact_object_list = [
         "table",
-        "sm_rack_m01",
-        "rack_l04",
+        "alphabet_soup_can",
+        "milk_carton",
+        "orange_juice_carton",
+        "smartphone",
+        "mug",
+        "mayonnaise_bottle",
         "ketchup_bottle",
-        "mustard",
+        "cubebox_a02",
     ]
-    scene = import_scene("shelf2_with_condiments.usda", contact_object_list)
+    scene = import_scene("cartons_on_box.usda", contact_object_list)
     terminations = AngledReachKetchupTerminations
     instruction = {
         "default": "AngledReachKetchup",
-        "vague": "Reach the ketchup bottle from the side",
-        "specific": "Move the robot gripper to a position next to the ketchup facing the bottle without grasping it",
+        "vague": "Reach the ketchup bottle in the center of the packing table with a yawed approach",
+        "specific": "Move the robot gripper to the ketchup bottle near the center of the table, yawed to face the bottle from the side of the surrounding cartons and box, without grasping it",
     }
     episode_steps: int = 50
-    attributes = ["angled_reach", "goal"]
+    attributes = ["angled_reach", "dominant_yaw", "goal"]
     goal = {
         "mode": "angled_reach",
         "object": "ketchup_bottle",
