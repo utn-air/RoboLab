@@ -42,7 +42,7 @@ class AngledReachMilkCartonTask(Task):
         "specific": "Move the robot gripper to the front of the milk carton in the middle of the table with the wrist pitched, without grasping it",
     }
     episode_steps: int = 60
-    attributes = ["angled_reach", "dominant_pitch", "goal"]
+    attributes = ["angled_reach", "dominant_pitch", "-ry", "goal"]
     goal = {
         "mode": "angled_reach",
         "object": "milk_carton",
