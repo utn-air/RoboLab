@@ -36,7 +36,7 @@ class AngledReachDragontailTask(Task):
     contact_object_list = [
         "table",
         "glasses",
-        "dragontail",
+        "lizard_figurine",
         "marker",
         "remote_control",
         "rubiks_cube",
@@ -50,10 +50,10 @@ class AngledReachDragontailTask(Task):
         "specific": "Move the robot gripper to the left edge of the dragontail near the center of the table with the wrist rolled so the fingers align vertically with the thin dragontail side, without grasping it",
     }
     episode_steps: int = 100
-    attributes = ["angled_reach", "dominant_roll", "+rx", "goal"]
+    attributes = ["angled_reach", "dominant_roll", "-rx", "goal"]
     goal = {
         "mode": "angled_reach",
-        "object": "dragontail",
+        "object": "lizard_figurine",
         "external_camera": "over_shoulder_right_camera",
         "wrist_camera": "wrist_cam",
     }
@@ -61,7 +61,7 @@ class AngledReachDragontailTask(Task):
         Subtask(
             name="angled_reach_dragontail",
             conditions={
-                "dragontail": [
+                "lizard_figurine": [
                     (
                         partial(
                             angled_reach_object,
