@@ -50,6 +50,12 @@ class AngledReachShelfForkTask(Task):
     }
     episode_steps: int = 50
     attributes = ["angled_reach", "dominant_yaw_pitch", "+rz-ry", "goal"]
+    goal = {
+    "mode": "angled_reach",
+    "object": "fork_big",
+    "external_camera": "over_shoulder_right_camera",
+    "wrist_camera": "wrist_cam",
+    }
     subtasks = [
         Subtask(
             name="angled_reach_fork_big",

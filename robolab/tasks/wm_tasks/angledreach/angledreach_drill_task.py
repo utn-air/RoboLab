@@ -49,6 +49,12 @@ class AngledReachDrillTask(Task):
     }
     episode_steps: int = 60
     attributes = ["angled_reach", "dominant_yaw", "-rz", "goal"]
+    goal = {
+        "mode": "angled_reach",
+        "object": "cordless_drill",
+        "external_camera": "over_shoulder_right_camera",
+        "wrist_camera": "wrist_cam",
+    }
     subtasks = [
         Subtask(
             name="angled_reach_drill",

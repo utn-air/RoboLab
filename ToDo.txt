@@ -44,7 +44,7 @@ screen -r valp_sweep
 screen -ls
 
 TODO:
-    - take goal images for roll, pitch, grasp, pick, place with interactive key mode
+    - take goal images for grasp, pick, place with interactive key mode
     - subgoals and steps
     - write a script to get numbers for the table
         - speed

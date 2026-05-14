@@ -43,19 +43,24 @@ class AngledReachShelfTask(Task):
     scene = import_scene("cutlery_shelf.usda", contact_object_list)
     terminations = AngledReachShelfTerminations
     instruction = {
-        "default": "AngledReachShelfFork",
+        "default": "AngledReachShelf",
         "vague": "Reach the upper shelf with a rolled approach from right side",
         "specific": "Move the robot gripper toward the right side of the upper shelf with the wrist rolled so the fingers align vertically with the shelf bar, without grasping it",
     }
     episode_steps: int = 50
     attributes = ["angled_reach", "dominant_roll", "-rx", "goal"]
+    goal = {
+    "mode": "angled_reach",
+    "object": "sm_rack_m01",
+    "external_camera": "over_shoulder_right_camera",
+    "wrist_camera": "wrist_cam",
+    }
     subtasks = [
         Subtask(
-            name="angled_reach_fork_big",
+            name="angled_reach_shelf",
             conditions={
-                "fork_big": [
+                "sm_rack_m01": [
                     (partial(angled_reach_object, 
-                            object="fork_big", 
                             pos_tolerance=0.10, 
                             angle_tolerance=0.20, 
                             status_path=STATUS_PATH),
