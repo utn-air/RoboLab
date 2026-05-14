@@ -15,16 +15,18 @@ from robolab.core.task.conditionals import angled_reach_object
 from robolab.core.task.subtask import Subtask
 from robolab.core.task.task import Task
 
-STATUS_PATH = Path(ASSET_DIR) / "wm_tasks" / "AngledReachDrillTask" / "status.json"
+CAPTURED_STATUS_PATH = Path(ASSET_DIR) / "wm_tasks" / "AngledReachMilkCartonRollTask" / "status.json"
+FALLBACK_STATUS_PATH = Path(__file__).with_name("angledreach_milk_carton_roll_status.json")
+STATUS_PATH = CAPTURED_STATUS_PATH if CAPTURED_STATUS_PATH.exists() else FALLBACK_STATUS_PATH
 
 
 @configclass
-class AngledReachDrillTerminations:
+class AngledReachMilkCartonRollTerminations:
     time_out = DoneTerm(func=mdp.time_out, time_out=True)
     success = DoneTerm(
         func=angled_reach_object,
         params={
-            "object": "cordless_drill",
+            "object": "milk_carton",
             "pos_tolerance": 0.10,
             "angle_tolerance": 0.20,
             "status_path": STATUS_PATH,
@@ -33,26 +35,20 @@ class AngledReachDrillTerminations:
 
 
 @dataclass
-class AngledReachDrillTask(Task):
-    contact_object_list = [
-        "table",
-        "cordless_drill",
-        "husky_hammer",
-        "left_bin",
-        "right_bin",
-    ]
-    scene = import_scene("tools_container.usda", contact_object_list)
-    terminations = AngledReachDrillTerminations
+class AngledReachMilkCartonRollTask(Task):
+    contact_object_list = ["table", "milk_carton"]
+    scene = import_scene("milk_carton_center_table.usda", contact_object_list)
+    terminations = AngledReachMilkCartonRollTerminations
     instruction = {
-        "default": "AngledReachDrill",
-        "vague": "Reach the cordless drill near the center of the tool table with a with a yawed wrist",
-        "specific": "Move the robot gripper above the cordless drill near the center of the table with the wrist yawed so the fingers align vertically with the drill handle, without grasping it",
+        "default": "AngledReachMilkCartonRoll",
+        "vague": "Reach the tall carton in the middle of the table from the side with a rolled wrist",
+        "specific": "Move the robot gripper to the side of the milk carton in the middle of the table with the wrist rolled as if preparing to hold the carton from the side, without grasping it",
     }
     episode_steps: int = 60
-    attributes = ["angled_reach", "dominant_yaw", "goal"]
+    attributes = ["angled_reach", "dominant_roll", "goal"]
     goal = {
         "mode": "angled_reach",
-        "object": "cordless_drill",
+        "object": "milk_carton",
         "drive_steps": 30,
         "settle_steps": 4,
         "external_camera": "over_shoulder_right_camera",
@@ -60,13 +56,13 @@ class AngledReachDrillTask(Task):
     }
     subtasks = [
         Subtask(
-            name="angled_reach_drill",
+            name="angled_reach_milk_carton_roll",
             conditions={
-                "cordless_drill": [
+                "milk_carton": [
                     (
                         partial(
                             angled_reach_object,
-                            object="cordless_drill",
+                            object="milk_carton",
                             pos_tolerance=0.10,
                             angle_tolerance=0.20,
                             status_path=STATUS_PATH,

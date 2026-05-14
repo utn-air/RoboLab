@@ -11,7 +11,7 @@ the cached goal files after each command:
 
     assets/wm_tasks/<TaskName>/over_shoulder_right_camera.png
     assets/wm_tasks/<TaskName>/wrist_cam.png
-    assets/wm_tasks/<TaskName>/status.json
+    assets/wm_tasks/<TaskName>/status_draft.json
 
 Usage:
     $ python examples/demo/run_env_keys.py --headless
@@ -52,14 +52,20 @@ parser.add_argument(
 parser.add_argument(
     "--pos-step",
     type=float,
-    default=0.015,
+    default=0.05,
     help="Translation jog size in meters before the IK action scale is applied.",
 )
 parser.add_argument(
     "--rot-step",
     type=float,
-    default=0.08,
-    help="Rotation jog size in radians before the IK action scale is applied.",
+    default=0.25,
+    help="Angle-axis rotation jog size in radians before the IK action scale is applied.",
+)
+parser.add_argument(
+    "--repeat-steps",
+    type=int,
+    default=4,
+    help="Number of env steps to repeat each nonzero key command.",
 )
 parser.add_argument(
     "--settle-steps",
@@ -97,7 +103,7 @@ from robolab.tasks.wm_tasks.goal_images import _save_rgb_image, goal_image_paths
 SIMPLE_HELP = """
 Type one key, then Enter.
   w/s: +x/-x    a/d: +y/-y    r/f: +z/-z
-  i/k: roll     j/l: pitch    u/o: yaw
+  i/k: +rx/-rx  j/l: +ry/-ry  u/o: +rz/-rz  (angle-axis)
   .: save       x: reset      q: quit
 """
 
@@ -129,6 +135,22 @@ def _simple_action(env, key: str):
     return action
 
 
+def _write_status(paths, ee_pose):
+    status_path = paths["status"].with_name("status_draft.json")
+    status_path.parent.mkdir(parents=True, exist_ok=True)
+    with status_path.open("w", encoding="utf-8") as handle:
+        json.dump(
+            {
+                "reached": True,
+                "manual_capture": True,
+                "last_distance": 0.0,
+                "last_ee_pose": ee_pose,
+            },
+            handle,
+            indent=2,
+        )
+
+
 def _simple_save(env, env_cfg, obs, label: str):
     paths = goal_image_paths(env_cfg)
     external_key = env_cfg.goal.get("external_camera", "over_shoulder_right_camera")
@@ -141,17 +163,7 @@ def _simple_save(env, env_cfg, obs, label: str):
     link_name = env_cfg.goal.get("link_name", "panda_link8")
     ee_pose = get_world(env).get_articulation_link_pose("robot", link_name, env_id=None)[0]
     ee_pose = [float(x) for x in ee_pose.detach().cpu().tolist()]
-    with paths["status"].open("w", encoding="utf-8") as handle:
-        json.dump(
-            {
-                "reached": True,
-                "manual_capture": True,
-                "last_distance": 0.0,
-                "last_ee_pose": ee_pose,
-            },
-            handle,
-            indent=2,
-        )
+    _write_status(paths, ee_pose)
     print(f"saved {label}: {paths['status'].parent}", flush=True)
     return obs
 
@@ -203,7 +215,8 @@ def main():
                 print("unknown key; type h for help", flush=True)
                 continue
 
-            obs, _, _, _, _ = env.step(action)
+            for _ in range(max(1, args_cli.repeat_steps)):
+                obs, _, _, _, _ = env.step(action)
             for _ in range(max(0, args_cli.settle_steps)):
                 obs, _, _, _, _ = env.step(_simple_zero_action(env))
             _simple_save(env, env_cfg, obs, key)
