@@ -49,7 +49,7 @@ class AngledReachShelfForkTask(Task):
         "specific": "Move the robot gripper toward the fork on the upper shelf with the wrist pitched down into the shelf opening, facing the handle without grasping it",
     }
     episode_steps: int = 50
-    attributes = ["angled_reach", "dominant_pitch", "goal"]
+    attributes = ["angled_reach", "dominant_yaw_pitch", "+rz-ry", "goal"]
     goal = {
         "mode": "angled_reach",
         "object": "fork_big",

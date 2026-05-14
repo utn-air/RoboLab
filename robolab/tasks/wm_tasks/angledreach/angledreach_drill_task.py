@@ -49,7 +49,7 @@ class AngledReachDrillTask(Task):
         "specific": "Move the robot gripper above the cordless drill near the center of the table with the wrist yawed so the fingers align vertically with the drill handle, without grasping it",
     }
     episode_steps: int = 60
-    attributes = ["angled_reach", "dominant_yaw", "goal"]
+    attributes = ["angled_reach", "dominant_yaw", "-rz", "goal"]
     goal = {
         "mode": "angled_reach",
         "object": "cordless_drill",

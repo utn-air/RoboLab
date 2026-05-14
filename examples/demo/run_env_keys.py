@@ -24,6 +24,7 @@ Press Ctrl+C or q when the saved pose/images look good.
 
 import argparse
 import json
+import re
 
 import cv2  # Must import this before isaaclab. Do not remove
 from isaaclab.app import AppLauncher
@@ -52,25 +53,25 @@ parser.add_argument(
 parser.add_argument(
     "--pos-step",
     type=float,
-    default=0.05,
+    default=0.15,
     help="Translation jog size in meters before the IK action scale is applied.",
 )
 parser.add_argument(
     "--rot-step",
     type=float,
-    default=0.25,
+    default=0.75,
     help="Angle-axis rotation jog size in radians before the IK action scale is applied.",
 )
 parser.add_argument(
     "--repeat-steps",
     type=int,
-    default=4,
+    default=1,
     help="Number of env steps to repeat each nonzero key command.",
 )
 parser.add_argument(
     "--settle-steps",
     type=int,
-    default=1,
+    default=0,
     help="Zero-action steps after each key command before saving images.",
 )
 parser.add_argument(
@@ -100,8 +101,10 @@ from robolab.core.world.world_state import get_world
 from robolab.tasks.wm_tasks.goal_images import _save_rgb_image, goal_image_paths
 
 
+ANSI_ESCAPE_RE = re.compile(r"\x1b\[[0-?]*[ -/]*[@-~]")
+
 SIMPLE_HELP = """
-Type one key, then Enter.
+Type keys, then Enter. Repeated letters repeat the move.
   w/s: +x/-x    a/d: +y/-y    r/f: +z/-z
   i/k: +rx/-rx  j/l: +ry/-ry  u/o: +rz/-rz  (angle-axis)
   .: save       x: reset      q: quit
@@ -133,6 +136,11 @@ def _simple_action(env, key: str):
     idx, value = commands[key]
     action[:, idx] = value
     return action
+
+
+def _clean_keys(keys: str) -> str:
+    keys = ANSI_ESCAPE_RE.sub("", keys)
+    return "".join(key for key in keys.lower() if key in "wsadrfijkluo.xqh")
 
 
 def _write_status(paths, ee_pose):
@@ -192,34 +200,42 @@ def main():
         _simple_save(env, env_cfg, obs, "initial")
 
         while True:
-            key = input("key> ").strip().lower()
-            if not key:
+            keys = _clean_keys(input("key> ").strip())
+            if not keys:
                 continue
-            key = key[0]
-            if key == "q":
+            if "q" in keys:
                 break
-            if key == "h":
+            if "h" in keys:
                 print(SIMPLE_HELP, flush=True)
                 continue
-            if key == "x":
+            if "x" in keys:
                 obs, _ = env.reset()
                 obs, _, _, _, _ = env.step(_simple_zero_action(env))
                 _simple_save(env, env_cfg, obs, "reset")
                 continue
-            if key == ".":
+            if keys == ".":
                 _simple_save(env, env_cfg, obs, "current")
                 continue
 
-            action = _simple_action(env, key)
-            if action is None:
-                print("unknown key; type h for help", flush=True)
-                continue
+            applied = 0
+            for key in keys:
+                if key == ".":
+                    continue
 
-            for _ in range(max(1, args_cli.repeat_steps)):
-                obs, _, _, _, _ = env.step(action)
+                action = _simple_action(env, key)
+                if action is None:
+                    print(f"unknown key {key!r}; skipping", flush=True)
+                    continue
+
+                for _ in range(max(1, args_cli.repeat_steps)):
+                    obs, _, _, _, _ = env.step(action)
+                applied += 1
+
+            if applied == 0:
+                continue
             for _ in range(max(0, args_cli.settle_steps)):
                 obs, _, _, _, _ = env.step(_simple_zero_action(env))
-            _simple_save(env, env_cfg, obs, key)
+            _simple_save(env, env_cfg, obs, keys)
 
     except KeyboardInterrupt:
         print("\nCtrl+C received. Closing environment.", flush=True)

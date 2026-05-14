@@ -50,7 +50,7 @@ class AngledReachKetchupTask(Task):
         "specific": "Move the robot gripper to the ketchup bottle near the center of the table, yawed to face the bottle from the side of the surrounding cartons and box, without grasping it",
     }
     episode_steps: int = 50
-    attributes = ["angled_reach", "dominant_yaw", "goal"]
+    attributes = ["angled_reach", "dominant_yaw", "+rz", "goal"]
     goal = {
         "mode": "angled_reach",
         "object": "ketchup_bottle",
