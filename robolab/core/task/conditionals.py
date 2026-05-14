@@ -114,7 +114,6 @@ def pick_and_place_on_surface(
 @atomic
 def reach_object(
     env,
-    object: str,
     tolerance: float = 0.04,
     link_name: str = "panda_link8",
     status_path: str | Path | None = None,
@@ -175,7 +174,6 @@ def quat_angle_error_wxyz(q_current: torch.Tensor, q_target: torch.Tensor) -> to
 @atomic
 def angled_reach_object(
     env,
-    object: str,
     pos_tolerance: float = 0.04,
     angle_tolerance: float = 0.20,  # radians, ~11.5 degrees
     link_name: str = "panda_link8",

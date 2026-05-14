@@ -54,7 +54,7 @@ class ReachPitcherTask(Task):
             name="reach_above_pitcher",
             conditions={
                 "pitcher": [
-                    (partial(reach_object, object="pitcher", tolerance=0.05, status_path=STATUS_PATH), 1.0)
+                    (partial(reach_object, tolerance=0.05, status_path=STATUS_PATH), 1.0)
                 ]
             },
             logical="all",

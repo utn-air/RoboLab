@@ -24,7 +24,7 @@ class ReachCeramicMugTerminations:
     time_out = DoneTerm(func=mdp.time_out, time_out=True)
     success = DoneTerm(
         func=reach_object,
-        params={"object": "ceramic_mug", "tolerance": 0.05, "status_path": STATUS_PATH},
+        params={"tolerance": 0.05, "status_path": STATUS_PATH},
     )
 
 
@@ -54,7 +54,7 @@ class ReachCeramicMugTask(Task):
             name="reach_above_ceramic_mug",
             conditions={
                 "ceramic_mug": [
-                    (partial(reach_object, object="ceramic_mug", tolerance=0.05, status_path=STATUS_PATH), 1.0)
+                    (partial(reach_object, tolerance=0.05, status_path=STATUS_PATH), 1.0)
                 ]
             },
             logical="all",

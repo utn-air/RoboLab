@@ -44,7 +44,8 @@ screen -r valp_sweep
 screen -ls
 
 TODO:
-    - take goal images for angled reach with ee_pose via interactive sim mode
+    - take goal images for roll, pitch, grasp, pick, place with interactive key mode
+    - subgoals and steps
     - write a script to get numbers for the table
         - speed
         - path length
@@ -52,6 +53,5 @@ TODO:
     - Experiments:
         3. Randomise table textures - 20
         4. Randomise background - 50
-        5. Randomise init gripper position - 4
-    - Grasp, pickup, place substasks 
+        5. Randomise initial gripper positions - 4
     - planning: action std deviation sampling based on loss

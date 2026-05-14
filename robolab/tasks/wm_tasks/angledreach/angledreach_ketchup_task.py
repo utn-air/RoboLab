@@ -22,7 +22,7 @@ class AngledReachKetchupTerminations:
     time_out = DoneTerm(func=mdp.time_out, time_out=True)
     success = DoneTerm(
         func=angled_reach_object,
-        params={"object": "ketchup_bottle", 
+        params={
                 "pos_tolerance": 0.10, 
                 "angle_tolerance": 0.20, 
                 "status_path": STATUS_PATH},
@@ -51,21 +51,12 @@ class AngledReachKetchupTask(Task):
     }
     episode_steps: int = 50
     attributes = ["angled_reach", "dominant_yaw", "+rz", "goal"]
-    goal = {
-        "mode": "angled_reach",
-        "object": "ketchup_bottle",
-        "drive_steps": 30,
-        "settle_steps": 4,
-        "external_camera": "over_shoulder_right_camera",
-        "wrist_camera": "wrist_cam",
-    }
     subtasks = [
         Subtask(
             name="angled_reach_ketchup",
             conditions={
                 "ketchup_bottle": [
                     (partial(angled_reach_object, 
-                            object="ketchup_bottle", 
                             pos_tolerance=0.10, 
                             angle_tolerance=0.20, 
                             status_path=STATUS_PATH),

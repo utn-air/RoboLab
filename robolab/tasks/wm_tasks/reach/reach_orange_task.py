@@ -54,7 +54,7 @@ class ReachOrangeTask(Task):
             name="reach_above_orange",
             conditions={
                 "orange2": [
-                    (partial(reach_object, object="orange2", tolerance=0.05, status_path=STATUS_PATH), 1.0)
+                    (partial(reach_object, tolerance=0.05, status_path=STATUS_PATH), 1.0)
                 ]
             },
             logical="all",

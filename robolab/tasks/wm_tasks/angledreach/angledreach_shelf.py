@@ -15,22 +15,21 @@ from robolab.core.task.conditionals import angled_reach_object
 from robolab.core.task.subtask import Subtask
 from robolab.core.task.task import Task
 
-STATUS_PATH = Path(ASSET_DIR) / "wm_tasks" / "AngledReachShelfForkTask" / "status.json"
+STATUS_PATH = Path(ASSET_DIR) / "wm_tasks" / "AngledReachShelfTask" / "status.json"
 
 @configclass
-class AngledReachShelfForkTerminations:
+class AngledReachShelfTerminations:
     time_out = DoneTerm(func=mdp.time_out, time_out=True)
     success = DoneTerm(
         func=angled_reach_object,
-        params={
-                "pos_tolerance": 0.10, 
+        params={"pos_tolerance": 0.10, 
                 "angle_tolerance": 0.20, 
                 "status_path": STATUS_PATH},
     )
 
 
 @dataclass
-class AngledReachShelfForkTask(Task):
+class AngledReachShelfTask(Task):
     contact_object_list = [
         "table",
         "sm_rack_m01",
@@ -42,20 +41,21 @@ class AngledReachShelfForkTask(Task):
         "fork_small",
     ]
     scene = import_scene("cutlery_shelf.usda", contact_object_list)
-    terminations = AngledReachShelfForkTerminations
+    terminations = AngledReachShelfTerminations
     instruction = {
         "default": "AngledReachShelfFork",
-        "vague": "Reach the fork on the upper shelf with a pitched approach",
-        "specific": "Move the robot gripper toward the fork on the upper shelf with the wrist pitched down into the shelf opening, facing the handle without grasping it",
+        "vague": "Reach the upper shelf with a rolled approach from right side",
+        "specific": "Move the robot gripper toward the right side of the upper shelf with the wrist rolled so the fingers align vertically with the shelf bar, without grasping it",
     }
     episode_steps: int = 50
-    attributes = ["angled_reach", "dominant_yaw_pitch", "+rz-ry", "goal"]
+    attributes = ["angled_reach", "dominant_roll", "-rx", "goal"]
     subtasks = [
         Subtask(
             name="angled_reach_fork_big",
             conditions={
                 "fork_big": [
                     (partial(angled_reach_object, 
+                            object="fork_big", 
                             pos_tolerance=0.10, 
                             angle_tolerance=0.20, 
                             status_path=STATUS_PATH),
