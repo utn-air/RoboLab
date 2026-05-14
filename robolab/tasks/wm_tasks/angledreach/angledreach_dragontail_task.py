@@ -15,11 +15,11 @@ from robolab.core.task.conditionals import angled_reach_object
 from robolab.core.task.subtask import Subtask
 from robolab.core.task.task import Task
 
-STATUS_PATH = Path(ASSET_DIR) / "wm_tasks" / "AngledReachMilkCartonRollTask" / "status.json"
+STATUS_PATH = Path(ASSET_DIR) / "wm_tasks" / "AngledReachDragontailTask" / "status.json"
 
 
 @configclass
-class AngledReachMilkCartonTerminations:
+class AngledReachDragontailTerminations:
     time_out = DoneTerm(func=mdp.time_out, time_out=True)
     success = DoneTerm(
         func=angled_reach_object,
@@ -32,28 +32,36 @@ class AngledReachMilkCartonTerminations:
 
 
 @dataclass
-class AngledReachMilkCartonTask(Task):
-    contact_object_list = ["table", "milk_carton"]
-    scene = import_scene("milk_carton_center_table.usda", contact_object_list)
-    terminations = AngledReachMilkCartonTerminations
+class AngledReachDragontailTask(Task):
+    contact_object_list = [
+        "table",
+        "glasses",
+        "dragontail",
+        "marker",
+        "remote_control",
+        "rubiks_cube",
+        "smartphone",
+    ]
+    scene = import_scene("workdesk.usda", contact_object_list)
+    terminations = AngledReachDragontailTerminations
     instruction = {
-        "default": "AngledReachMilkCarton",
-        "vague": "Reach the tall carton in the middle of the table from the front face with a pitched wrist",
-        "specific": "Move the robot gripper to the front of the milk carton in the middle of the table with the wrist pitched, without grasping it",
+        "default": "AngledReachDragontail",
+        "vague": "Reach the left edge of the dragontail with a rolled wrist",
+        "specific": "Move the robot gripper to the left edge of the dragontail near the center of the table with the wrist rolled so the fingers align vertically with the thin dragontail side, without grasping it",
     }
     episode_steps: int = 100
-    attributes = ["angled_reach", "dominant_pitch", "-ry", "goal"]
+    attributes = ["angled_reach", "dominant_roll", "+rx", "goal"]
     goal = {
         "mode": "angled_reach",
-        "object": "milk_carton",
+        "object": "dragontail",
         "external_camera": "over_shoulder_right_camera",
         "wrist_camera": "wrist_cam",
     }
     subtasks = [
         Subtask(
-            name="angled_reach_milk_carton",
+            name="angled_reach_dragontail",
             conditions={
-                "milk_carton": [
+                "dragontail": [
                     (
                         partial(
                             angled_reach_object,
