@@ -48,12 +48,12 @@ class AngledReachShelfTask(Task):
         "specific": "Move the robot gripper toward the right side of the upper shelf with the wrist rolled so the fingers align vertically with the shelf bar, without grasping it",
     }
     episode_steps: int = 50
-    attributes = ["angled_reach", "dominant_roll", "-rx", "goal"]
+    attributes = ["angled_reach", "dominant_roll", "+rx", "goal"]
     goal = {
-    "mode": "angled_reach",
-    "object": "sm_rack_m01",
-    "external_camera": "over_shoulder_right_camera",
-    "wrist_camera": "wrist_cam",
+        "mode": "angled_reach",
+        "object": "sm_rack_m01",
+        "external_camera": "over_shoulder_right_camera",
+        "wrist_camera": "wrist_cam",
     }
     subtasks = [
         Subtask(
