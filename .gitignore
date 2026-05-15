@@ -35,5 +35,12 @@ ${data}/*
 checkpoints/*
 valp/
 logs/
-assets/
 droid/
+
+assets/backgrounds/*
+assets/fixtures/*
+assets/materials/*
+assets/objects/*
+assets/robots/*
+assets/scenes/*
+assets/cameras.usda
