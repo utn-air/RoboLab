@@ -12,11 +12,11 @@ import h5py
 import json 
 
 
-zip_path = "/workspace/robolab/output/dual_dinov3.zip"
+zip_path = "/workspace/robolab/output/ind_dinov3.zip"
 
 zip_path = Path(zip_path)
 
-current_task = [
+simple_tasks = [
 				"ReachAppleTask",
 				"ReachBagelTask",
 				"ReachBananaTask",
@@ -25,12 +25,45 @@ current_task = [
 				"ReachOrangeJuiceCartonTask",
 				"ReachOrangeTask",
 				"ReachYogurtCupTask",
-				# "ReachCoffeeCanTask",
-				# "ReachPitcherTask",
-				# "ReachSpoonBigTask"
 				]
+edge_tasks = [	
+			"ReachCoffeeCanTask",
+			"ReachPitcherTask",
+			"ReachSpoonBigTask"
+			]
 
 with zipfile.ZipFile(zip_path, "r") as zip_file:
+	tasks_statistics = {task: {
+								"total_runs": 0,
+								"steps": [], 
+								"steps_mean": 0, 
+								"steps_std": 0, 
+								"goal_distances": [],
+								"goal_distances_mean": 0,
+								"goal_distances_std": 0,
+								"path_length": [],
+								"path_length_mean": 0,
+								"path_length_std": 0,
+								"successful_runs": 0,
+								"success_rate": 0,
+								} for task in simple_tasks}
+	# update tasks_statistics with edge_tasks
+	for task in edge_tasks:
+		tasks_statistics[task] = {
+								"total_runs": 0,
+								"steps": [], 
+								"steps_mean": 0, 
+								"steps_std": 0, 
+								"goal_distances": [],
+								"goal_distances_mean": 0,
+								"goal_distances_std": 0,
+								"path_length": [],
+								"path_length_mean": 0,
+								"path_length_std": 0,
+								"successful_runs": 0,
+								"success_rate": 0,
+								}
+
 	for item in zip_file.infolist():
 		# print(f"Inspecting: {item.filename}")
 
@@ -43,7 +76,7 @@ with zipfile.ZipFile(zip_path, "r") as zip_file:
 			split_filename = item.filename.split("/")
 			filename = split_filename[-1]
 			
-			if split_filename[1] in current_task and filename.startswith("run_"):
+			if (split_filename[1] in simple_tasks or split_filename[1] in edge_tasks) and filename.startswith("run_"):
 				# print(f"File: {item.filename}")
 
 				# read "/assets/wm_tasks/{split_filename[1]}/status.json" to get goal position
@@ -55,21 +88,68 @@ with zipfile.ZipFile(zip_path, "r") as zip_file:
 				with zip_file.open(item) as file:
 					with h5py.File(file, "r") as hdf5_file:
 						# print(f"{hdf5_file['data']['demo_0'].keys()}")
+
+						tasks_statistics[split_filename[1]]["total_runs"] += 1
+
 						position = hdf5_file['data']['demo_0']['ee_pose']['position']
 						orientation = hdf5_file['data']['demo_0']['ee_pose']['orientation']
 
-						# calculate number of steps in the run
+						path_length = 0
+						successful_run = False
 						for i in range(position.shape[0]):
 							current_position = position[i]
 							distance = ((current_position[0] - goal_posiiton[0]) **2 + (current_position[1] - goal_posiiton[1]) ** 2 + (current_position[2] - goal_posiiton[2]) ** 2) ** 0.5
-							if distance < 0.05 
-								print(f"file {item.filename}: reached goal at step {i}, distance: {distance}")
-								break
+
+							# path length
+							if i > 0:
+								prev_position = position[i-1]
+								path_length += ((current_position[0] - prev_position[0]) **2 + (current_position[1] - prev_position[1]) ** 2 + (current_position[2] - prev_position[2]) ** 2) ** 0.5
+
+							if split_filename[1] in simple_tasks:
+								if distance < 0.05:
+									successful_run = True
+									tasks_statistics[split_filename[1]]["steps"].append(i)
+									tasks_statistics[split_filename[1]]["goal_distances"].append(distance)
+									tasks_statistics[split_filename[1]]["path_length"].append(path_length)
+									tasks_statistics[split_filename[1]]["successful_runs"] += 1
+									print(f"file {item.filename}: reached goal at step {i}, distance: {distance}")
+
+									break
+
+							elif split_filename[1] in edge_tasks:
+								if distance < 0.1:
+									successful_run = True
+									tasks_statistics[split_filename[1]]["steps"].append(i)
+									tasks_statistics[split_filename[1]]["goal_distances"].append(distance)
+									tasks_statistics[split_filename[1]]["path_length"].append(path_length)
+									tasks_statistics[split_filename[1]]["successful_runs"] += 1
+									print(f"file {item.filename}: reached goal at step {i}, distance: {distance}")
+									break
+
+						if not successful_run:
+							tasks_statistics[split_filename[1]]["steps"].append(position.shape[0])
+							tasks_statistics[split_filename[1]]["goal_distances"].append(distance)
+							tasks_statistics[split_filename[1]]["path_length"].append(path_length)
+							print(f"file {item.filename}: did not reach goal, final distance: {distance}")	
 
 					# # compute distance to the goal from the last position in the run
 					# distance = ((position[-1][0] - goal_posiiton[0]) **2 + (position[-1][1] - goal_posiiton[1]) ** 2 + (position[-1][2] - goal_posiiton[2]) ** 2) ** 0.5
 					# print(f"file {item.filename}: distance to goal: {distance}")
 
+	# compute success rate and mean, std of steps and goal distances for each task
+	for task in tasks_statistics:
+
+		tasks_statistics[task]["steps_mean"] = sum(tasks_statistics[task]["steps"]) / len(tasks_statistics[task]["steps"])
+		tasks_statistics[task]["steps_std"] = (sum([(x - tasks_statistics[task]["steps_mean"]) ** 2 for x in tasks_statistics[task]["steps"]]) / (len(tasks_statistics[task]["steps"]) - 1)) ** 0.5
+
+		tasks_statistics[task]["goal_distances_mean"] = sum(tasks_statistics[task]["goal_distances"]) / len(tasks_statistics[task]["goal_distances"])
+		tasks_statistics[task]["goal_distances_std"] = (sum([(x - tasks_statistics[task]["goal_distances_mean"]) ** 2 for x in tasks_statistics[task]["goal_distances"]]) / (len(tasks_statistics[task]["goal_distances"]) - 1)) ** 0.5
+
+		tasks_statistics[task]["path_length_mean"] = sum(tasks_statistics[task]["path_length"]) / len(tasks_statistics[task]["path_length"])
+		tasks_statistics[task]["path_length_std"] = (sum([(x - tasks_statistics[task]["path_length_mean"]) ** 2 for x in tasks_statistics[task]["path_length"]]) / (len(tasks_statistics[task]["path_length"]) - 1)) ** 0.5
+		
+		tasks_statistics[task]["success_rate"] = tasks_statistics[task]["successful_runs"] / tasks_statistics[task]["total_runs"]
+		print(f"Task: {task}, Total Runs: {tasks_statistics[task]['total_runs']}, Success Rate: {tasks_statistics[task]['success_rate']:.2f}, Steps Mean: {tasks_statistics[task]['steps_mean']:.2f}, Steps Std: {tasks_statistics[task]['steps_std']:.2f}, Goal Distances Mean: {tasks_statistics[task]['goal_distances_mean']:.4f}, Goal Distances Std: {tasks_statistics[task]['goal_distances_std']:.4f}")
 
 
 
