@@ -97,7 +97,7 @@ with zipfile.ZipFile(zip_path, "r") as zip_file:
 						path_length = 0
 						successful_run = False
 						for i in range(position.shape[0]):
-							current_position = position[i]
+							current_position = position[i, :]
 							distance = ((current_position[0] - goal_posiiton[0]) **2 + (current_position[1] - goal_posiiton[1]) ** 2 + (current_position[2] - goal_posiiton[2]) ** 2) ** 0.5
 
 							# path length
@@ -106,7 +106,7 @@ with zipfile.ZipFile(zip_path, "r") as zip_file:
 								path_length += ((current_position[0] - prev_position[0]) **2 + (current_position[1] - prev_position[1]) ** 2 + (current_position[2] - prev_position[2]) ** 2) ** 0.5
 
 							if split_filename[1] in simple_tasks:
-								if distance < 0.05:
+								if distance <= 0.05:
 									successful_run = True
 									tasks_statistics[split_filename[1]]["steps"].append(i)
 									tasks_statistics[split_filename[1]]["goal_distances"].append(distance)
@@ -117,7 +117,7 @@ with zipfile.ZipFile(zip_path, "r") as zip_file:
 									break
 
 							elif split_filename[1] in edge_tasks:
-								if distance < 0.1:
+								if distance <= 0.1:
 									successful_run = True
 									tasks_statistics[split_filename[1]]["steps"].append(i)
 									tasks_statistics[split_filename[1]]["goal_distances"].append(distance)
@@ -126,15 +126,16 @@ with zipfile.ZipFile(zip_path, "r") as zip_file:
 									print(f"file {item.filename}: reached goal at step {i}, distance: {distance}")
 									break
 
+
+						# compute distance to the goal from the last position in the run
+						# print(f"file {item.filename}: distance to goal: {distance}")
 						if not successful_run:
+							last_position = position[-1]
+							distance = ((last_position[0] - goal_posiiton[0]) **2 + (last_position[1] - goal_posiiton[1]) ** 2 + (last_position[2] - goal_posiiton[2]) ** 2) ** 0.5
 							tasks_statistics[split_filename[1]]["steps"].append(position.shape[0])
 							tasks_statistics[split_filename[1]]["goal_distances"].append(distance)
 							tasks_statistics[split_filename[1]]["path_length"].append(path_length)
 							print(f"file {item.filename}: did not reach goal, final distance: {distance}")	
-
-					# # compute distance to the goal from the last position in the run
-					# distance = ((position[-1][0] - goal_posiiton[0]) **2 + (position[-1][1] - goal_posiiton[1]) ** 2 + (position[-1][2] - goal_posiiton[2]) ** 2) ** 0.5
-					# print(f"file {item.filename}: distance to goal: {distance}")
 
 	# compute success rate and mean, std of steps and goal distances for each task
 	for task in tasks_statistics:
@@ -149,7 +150,16 @@ with zipfile.ZipFile(zip_path, "r") as zip_file:
 		tasks_statistics[task]["path_length_std"] = (sum([(x - tasks_statistics[task]["path_length_mean"]) ** 2 for x in tasks_statistics[task]["path_length"]]) / (len(tasks_statistics[task]["path_length"]) - 1)) ** 0.5
 		
 		tasks_statistics[task]["success_rate"] = tasks_statistics[task]["successful_runs"] / tasks_statistics[task]["total_runs"]
-		print(f"Task: {task}, Total Runs: {tasks_statistics[task]['total_runs']}, Success Rate: {tasks_statistics[task]['success_rate']:.2f}, Steps Mean: {tasks_statistics[task]['steps_mean']:.2f}, Steps Std: {tasks_statistics[task]['steps_std']:.2f}, Goal Distances Mean: {tasks_statistics[task]['goal_distances_mean']:.4f}, Goal Distances Std: {tasks_statistics[task]['goal_distances_std']:.4f}")
+	print(f"Task: {task}, Total Runs: {tasks_statistics[task]['total_runs']}," \
+			f"Success Rate: {tasks_statistics[task]['success_rate']:.2f}, "\
+			f"Steps Mean: {tasks_statistics[task]['steps_mean']:.2f}, "\
+			f"Steps Std: {tasks_statistics[task]['steps_std']:.2f}, "\
+			f"Path Length Mean: {tasks_statistics[task]['path_length_mean']:.4f}, "\
+			f"Path Length Std: {tasks_statistics[task]['path_length_std']:.4f}, "\
+			f"Goal Distances Mean: {tasks_statistics[task]['goal_distances_mean']:.4f}, "\
+			f"Goal Distances Std: {tasks_statistics[task]['goal_distances_std']:.4f}")
+
+	print(f"total success rate: {sum([tasks_statistics[task]['successful_runs'] for task in tasks_statistics]) / sum([tasks_statistics[task]['total_runs'] for task in tasks_statistics]):.2f}")
 
 
 
