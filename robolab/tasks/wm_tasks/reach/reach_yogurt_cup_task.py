@@ -24,7 +24,7 @@ class ReachYogurtCupTerminations:
     time_out = DoneTerm(func=mdp.time_out, time_out=True)
     success = DoneTerm(
         func=reach_object,
-        params={"object": "yogurt_cup", "tolerance": 0.05, "status_path": STATUS_PATH},
+        params={"tolerance": 0.05, "status_path": STATUS_PATH},
     )
 
 
