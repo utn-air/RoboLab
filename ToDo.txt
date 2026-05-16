@@ -41,14 +41,13 @@ chown -R 10175:101010 /workspace/robolab/output && chmod -R u+rw /workspace/robo
 
 
 TODO:
-    - fix recording issue
+    - fix recording issue before angled reach
     - write a script to get numbers for the reach table
         - success
-        - inf speed
         - path length
         - number of steps
+        - inf time and speed
     - take goal images for grasp, pick, place with interactive key mode
-    - subgoals and steps
     - planning: action std deviation sampling based on loss
     - Experiments:
         3. Randomise table textures - 20

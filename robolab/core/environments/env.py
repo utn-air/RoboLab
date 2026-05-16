@@ -91,6 +91,8 @@ class RobolabEnv(ManagerBasedRLEnv):
                 if self.recorder_manager is not None:
                     try:
                         self.recorder_manager.export_episodes(env_ids=[eid])
+                        # if hasattr(self.recorder_manager, "clear"):
+                        #     self.recorder_manager.clear(env_ids=[eid])
                     except Exception:
                         logger.exception(
                             "Failed to export recording for env_id=%d at step=%d; episode data may be incomplete.",
