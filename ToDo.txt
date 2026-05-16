@@ -44,9 +44,10 @@ screen -r valp_sweep
 screen -ls
 
 TODO:
+    - fix recording issue
     - write a script to get numbers for the reach table
         - success
-        - speed
+        - inf speed
         - path length
         - number of steps
     - take goal images for grasp, pick, place with interactive key mode
