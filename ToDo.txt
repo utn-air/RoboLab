@@ -56,3 +56,8 @@ TODO:
         3. Randomise table textures - 20
         4. Randomise background - 50
         5. Randomise initial gripper positions - 4
+
+
+# Bug with reach tasks recording: if success, concatenates run buffer to the next run. If run fail, next run start fresh
+python scripts/clean_concatenated_hdf5.py output/dual_dinov3.zip --overwrite
+python scripts/clean_concatenated_hdf5.py output/dual_dinov3.zip --overwrite --keep-folder
