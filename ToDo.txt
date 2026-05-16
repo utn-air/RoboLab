@@ -1,11 +1,7 @@
 # Start RoboLab Docker with the VALP image:
 ./docker/run_docker.sh nisarga
 
-RUN ENV:
-python examples/demo/run_env.py --device cuda:1
-
 RUN EVALUATIONS:
-
 # Terminal 1 inside Docker: load VALP once and keep this running:
 /workspace/isaaclab/_isaac_sim/python.sh valp/inference/serve_policy.py \
     --cfg-file droid-224px-8f-dual.yaml \
@@ -28,13 +24,12 @@ HEADLESS=1 VIDEO_MODE=sensor bash examples/policy/run_reach_valp_model_sweep_256
 mkdir -p output && HEADLESS=1 VIDEO_MODE=sensor bash examples/policy/run_reach_valp_model_sweep_224_5x.sh > output/sweep_224.log 2>&1
 mkdir -p output && HEADLESS=1 VIDEO_MODE=sensor bash examples/policy/run_reach_valp_model_sweep_256_5x.sh > output/sweep_256.log 2>&1
 
-
+HEADLESS=1 VIDEO_MODE=sensor bash examples/policy/run_angledreach_valp_model_sweep_224_5x.sh
+HEADLESS=1 VIDEO_MODE=sensor bash examples/policy/run_angledreach_valp_model_sweep_256_5x.sh
+mkdir -p output && HEADLESS=1 VIDEO_MODE=sensor bash examples/policy/run_angledreach_valp_model_sweep_224_5x.sh > output/sweep_224.log 2>&1
+mkdir -p output && HEADLESS=1 VIDEO_MODE=sensor bash examples/policy/run_angledreach_valp_model_sweep_256_5x.sh > output/sweep_256.log 2>&1
 
 python examples/demo/run_env_keys.py --headless --task AngledReachShelfForkTask
-
-
-
-chown -R 10175:101010 /workspace/robolab/output && chmod -R u+rw /workspace/robolab/output
 
 # more handy commands
 pkill -f "valp/inference/serve_policy.py"
@@ -42,6 +37,8 @@ screen -S valp_sweep
 Ctrl-a d
 screen -r valp_sweep
 screen -ls
+chown -R 10175:101010 /workspace/robolab/output && chmod -R u+rw /workspace/robolab/output
+
 
 TODO:
     - fix recording issue
