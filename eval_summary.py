@@ -12,7 +12,7 @@ import h5py
 import json 
 
 
-zip_path = "/workspace/robolab/output/ind_dinov3.zip"
+zip_path = "output/cleandata/dual_dinov3_roboarena.zip"
 
 zip_path = Path(zip_path)
 
@@ -150,14 +150,22 @@ with zipfile.ZipFile(zip_path, "r") as zip_file:
 		tasks_statistics[task]["path_length_std"] = (sum([(x - tasks_statistics[task]["path_length_mean"]) ** 2 for x in tasks_statistics[task]["path_length"]]) / (len(tasks_statistics[task]["path_length"]) - 1)) ** 0.5
 		
 		tasks_statistics[task]["success_rate"] = tasks_statistics[task]["successful_runs"] / tasks_statistics[task]["total_runs"]
-	print(f"Task: {task}, Total Runs: {tasks_statistics[task]['total_runs']}," \
-			f"Success Rate: {tasks_statistics[task]['success_rate']:.2f}, "\
-			f"Steps Mean: {tasks_statistics[task]['steps_mean']:.2f}, "\
-			f"Steps Std: {tasks_statistics[task]['steps_std']:.2f}, "\
-			f"Path Length Mean: {tasks_statistics[task]['path_length_mean']:.4f}, "\
-			f"Path Length Std: {tasks_statistics[task]['path_length_std']:.4f}, "\
-			f"Goal Distances Mean: {tasks_statistics[task]['goal_distances_mean']:.4f}, "\
-			f"Goal Distances Std: {tasks_statistics[task]['goal_distances_std']:.4f}")
+
+	print(
+		f"{'Task':<32} {'Runs':>4} {'Succ':>4} {'SR':>6} "
+		f"{'Step Mean':>10} {'Step Std':>9} "
+		f"{'Path Mean':>10} {'Path Std':>9} "
+		f"{'Dist Mean':>10} {'Dist Std':>9}"
+	)
+	print("-" * 122)
+	for task in tasks_statistics:
+		stats = tasks_statistics[task]
+		print(
+			f"{task:<32} {stats['total_runs']:>4} {stats['successful_runs']:>4} {stats['success_rate']:>6.2f} "
+			f"{stats['steps_mean']:>10.2f} {stats['steps_std']:>9.2f} "
+			f"{stats['path_length_mean']:>10.4f} {stats['path_length_std']:>9.4f} "
+			f"{stats['goal_distances_mean']:>10.4f} {stats['goal_distances_std']:>9.4f}"
+		)
 
 	print(f"total success rate: {sum([tasks_statistics[task]['successful_runs'] for task in tasks_statistics]) / sum([tasks_statistics[task]['total_runs'] for task in tasks_statistics]):.2f}")
 

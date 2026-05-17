@@ -56,5 +56,5 @@ TODO:
 
 
 # Bug with reach tasks recording: if success, concatenates run buffer to the next run. If run fail, next run start fresh
-python scripts/clean_concatenated_hdf5.py output/dual_dinov3.zip --overwrite
-python scripts/clean_concatenated_hdf5.py output/dual_dinov3.zip --overwrite --keep-folder
+python clean_concatenated_hdf5.py output/dual_dinov3.zip --overwrite
+python clean_concatenated_hdf5.py output/dual_dinov3.zip --overwrite --keep-folder
