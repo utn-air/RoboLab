@@ -47,7 +47,7 @@ class AngledReachDrillTask(Task):
         "vague": "Reach the cordless drill near the center of the tool table with a with a yawed wrist",
         "specific": "Move the robot gripper above the cordless drill near the center of the table with the wrist yawed so the fingers align vertically with the drill handle, without grasping it",
     }
-    episode_steps: int = 100
+    episode_steps: int = 50
     attributes = ["angled_reach", "dominant_yaw", "-rz", "goal"]
     goal = {
         "mode": "angled_reach",

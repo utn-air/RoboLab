@@ -49,7 +49,7 @@ class AngledReachDragontailTask(Task):
         "vague": "Reach the left edge of the dragontail with a rolled wrist",
         "specific": "Move the robot gripper to the left edge of the dragontail near the center of the table with the wrist rolled so the fingers align vertically with the thin dragontail side, without grasping it",
     }
-    episode_steps: int = 100
+    episode_steps: int = 50
     attributes = ["angled_reach", "dominant_roll", "-rx", "goal"]
     goal = {
         "mode": "angled_reach",

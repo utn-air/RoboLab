@@ -47,7 +47,7 @@ class AngledReachShelfTask(Task):
         "vague": "Reach the upper shelf with a rolled approach from right side",
         "specific": "Move the robot gripper toward the right side of the upper shelf with the wrist rolled so the fingers align vertically with the shelf bar, without grasping it",
     }
-    episode_steps: int = 100
+    episode_steps: int = 50
     attributes = ["angled_reach", "dominant_roll", "+rx", "goal"]
     goal = {
         "mode": "angled_reach",
