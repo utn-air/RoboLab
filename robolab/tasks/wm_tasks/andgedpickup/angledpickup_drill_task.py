@@ -1,0 +1,83 @@
+# SPDX-FileCopyrightText: Copyright (c) 2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-License-Identifier: CC-BY-NC-4.0
+
+from dataclasses import dataclass
+from functools import partial
+from pathlib import Path
+
+import isaaclab.envs.mdp as mdp
+from isaaclab.managers import TerminationTermCfg as DoneTerm
+from isaaclab.utils import configclass
+
+from robolab.constants import ASSET_DIR
+from robolab.core.scenes.utils import import_scene
+from robolab.core.task.conditionals import angled_reach_object, object_grabbed, object_picked_up
+from robolab.core.task.subtask import Subtask
+from robolab.core.task.task import Task
+
+STATUS_PATH = Path(ASSET_DIR) / "wm_tasks" / "AngledPickupDrillTask" / "status.json"
+
+
+@configclass
+class AngledPickupDrillTerminations:
+    time_out = DoneTerm(func=mdp.time_out, time_out=True)
+    success = DoneTerm(
+        func=object_picked_up,
+        params={"object": "cordless_drill", "surface": "table", "distance": 0.03},
+    )
+
+
+@dataclass
+class AngledPickupDrillTask(Task):
+    contact_object_list = [
+        "table",
+        "cordless_drill",
+        "husky_hammer",
+        "left_bin",
+        "right_bin",
+    ]
+    scene = import_scene("tools_container.usda", contact_object_list)
+    terminations = AngledPickupDrillTerminations
+    instruction = {
+        "default": "AngledPickupDrill",
+        "vague": "Reach the cordless drill with a yawed wrist, grasp it, and lift it up",
+        "specific": "Move the robot gripper above the cordless drill with the wrist yawed so the fingers align vertically with the drill handle, grasp the drill, and lift it off the table",
+    }
+    episode_steps: int = 80
+    attributes = ["angled_reach", "pickup", "grasp", "lift", "dominant_yaw", "-rz", "goal"]
+    goal = {
+        "mode": "angled_reach",
+        "object": "cordless_drill",
+        "external_camera": "over_shoulder_right_camera",
+        "wrist_camera": "wrist_cam",
+    }
+    subtasks = [
+        Subtask(
+            name="angled_pickup_drill",
+            conditions={
+                "cordless_drill": [
+                    (
+                        partial(
+                            angled_reach_object,
+                            pos_tolerance=0.10,
+                            angle_tolerance=0.20,
+                            status_path=STATUS_PATH,
+                        ),
+                        1.0,
+                    ),
+                    (partial(object_grabbed, object="cordless_drill"), 1.0),
+                    (
+                        partial(
+                            object_picked_up,
+                            object="cordless_drill",
+                            surface="table",
+                            distance=0.03,
+                        ),
+                        1.0,
+                    ),
+                ]
+            },
+            logical="all",
+            score=1.0,
+        )
+    ]

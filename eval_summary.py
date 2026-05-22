@@ -11,6 +11,322 @@ import zipfile
 import h5py
 import json 
 
+# NEW PLOT IMPLEMENTATION
+def save_goal_distance_plot(task_goal_distances, output_path):
+	import matplotlib
+	matplotlib.use("Agg")
+	import matplotlib.pyplot as plt
+	from matplotlib.ticker import MultipleLocator
+	plt.rcParams.update({"font.family": "serif", "font.serif": ["Times New Roman", "Times", "DejaVu Serif"], "font.size": 14, "axes.labelsize": 16, "xtick.labelsize": 13, "ytick.labelsize": 13, "legend.fontsize": 11})
+
+	model_variants = []
+	tasks = []
+	for item in task_goal_distances:
+		if item["model_variant"] not in model_variants:
+			model_variants.append(item["model_variant"])
+		if item["task"] not in tasks:
+			tasks.append(item["task"])
+
+	stats_by_model_and_task = {(item["model_variant"], item["task"]): item for item in task_goal_distances}
+
+	model_positions = list(range(len(model_variants)))
+	task_count = len(tasks)
+	task_spacing = 0.8 / task_count
+	model_variant_labels = {
+		"right_vjepa": "VJEPA2",
+		"right_dinov3": "DINOv3",
+		"wrist_vjepa": "VJEPA2",
+		"wrist_dinov3": "DINOv3",
+		"ind_vjepa": "VJEPA2",
+		"ind_dinov3": "DINOv3",
+		"dual_vjepa": "VJEPA2",
+		"dual_dinov3": "DINOv3",
+		"dual_dinov3_roboarena": "VALPA",
+	}
+	model_variant_groups = [
+		("Side", ["right_vjepa", "right_dinov3"]),
+		("Wrist", ["wrist_vjepa", "wrist_dinov3"]),
+		("Dual Independent", ["ind_vjepa", "ind_dinov3"]),
+		("Dual Shared Latent", ["dual_vjepa", "dual_dinov3", "dual_dinov3_roboarena"]),
+	]
+
+	output_path.parent.mkdir(parents=True, exist_ok=True)
+	plt.figure(figsize=(max(12, 0.9 * len(model_variants)), 7))
+	ax = plt.gca()
+	group_background_colors = ["#4C78A8", "#F58518", "#54A24B", "#B279A2"]
+	for group_index, (_, group_model_variants) in enumerate(model_variant_groups):
+		group_positions = [model_variants.index(model_variant) for model_variant in group_model_variants if model_variant in model_variants]
+		group_start = min(group_positions)
+		group_end = max(group_positions)
+		group_left = group_start - 0.5
+		group_right = group_end + 0.5
+		if group_index == len(model_variant_groups) - 1:
+			group_right = len(model_variants) - 0.5
+		ax.axvspan(group_left, group_right, color=group_background_colors[group_index], alpha=0.10, zorder=0)
+	ax.set_xlim(-0.5, len(model_variants) - 0.5)
+
+	for task_index, task in enumerate(tasks):
+		means = []
+		stds = []
+		for model_variant in model_variants:
+			stats = stats_by_model_and_task[(model_variant, task)]
+			means.append(stats["goal_distance_mean"])
+			stds.append(stats["goal_distance_std"])
+
+		offset = (task_index - (task_count - 1) / 2) * task_spacing
+		plot_positions = [position + offset for position in model_positions]
+		label = task.replace("Reach", "").replace("Task", "")
+		plt.errorbar(plot_positions, means, yerr=stds, fmt="o", capsize=3, linestyle="none", label=label)
+
+	ax.yaxis.set_minor_locator(MultipleLocator(0.02))
+	plt.grid(axis="y", which="major", linestyle="--", alpha=0.35)
+	plt.grid(axis="y", which="minor", linestyle="--", alpha=0.20)
+	for model_boundary in [position + 0.5 for position in model_positions[:-1]]:
+		ax.axvline(model_boundary, linestyle="--", color="0.75", alpha=0.35, linewidth=0.8)
+	ax.set_axisbelow(True)
+	plt.ylabel("Goal Distance", labelpad=16)
+	plt.xticks(model_positions, [model_variant_labels[model_variant] for model_variant in model_variants])
+	plt.tick_params(axis="x", pad=6)
+
+	for group_label, group_model_variants in model_variant_groups:
+		group_positions = [model_variants.index(model_variant) for model_variant in group_model_variants if model_variant in model_variants]
+		group_start = min(group_positions)
+		group_end = max(group_positions)
+		group_center = (group_start + group_end) / 2
+		ax.text(group_center, -0.10, group_label, ha="center", va="top", fontweight="bold", transform=ax.get_xaxis_transform())
+
+	plt.legend(ncol=2)
+	plt.tight_layout()
+	plt.subplots_adjust(bottom=0.18)
+	plt.savefig(output_path, dpi=300, bbox_inches="tight", pad_inches=0.05)
+	plt.close()
+
+# NEW PLOT IMPLEMENTATION
+def save_goal_distance_summary_plot(model_goal_distances, output_path):
+	import matplotlib
+	matplotlib.use("Agg")
+	import matplotlib.pyplot as plt
+	from matplotlib.ticker import MultipleLocator
+	plt.rcParams.update({"font.family": "serif", "font.serif": ["Times New Roman", "Times", "DejaVu Serif"], "font.size": 14, "axes.labelsize": 16, "xtick.labelsize": 13, "ytick.labelsize": 13, "legend.fontsize": 11})
+
+	model_variants = [item["model_variant"] for item in model_goal_distances]
+	model_positions = list(range(len(model_variants)))
+	goal_distance_means = [item["goal_distance_mean"] for item in model_goal_distances]
+	goal_distance_stds = [item["goal_distance_std"] for item in model_goal_distances]
+	model_variant_labels = {
+		"right_vjepa": "VJEPA2",
+		"right_dinov3": "DINOv3",
+		"wrist_vjepa": "VJEPA2",
+		"wrist_dinov3": "DINOv3",
+		"ind_vjepa": "VJEPA2",
+		"ind_dinov3": "DINOv3",
+		"dual_vjepa": "VJEPA2",
+		"dual_dinov3": "DINOv3",
+		"dual_dinov3_roboarena": "VALPA",
+	}
+	model_variant_groups = [
+		("Side", ["right_vjepa", "right_dinov3"]),
+		("Wrist", ["wrist_vjepa", "wrist_dinov3"]),
+		("Dual Independent", ["ind_vjepa", "ind_dinov3"]),
+		("Dual Shared Latent", ["dual_vjepa", "dual_dinov3", "dual_dinov3_roboarena"]),
+	]
+
+	output_path.parent.mkdir(parents=True, exist_ok=True)
+	plt.figure(figsize=(max(12, 0.9 * len(model_variants)), 7))
+	ax = plt.gca()
+	group_background_colors = ["#4C78A8", "#F58518", "#54A24B", "#B279A2"]
+	for group_index, (_, group_model_variants) in enumerate(model_variant_groups):
+		group_positions = [model_variants.index(model_variant) for model_variant in group_model_variants if model_variant in model_variants]
+		group_start = min(group_positions)
+		group_end = max(group_positions)
+		group_left = group_start - 0.5
+		group_right = group_end + 0.5
+		if group_index == len(model_variant_groups) - 1:
+			group_right = len(model_variants) - 0.5
+		ax.axvspan(group_left, group_right, color=group_background_colors[group_index], alpha=0.10, zorder=0)
+	ax.set_xlim(-0.5, len(model_variants) - 0.5)
+
+	plt.errorbar(model_positions, goal_distance_means, yerr=goal_distance_stds, fmt="o", capsize=5, linestyle="none", color="black", zorder=2)
+	ax.yaxis.set_minor_locator(MultipleLocator(0.02))
+	plt.grid(axis="y", which="major", linestyle="--", alpha=0.35)
+	plt.grid(axis="y", which="minor", linestyle="--", alpha=0.20)
+	for model_boundary in [position + 0.5 for position in model_positions[:-1]]:
+		ax.axvline(model_boundary, linestyle="--", color="0.75", alpha=0.35, linewidth=0.8)
+	ax.set_axisbelow(True)
+	plt.ylabel("Goal Distance", labelpad=16)
+	plt.xticks(model_positions, [model_variant_labels[model_variant] for model_variant in model_variants])
+	plt.tick_params(axis="x", pad=6)
+
+	for group_label, group_model_variants in model_variant_groups:
+		group_positions = [model_variants.index(model_variant) for model_variant in group_model_variants if model_variant in model_variants]
+		group_start = min(group_positions)
+		group_end = max(group_positions)
+		group_center = (group_start + group_end) / 2
+		ax.text(group_center, -0.10, group_label, ha="center", va="top", fontweight="bold", transform=ax.get_xaxis_transform())
+
+	plt.tight_layout()
+	plt.subplots_adjust(bottom=0.18)
+	plt.savefig(output_path, dpi=300, bbox_inches="tight", pad_inches=0.05)
+	plt.close()
+
+# NEW PLOT IMPLEMENTATION
+def save_steps_plot(task_steps, output_path):
+	import matplotlib
+	matplotlib.use("Agg")
+	import matplotlib.pyplot as plt
+	from matplotlib.ticker import MultipleLocator
+	plt.rcParams.update({"font.family": "serif", "font.serif": ["Times New Roman", "Times", "DejaVu Serif"], "font.size": 14, "axes.labelsize": 16, "xtick.labelsize": 13, "ytick.labelsize": 13, "legend.fontsize": 11})
+
+	model_variants = []
+	tasks = []
+	for item in task_steps:
+		if item["model_variant"] not in model_variants:
+			model_variants.append(item["model_variant"])
+		if item["task"] not in tasks:
+			tasks.append(item["task"])
+
+	stats_by_model_and_task = {(item["model_variant"], item["task"]): item for item in task_steps}
+
+	model_positions = list(range(len(model_variants)))
+	task_count = len(tasks)
+	task_spacing = 0.8 / task_count
+	model_variant_labels = {
+		"right_vjepa": "VJEPA2",
+		"right_dinov3": "DINOv3",
+		"wrist_vjepa": "VJEPA2",
+		"wrist_dinov3": "DINOv3",
+		"ind_vjepa": "VJEPA2",
+		"ind_dinov3": "DINOv3",
+		"dual_vjepa": "VJEPA2",
+		"dual_dinov3": "DINOv3",
+		"dual_dinov3_roboarena": "VALPA",
+	}
+	model_variant_groups = [
+		("Side", ["right_vjepa", "right_dinov3"]),
+		("Wrist", ["wrist_vjepa", "wrist_dinov3"]),
+		("Dual Independent", ["ind_vjepa", "ind_dinov3"]),
+		("Dual Shared Latent", ["dual_vjepa", "dual_dinov3", "dual_dinov3_roboarena"]),
+	]
+
+	output_path.parent.mkdir(parents=True, exist_ok=True)
+	plt.figure(figsize=(max(12, 0.9 * len(model_variants)), 7))
+	ax = plt.gca()
+	group_background_colors = ["#4C78A8", "#F58518", "#54A24B", "#B279A2"]
+	for group_index, (_, group_model_variants) in enumerate(model_variant_groups):
+		group_positions = [model_variants.index(model_variant) for model_variant in group_model_variants if model_variant in model_variants]
+		group_start = min(group_positions)
+		group_end = max(group_positions)
+		group_left = group_start - 0.5
+		group_right = group_end + 0.5
+		if group_index == len(model_variant_groups) - 1:
+			group_right = len(model_variants) - 0.5
+		ax.axvspan(group_left, group_right, color=group_background_colors[group_index], alpha=0.10, zorder=0)
+	ax.set_xlim(-0.5, len(model_variants) - 0.5)
+
+	for task_index, task in enumerate(tasks):
+		means = []
+		stds = []
+		for model_variant in model_variants:
+			stats = stats_by_model_and_task[(model_variant, task)]
+			means.append(stats["steps_mean"])
+			stds.append(stats["steps_std"])
+
+		offset = (task_index - (task_count - 1) / 2) * task_spacing
+		plot_positions = [position + offset for position in model_positions]
+		label = task.replace("Reach", "").replace("Task", "")
+		plt.errorbar(plot_positions, means, yerr=stds, fmt="o", capsize=3, linestyle="none", label=label)
+
+	ax.yaxis.set_minor_locator(MultipleLocator(5))
+	plt.grid(axis="y", which="major", linestyle="--", alpha=0.35)
+	plt.grid(axis="y", which="minor", linestyle="--", alpha=0.20)
+	for model_boundary in [position + 0.5 for position in model_positions[:-1]]:
+		ax.axvline(model_boundary, linestyle="--", color="0.75", alpha=0.35, linewidth=0.8)
+	ax.set_axisbelow(True)
+	plt.ylabel("Steps", labelpad=16)
+	plt.xticks(model_positions, [model_variant_labels[model_variant] for model_variant in model_variants])
+	plt.tick_params(axis="x", pad=6)
+
+	for group_label, group_model_variants in model_variant_groups:
+		group_positions = [model_variants.index(model_variant) for model_variant in group_model_variants if model_variant in model_variants]
+		group_start = min(group_positions)
+		group_end = max(group_positions)
+		group_center = (group_start + group_end) / 2
+		ax.text(group_center, -0.10, group_label, ha="center", va="top", fontweight="bold", transform=ax.get_xaxis_transform())
+
+	plt.legend(ncol=2)
+	plt.tight_layout()
+	plt.subplots_adjust(bottom=0.18)
+	plt.savefig(output_path, dpi=300, bbox_inches="tight", pad_inches=0.05)
+	plt.close()
+
+# NEW PLOT IMPLEMENTATION
+def save_steps_summary_plot(model_steps, output_path):
+	import matplotlib
+	matplotlib.use("Agg")
+	import matplotlib.pyplot as plt
+	from matplotlib.ticker import MultipleLocator
+	plt.rcParams.update({"font.family": "serif", "font.serif": ["Times New Roman", "Times", "DejaVu Serif"], "font.size": 14, "axes.labelsize": 16, "xtick.labelsize": 13, "ytick.labelsize": 13, "legend.fontsize": 11})
+
+	model_variants = [item["model_variant"] for item in model_steps]
+	model_positions = list(range(len(model_variants)))
+	steps_means = [item["steps_mean"] for item in model_steps]
+	steps_stds = [item["steps_std"] for item in model_steps]
+	model_variant_labels = {
+		"right_vjepa": "VJEPA2",
+		"right_dinov3": "DINOv3",
+		"wrist_vjepa": "VJEPA2",
+		"wrist_dinov3": "DINOv3",
+		"ind_vjepa": "VJEPA2",
+		"ind_dinov3": "DINOv3",
+		"dual_vjepa": "VJEPA2",
+		"dual_dinov3": "DINOv3",
+		"dual_dinov3_roboarena": "VALPA",
+	}
+	model_variant_groups = [
+		("Side", ["right_vjepa", "right_dinov3"]),
+		("Wrist", ["wrist_vjepa", "wrist_dinov3"]),
+		("Dual Independent", ["ind_vjepa", "ind_dinov3"]),
+		("Dual Shared Latent", ["dual_vjepa", "dual_dinov3", "dual_dinov3_roboarena"]),
+	]
+
+	output_path.parent.mkdir(parents=True, exist_ok=True)
+	plt.figure(figsize=(max(12, 0.9 * len(model_variants)), 7))
+	ax = plt.gca()
+	group_background_colors = ["#4C78A8", "#F58518", "#54A24B", "#B279A2"]
+	for group_index, (_, group_model_variants) in enumerate(model_variant_groups):
+		group_positions = [model_variants.index(model_variant) for model_variant in group_model_variants if model_variant in model_variants]
+		group_start = min(group_positions)
+		group_end = max(group_positions)
+		group_left = group_start - 0.5
+		group_right = group_end + 0.5
+		if group_index == len(model_variant_groups) - 1:
+			group_right = len(model_variants) - 0.5
+		ax.axvspan(group_left, group_right, color=group_background_colors[group_index], alpha=0.10, zorder=0)
+	ax.set_xlim(-0.5, len(model_variants) - 0.5)
+
+	plt.errorbar(model_positions, steps_means, yerr=steps_stds, fmt="o", capsize=5, linestyle="none", color="black", zorder=2)
+	ax.yaxis.set_minor_locator(MultipleLocator(5))
+	plt.grid(axis="y", which="major", linestyle="--", alpha=0.35)
+	plt.grid(axis="y", which="minor", linestyle="--", alpha=0.20)
+	for model_boundary in [position + 0.5 for position in model_positions[:-1]]:
+		ax.axvline(model_boundary, linestyle="--", color="0.75", alpha=0.35, linewidth=0.8)
+	ax.set_axisbelow(True)
+	plt.ylabel("Steps", labelpad=16)
+	plt.xticks(model_positions, [model_variant_labels[model_variant] for model_variant in model_variants])
+	plt.tick_params(axis="x", pad=6)
+
+	for group_label, group_model_variants in model_variant_groups:
+		group_positions = [model_variants.index(model_variant) for model_variant in group_model_variants if model_variant in model_variants]
+		group_start = min(group_positions)
+		group_end = max(group_positions)
+		group_center = (group_start + group_end) / 2
+		ax.text(group_center, -0.10, group_label, ha="center", va="top", fontweight="bold", transform=ax.get_xaxis_transform())
+
+	plt.tight_layout()
+	plt.subplots_adjust(bottom=0.18)
+	plt.savefig(output_path, dpi=300, bbox_inches="tight", pad_inches=0.05)
+	plt.close()
+
 
 zip_paths = ["output/cleandata/right_vjepa.zip",
 			"output/cleandata/right_dinov3.zip",
@@ -24,6 +340,10 @@ zip_paths = ["output/cleandata/right_vjepa.zip",
 			 ]
 
 zip_paths = [Path(zip_path) for zip_path in zip_paths]
+task_goal_distances = []
+model_goal_distances = []
+task_steps = []
+model_steps = []
 
 simple_tasks = [
 				"ReachAppleTask",
@@ -178,6 +498,56 @@ for zip_path in zip_paths:
 			)
 
 		print(f"total success rate: {sum([tasks_statistics[task]['successful_runs'] for task in tasks_statistics]) / sum([tasks_statistics[task]['total_runs'] for task in tasks_statistics]):.2f}")
+
+		# NEW PLOT IMPLEMENTATION
+		for task in tasks_statistics:
+			task_goal_distances.append({
+				"model_variant": zip_path.stem,
+				"task": task,
+				"goal_distance_mean": tasks_statistics[task]["goal_distances_mean"],
+				"goal_distance_std": tasks_statistics[task]["goal_distances_std"],
+			})
+			task_steps.append({
+				"model_variant": zip_path.stem,
+				"task": task,
+				"steps_mean": tasks_statistics[task]["steps_mean"],
+				"steps_std": tasks_statistics[task]["steps_std"],
+			})
+
+		all_goal_distances = []
+		all_steps = []
+		for task in tasks_statistics:
+			all_goal_distances.extend(tasks_statistics[task]["goal_distances"])
+			all_steps.extend(tasks_statistics[task]["steps"])
+
+		goal_distance_mean = sum(all_goal_distances) / len(all_goal_distances)
+		goal_distance_std = (sum([(x - goal_distance_mean) ** 2 for x in all_goal_distances]) / (len(all_goal_distances) - 1)) ** 0.5
+		model_goal_distances.append({
+			"model_variant": zip_path.stem,
+			"goal_distance_mean": goal_distance_mean,
+			"goal_distance_std": goal_distance_std,
+		})
+
+		steps_mean = sum(all_steps) / len(all_steps)
+		steps_std = (sum([(x - steps_mean) ** 2 for x in all_steps]) / (len(all_steps) - 1)) ** 0.5
+		model_steps.append({
+			"model_variant": zip_path.stem,
+			"steps_mean": steps_mean,
+			"steps_std": steps_std,
+		})
+
+
+save_goal_distance_plot(task_goal_distances, Path("output/goal_distance_by_model_and_task.png"))
+print("saved goal distance plot to output/goal_distance_by_model_and_task.png")
+
+save_goal_distance_summary_plot(model_goal_distances, Path("output/goal_distance_by_model_all_tasks.png"))
+print("saved all-tasks goal distance plot to output/goal_distance_by_model_all_tasks.png")
+
+save_steps_plot(task_steps, Path("output/steps_by_model_and_task.png"))
+print("saved steps plot to output/steps_by_model_and_task.png")
+
+save_steps_summary_plot(model_steps, Path("output/steps_by_model_all_tasks.png"))
+print("saved all-tasks steps plot to output/steps_by_model_all_tasks.png")
 
 
 

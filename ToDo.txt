@@ -41,15 +41,10 @@ chown -R 10175:101010 /workspace/robolab/output && chmod -R u+rw /workspace/robo
 
 
 TODO:
-    - serve model has configs of rot now, print action statements
-    - model had decouple action input
-    
-
+    - Try without normalising before chosing top 10
+    - serve model has configs of rot now    
     - fix recording issue before angled reach
     - write a script to get numbers for the reach table
-        - success
-        - path length
-        - number of steps
         - inf time and speed
     - take goal images for grasp, pick, place with interactive key mode
     - planning: action std deviation sampling based on loss
