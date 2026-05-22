@@ -23,7 +23,7 @@ class AngledPickupDrillTerminations:
     time_out = DoneTerm(func=mdp.time_out, time_out=True)
     success = DoneTerm(
         func=object_picked_up,
-        params={"object": "cordless_drill", "surface": "table", "distance": 0.03},
+        params={"object": "cordless_drill", "surface": "table", "distance": 0.30},
     )
 
 
@@ -60,7 +60,7 @@ class AngledPickupDrillTask(Task):
                         partial(
                             angled_reach_object,
                             pos_tolerance=0.10,
-                            angle_tolerance=0.20,
+                            angle_tolerance=0.35,
                             status_path=STATUS_PATH,
                         ),
                         1.0,
@@ -71,7 +71,7 @@ class AngledPickupDrillTask(Task):
                             object_picked_up,
                             object="cordless_drill",
                             surface="table",
-                            distance=0.03,
+                            distance=0.30,
                         ),
                         1.0,
                     ),

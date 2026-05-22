@@ -25,7 +25,7 @@ class AngledReachDragontailTerminations:
         func=angled_reach_object,
         params={
             "pos_tolerance": 0.10,
-            "angle_tolerance": 0.20,
+            "angle_tolerance": 0.35,
             "status_path": STATUS_PATH,
         },
     )
@@ -66,7 +66,7 @@ class AngledReachDragontailTask(Task):
                         partial(
                             angled_reach_object,
                             pos_tolerance=0.10,
-                            angle_tolerance=0.20,
+                            angle_tolerance=0.35,
                             status_path=STATUS_PATH,
                         ),
                         1.0,

@@ -23,7 +23,7 @@ class AngledPickupMilkCartonTerminations:
     time_out = DoneTerm(func=mdp.time_out, time_out=True)
     success = DoneTerm(
         func=object_picked_up,
-        params={"object": "milk_carton", "surface": "table", "distance": 0.05},
+        params={"object": "milk_carton", "surface": "table", "distance": 0.30},
     )
 
 
@@ -54,7 +54,7 @@ class AngledPickupMilkCartonTask(Task):
                         partial(
                             angled_reach_object,
                             pos_tolerance=0.10,
-                            angle_tolerance=0.20,
+                            angle_tolerance=0.35,
                             status_path=STATUS_PATH,
                         ),
                         1.0,
@@ -65,7 +65,7 @@ class AngledPickupMilkCartonTask(Task):
                             object_picked_up,
                             object="milk_carton",
                             surface="table",
-                            distance=0.05,
+                            distance=0.30,
                         ),
                         1.0,
                     ),
