@@ -18,7 +18,7 @@ if [[ -n "$VIDEO_MODE" ]]; then
 fi
 
 TASKS=(
-    AngledReachDrillTask
+    AngledReachKetchupTask
 )
 
 hosted_model_name() {

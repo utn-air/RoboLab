@@ -15,8 +15,7 @@ from robolab.core.task.conditionals import angled_reach_object
 from robolab.core.task.subtask import Subtask
 from robolab.core.task.task import Task
 
-STATUS_PATH = Path(ASSET_DIR) / "wm_tasks" / "AngledReachMilkCartonRollTask" / "status.json"
-
+STATUS_PATH = Path(ASSET_DIR) / "wm_tasks" / "AngledReachMilkCartonTask" / "status.json"
 
 @configclass
 class AngledReachMilkCartonTerminations:
@@ -24,25 +23,34 @@ class AngledReachMilkCartonTerminations:
     success = DoneTerm(
         func=angled_reach_object,
         params={
-            "pos_tolerance": 0.10,
-            "angle_tolerance": 0.35,
-            "status_path": STATUS_PATH,
-        },
+                "pos_tolerance": 0.10, 
+                "angle_tolerance": 0.35, 
+                "status_path": STATUS_PATH},
     )
 
 
 @dataclass
 class AngledReachMilkCartonTask(Task):
-    contact_object_list = ["table", "milk_carton"]
-    scene = import_scene("milk_carton_center_table.usda", contact_object_list)
+    contact_object_list = [
+        "table",
+        "alphabet_soup_can",
+        "milk_carton",
+        "orange_juice_carton",
+        "smartphone",
+        "mug",
+        "mayonnaise_bottle",
+        "ketchup_bottle",
+        "cubebox_a02",
+    ]
+    scene = import_scene("cartons_on_box.usda", contact_object_list)
     terminations = AngledReachMilkCartonTerminations
     instruction = {
         "default": "AngledReachMilkCarton",
-        "vague": "Reach the tall carton in the middle of the table from the front face with a pitched wrist",
-        "specific": "Move the robot gripper to the front of the milk carton in the middle of the table with the wrist pitched, without grasping it",
+        "vague": "Reach the milk carton on the packing table with a pitched approach",
+        "specific": "Move the robot gripper to the milk carton on the table, pitched to face the carton from the front of the carton, without grasping it",
     }
     episode_steps: int = 50
-    attributes = ["angled_reach", "dominant_pitch", "-ry", "goal"]
+    attributes = ["angled_reach", "dominant_pitch", "+ry", "goal"]
     goal = {
         "mode": "angled_reach",
         "object": "milk_carton",
@@ -54,15 +62,11 @@ class AngledReachMilkCartonTask(Task):
             name="angled_reach_milk_carton",
             conditions={
                 "milk_carton": [
-                    (
-                        partial(
-                            angled_reach_object,
-                            pos_tolerance=0.10,
-                            angle_tolerance=0.35,
-                            status_path=STATUS_PATH,
-                        ),
-                        1.0,
-                    )
+                    (partial(angled_reach_object, 
+                            pos_tolerance=0.10, 
+                            angle_tolerance=0.35, 
+                            status_path=STATUS_PATH),
+                    1.0)
                 ]
             },
             logical="all",

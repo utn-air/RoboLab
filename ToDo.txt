@@ -41,18 +41,18 @@ chown -R 10175:101010 /workspace/robolab/output && chmod -R u+rw /workspace/robo
 
 
 TODO:
+    - fix angled reach sweep scripts
     - serve model has configs of rot now    
     - fix recording issue before angled reach
+    - take goal images for grasp, pickup with interactive key mode
+    - Experiments visual robustness experiments:
+        3. Randomise table textures - 20, background - 50, initial gripper positions - 4
+
+Paper:
     - write a script to get numbers for the reach table
         - inf time and speed
-    - take goal images for grasp, pickup with interactive key mode
-    - planning: action std deviation sampling based on loss
-    - Experiments:
-        3. Randomise table textures - 20
-        4. Randomise background - 50
-        5. Randomise initial gripper positions - 4
 
-
+Statistics:
 # Bug with reach tasks recording: if success, concatenates run buffer to the next run. If run fail, next run start fresh
 python clean_concatenated_hdf5.py output/dual_dinov3.zip --overwrite
 python clean_concatenated_hdf5.py output/dual_dinov3.zip --overwrite --keep-folder

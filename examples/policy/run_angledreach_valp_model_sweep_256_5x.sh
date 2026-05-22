@@ -16,20 +16,10 @@ ARCHIVE_AFTER_MODEL="${ARCHIVE_AFTER_MODEL:-1}"
 DELETE_UNZIPPED_AFTER_ARCHIVE="${DELETE_UNZIPPED_AFTER_ARCHIVE:-1}"
 
 MODEL_CONFIGS=(
-    droid-256px-8f-dual.yaml
-    droid-256px-8f-right.yaml
+    droid-224px-8f-roboarena.yaml
 )
 
-TASKS=(
-    AngledReachDrillTask
-    AngledReachDragontailTask
-    AngledReachMilkCartonTask
-    AngledReachKetchupTask
-    AngledReachShelfForkTask
-    AngledReachShelfTask
-    
-    
-)
+
 
 SERVER_PID=""
 MODEL_NAMES=()
@@ -299,7 +289,7 @@ for cfg_file in "${MODEL_CONFIGS[@]}"; do
     VIDEO_MODE="$VIDEO_MODE" \
     OUTPUT_FOLDER_NAME="$output_folder_name" \
     DEVICE="$DEVICE" \
-        bash examples/policy/run_angledreach_valp_eval_5x.sh
+        bash examples/policy/run_angledreach_valp_eval_5x_256.sh
 
     archive_model_output "$output_folder_name"
     cleanup_server

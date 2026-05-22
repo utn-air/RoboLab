@@ -20,15 +20,6 @@ MODEL_CONFIGS=(
     droid-224px-8f-right.yaml
 )
 
-TASKS=(
-    AngledReachDrillTask
-    AngledReachDragontailTask
-    AngledReachMilkCartonTask
-    AngledReachKetchupTask
-    AngledReachShelfForkTask
-    AngledReachShelfTask
-)
-
 SERVER_PID=""
 MODEL_NAMES=()
 
