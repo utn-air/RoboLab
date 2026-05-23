@@ -75,6 +75,24 @@ parser.add_argument(
     help="Zero-action steps after each key command before saving images.",
 )
 parser.add_argument(
+    "--gripper-steps",
+    type=int,
+    default=12,
+    help="Number of env steps to repeat each gripper open/close command.",
+)
+parser.add_argument(
+    "--pickup-lift-steps",
+    type=int,
+    default=4,
+    help="Number of upward env steps for the v pickup macro.",
+)
+parser.add_argument(
+    "--pickup-lift-action",
+    type=float,
+    default=0.15,
+    help="Raw +z action value for each upward step in the v pickup macro.",
+)
+parser.add_argument(
     "--force-livestream",
     action="store_true",
     help="Force WebRTC livestream mode in addition to terminal control.",
@@ -107,6 +125,8 @@ SIMPLE_HELP = """
 Type keys, then Enter. Repeated letters repeat the move.
   w/s: +x/-x    a/d: +y/-y    r/f: +z/-z
   i/k: +rx/-rx  j/l: +ry/-ry  u/o: +rz/-rz  (angle-axis)
+  c: close and keep squeezing    b: open gripper
+  v: close gripper, lift upward, and keep squeezing
   .: save       x: reset      q: quit
 """
 
@@ -115,8 +135,9 @@ def _simple_zero_action(env):
     return torch.zeros(env.num_envs, 7, dtype=torch.float32, device=env.device)
 
 
-def _simple_action(env, key: str):
+def _simple_action(env, key: str, gripper_hold: float = 0.0):
     action = _simple_zero_action(env)
+    action[:, 6] = gripper_hold
     commands = {
         "w": (0, args_cli.pos_step),
         "s": (0, -args_cli.pos_step),
@@ -138,9 +159,29 @@ def _simple_action(env, key: str):
     return action
 
 
+def _apply_gripper(env, obs, value: float, label: str):
+    action = _simple_zero_action(env)
+    action[:, 6] = value
+    for _ in range(max(1, args_cli.gripper_steps)):
+        obs, _, _, _, _ = env.step(action)
+    print(label, flush=True)
+    return obs
+
+
+def _pickup_lift(env, obs):
+    obs = _apply_gripper(env, obs, 1.0, "closed gripper")
+    action = _simple_zero_action(env)
+    action[:, 2] = args_cli.pickup_lift_action
+    action[:, 6] = 1.0
+    for _ in range(max(1, args_cli.pickup_lift_steps)):
+        obs, _, _, _, _ = env.step(action)
+    print("lifted with gripper closing", flush=True)
+    return obs
+
+
 def _clean_keys(keys: str) -> str:
     keys = ANSI_ESCAPE_RE.sub("", keys)
-    return "".join(key for key in keys.lower() if key in "wsadrfijkluo.xqh")
+    return "".join(key for key in keys.lower() if key in "wsadrfijkluocvb.xqh")
 
 
 def _write_status(paths, ee_pose):
@@ -199,6 +240,8 @@ def main():
         print(SIMPLE_HELP, flush=True)
         _simple_save(env, env_cfg, obs, "initial")
 
+        gripper_hold = 0.0
+
         while True:
             keys = _clean_keys(input("key> ").strip())
             if not keys:
@@ -211,6 +254,7 @@ def main():
             if "x" in keys:
                 obs, _ = env.reset()
                 obs, _, _, _, _ = env.step(_simple_zero_action(env))
+                gripper_hold = 0.0
                 _simple_save(env, env_cfg, obs, "reset")
                 continue
             if keys == ".":
@@ -221,8 +265,23 @@ def main():
             for key in keys:
                 if key == ".":
                     continue
+                if key == "c":
+                    obs = _apply_gripper(env, obs, 1.0, "closed gripper")
+                    gripper_hold = 1.0
+                    applied += 1
+                    continue
+                if key == "b":
+                    obs = _apply_gripper(env, obs, -1.0, "opened gripper")
+                    gripper_hold = 0.0
+                    applied += 1
+                    continue
+                if key == "v":
+                    obs = _pickup_lift(env, obs)
+                    gripper_hold = 1.0
+                    applied += 1
+                    continue
 
-                action = _simple_action(env, key)
+                action = _simple_action(env, key, gripper_hold=gripper_hold)
                 if action is None:
                     print(f"unknown key {key!r}; skipping", flush=True)
                     continue
@@ -233,8 +292,10 @@ def main():
 
             if applied == 0:
                 continue
+            settle_action = _simple_zero_action(env)
+            settle_action[:, 6] = gripper_hold
             for _ in range(max(0, args_cli.settle_steps)):
-                obs, _, _, _, _ = env.step(_simple_zero_action(env))
+                obs, _, _, _, _ = env.step(settle_action)
             _simple_save(env, env_cfg, obs, keys)
 
     except KeyboardInterrupt:

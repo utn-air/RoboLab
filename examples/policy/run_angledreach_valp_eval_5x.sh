@@ -19,6 +19,8 @@ fi
 
 TASKS=(
     AngledReachDrillTask
+    AngledReachKetchupTask
+
 )
 
 hosted_model_name() {
