@@ -40,12 +40,15 @@ screen -ls
 chown -R 10175:101010 /workspace/robolab/output && chmod -R u+rw /workspace/robolab/output
 
 
+- serve model has configs of rot now 
 TODO:
-    - fix angled reach sweep scripts
-    - serve model has configs of rot now    
+- rotatedreach:
+    - angled reach sweep scripts: num runs, num env
     - fix recording issue before angled reach
-    - take goal images for grasp, pickup with interactive key mode
-    - Experiments visual robustness experiments:
+    - fix termination conditions
+- pickup:
+    - design benchmark tasks to switch to new subgoals after n steps
+- visual robustness experiments:
         3. Randomise table textures - 20, background - 50, initial gripper positions - 4
 
 Paper:

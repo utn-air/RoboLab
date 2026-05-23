@@ -17,7 +17,10 @@ DELETE_UNZIPPED_AFTER_ARCHIVE="${DELETE_UNZIPPED_AFTER_ARCHIVE:-1}"
 
 MODEL_CONFIGS=(
     droid-224px-8f-roboarena.yaml
-    droid-256px-8f-right.yaml
+    droid-224px-8f-dual.yaml
+    droid-224px-8f-ind.yaml
+    droid-224px-8f-right.yaml
+    droid-224px-8f-wrist.yaml
 )
 
 SERVER_PID=""
