@@ -23,7 +23,11 @@ class AngledPickupKetchupTerminations:
     time_out = DoneTerm(func=mdp.time_out, time_out=True)
     success = DoneTerm(
         func=object_picked_up,
-        params={"object": "ketchup_bottle", "surface": "table", "distance": 0.30},
+        params={"object": "ketchup_bottle", 
+                "surface": "table", 
+                "distance": 0.10, #0.19m
+                },
+
     )
 
 
@@ -47,10 +51,14 @@ class AngledPickupKetchupTask(Task):
         "vague": "Reach the ketchup bottle with a yawed wrist, grasp it, and lift it up",
         "specific": "Move the robot gripper to the ketchup bottle with the wrist yawed to face the bottle from the side, grasp the bottle, and lift it off the table",
     }
-    episode_steps: int = 80
+    episode_steps: int = 110
+    angledreach_steps: int = 75
+    grasp_steps: int = 5
+    pickup_steps: int = 30
+
     attributes = ["angled_reach", "pickup", "grasp", "lift", "dominant_yaw", "+rz", "goal"]
     goal = {
-        "mode": "angled_reach",
+        "mode": "angled_pickup",
         "object": "ketchup_bottle",
         "external_camera": "over_shoulder_right_camera",
         "wrist_camera": "wrist_cam",
@@ -63,8 +71,8 @@ class AngledPickupKetchupTask(Task):
                     (
                         partial(
                             angled_reach_object,
-                            pos_tolerance=0.10,
-                            angle_tolerance=0.35,
+                            pos_tolerance=0.04,
+                            angle_tolerance=0.09,
                             status_path=STATUS_PATH,
                         ),
                         1.0,
@@ -75,7 +83,7 @@ class AngledPickupKetchupTask(Task):
                             object_picked_up,
                             object="ketchup_bottle",
                             surface="table",
-                            distance=0.30,
+                            distance=0.10,
                         ),
                         1.0,
                     ),

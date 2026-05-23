@@ -117,7 +117,8 @@ simulation_app = app_launcher.app
 
 from robolab.constants import PACKAGE_DIR, set_output_dir # noqa
 from robolab.core.environments.runtime import create_env # noqa
-from robolab.eval import create_client, run_episode, summarize_run # noqa
+from robolab.eval import create_client, summarize_run # noqa
+from robolab.eval.multi_subtasks_episode import run_multi_subtasks_episode # noqa
 from robolab.core.environments.factory import get_envs # noqa
 from robolab.core.utils.print_utils import print_experiment_summary # noqa
 from robolab.core.logging.results import check_all_episodes_complete, check_run_complete # noqa
@@ -196,7 +197,7 @@ def main():
     )
 
     episode_results_file, episode_results = init_experiment(output_dir)
-
+    
 
     for task_env in task_envs:
         scene_output_dir = os.path.join(output_dir, task_env)
@@ -240,7 +241,7 @@ def main():
                 run_name = task_env + f"_{run_idx}"
             print(f"\033[96m[RoboLab] Running {run_name}: '{env_cfg.instruction}' (run {run_idx}, {num_envs} envs)\033[0m")
 
-            env_results, msgs, timing = run_episode(env=env,
+            env_results, msgs, timing = run_multi_subtasks_episode(env=env,
                         env_cfg=env_cfg,
                         episode=run_idx,
                         client=client,
