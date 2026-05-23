@@ -18,7 +18,7 @@ from pathlib import Path
 import h5py
 
 
-DEFAULT_MAX_STEPS = 100
+DEFAULT_MAX_STEPS = 75
 ROOT_FILES_TO_COPY = ("episode_results.jsonl", "episode_results.json")
 
 

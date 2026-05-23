@@ -23,8 +23,8 @@ class AngledReachKetchupTerminations:
     success = DoneTerm(
         func=angled_reach_object,
         params={
-                "pos_tolerance": 0.10, 
-                "angle_tolerance": 0.35, 
+                "pos_tolerance": 0.04, 
+                "angle_tolerance": 0.09, 
                 "status_path": STATUS_PATH},
     )
 
@@ -63,8 +63,8 @@ class AngledReachKetchupTask(Task):
             conditions={
                 "ketchup_bottle": [
                     (partial(angled_reach_object, 
-                            pos_tolerance=0.10, 
-                            angle_tolerance=0.35, 
+                            pos_tolerance=0.04, 
+                            angle_tolerance=0.09, 
                             status_path=STATUS_PATH),
                     1.0)
                 ]
