@@ -15,11 +15,11 @@ from robolab.core.task.conditionals import angled_reach_object, object_grabbed, 
 from robolab.core.task.subtask import Subtask
 from robolab.core.task.task import Task
 
-STATUS_PATH = Path(ASSET_DIR) / "wm_tasks" / "AngledPickupKetchupTask" / "status.json"
+STATUS_PATH = Path(ASSET_DIR) / "wm_tasks" / "AngledPickupAngledHomeKetchupTask" / "status.json"
 
 
 @configclass
-class AngledPickupKetchupTerminations:
+class AngledPickupAngledHomeKetchupTerminations:
     time_out = DoneTerm(func=mdp.time_out, time_out=True)
     success = DoneTerm(
         func=object_picked_up,
@@ -32,7 +32,7 @@ class AngledPickupKetchupTerminations:
 
 
 @dataclass
-class AngledPickupKetchupTask(Task):
+class AngledPickupAngledHomeKetchupTask(Task):
     contact_object_list = [
         "table",
         "alphabet_soup_can",
@@ -45,11 +45,11 @@ class AngledPickupKetchupTask(Task):
         "cubebox_a02",
     ]
     scene = import_scene("cartons_on_box.usda", contact_object_list)
-    terminations = AngledPickupKetchupTerminations
+    terminations = AngledPickupAngledHomeKetchupTerminations
     instruction = {
-        "default": "AngledPickupKetchup",
-        "vague": "Reach the ketchup bottle with a yawed wrist, grasp it, and lift it up",
-        "specific": "Move the robot gripper to the ketchup bottle with the wrist yawed to face the bottle from the side, grasp the bottle, and lift it off the table",
+        "default": "AngledPickupAngledHomeKetchup",
+        "vague": "Reach the ketchup bottle with a yawed wrist, grasp it, and lift it up with the robot starting in an angled home position",
+        "specific": "Move the robot gripper to the ketchup bottle with the wrist yawed to face the bottle from the side, grasp the bottle, and lift it off the table with the robot starting in an angled home position",
     }
     episode_steps: int = 135
     angledreach_steps: int = 75

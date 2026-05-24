@@ -301,7 +301,7 @@ for cfg_file in "${MODEL_CONFIGS[@]}"; do
     --num-envs 5 \
     --device "$DEVICE" \
     --task-dirs wm_tasks/angledpickup \
-    --task AngledPickupKetchupTask \
+    --task AngledPickupKetchupTask AngledPickupAngledHomeKetchupTask\
     --remote-host "$REMOTE_HOST" \
     --remote-port "$REMOTE_PORT" \
     --output-folder-name "$output_folder_name" \
