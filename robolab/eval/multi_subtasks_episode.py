@@ -1,23 +1,53 @@
 # SPDX-FileCopyrightText: Copyright (c) 2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: CC-BY-NC-4.0
 
-"""Multi-goal episode runner for staged WM pickup tasks.
+"""Policy episode runner for RoboLab.
 
-This runner is intended for tasks whose cached goal assets are named with
-stage suffixes, e.g. ``over_shoulder_right_camera_1.png`` for angled reach,
-``*_2.png`` for grasp, and ``*_3.png`` for lifted/home-with-object. It swaps
-client goals after the corresponding sub-condition is met, with task step
-budgets as a fallback.
+This module contains the run_episode function that executes policy-controlled
+episodes using various policy backends (pi0, gr00t, dreamzero, valp).
+
+Supports multi-env: one PolicyClient per env, per-env video writers,
+actions inferred per active env and stacked for env.step().
 """
 
 import logging
 import os
 import re
-from pathlib import Path
+import time
+from collections import defaultdict
 
 import cv2
-import torch
 from tqdm import tqdm
+import torch
+from pathlib import Path
+
+logger = logging.getLogger(__name__)
+
+class TimingStats:
+    """Simple timing utility for profiling code sections."""
+
+    def __init__(self):
+        self.times = defaultdict(list)
+        self._start_times = {}
+
+    def start(self, name: str):
+        self._start_times[name] = time.perf_counter()
+
+    def stop(self, name: str):
+        if name in self._start_times:
+            elapsed = time.perf_counter() - self._start_times[name]
+            self.times[name].append(elapsed)
+            del self._start_times[name]
+
+    def to_dict(self, num_steps: int) -> dict:
+        """Return timing summary as a dict for results logging."""
+        d = {}
+        for name, times in self.times.items():
+            d[f"{name}_s"] = round(sum(times), 3)
+            d[f"{name}_avg_ms"] = round(sum(times) / len(times) * 1000, 1) if times else 0
+        d["wall_total_s"] = round(sum(sum(t) for t in self.times.values()), 3)
+        d["it_per_sec"] = round(num_steps / d["wall_total_s"], 2) if d["wall_total_s"] > 0 else 0
+        return d
 
 from robolab.constants import VISUALIZE, get_output_dir
 from robolab.core.logging.results import get_all_env_subtask_infos
@@ -25,178 +55,139 @@ from robolab.core.observations.observation_utils import unpack_image_obs, unpack
 from robolab.core.utils.video_utils import VideoWriter
 from robolab.core.world.world_state import get_world
 from robolab.eval.base_client import InferenceClient
-from robolab.eval.episode import TimingStats, _load_rgb_image
-
-logger = logging.getLogger(__name__)
-
-REPO_ROOT = Path(__file__).resolve().parents[2]
-WM_GOAL_DIR = REPO_ROOT / "assets" / "wm_tasks"
 
 
-def _stage_goal_paths(env_cfg, stage: int) -> tuple[Path, Path]:
-    suffix = stage + 1
-    external_key = env_cfg.goal.get("external_camera", "over_shoulder_right_camera")
-    wrist_key = env_cfg.goal.get("wrist_camera", "wrist_cam")
-    task_name = getattr(env_cfg, "_task_name", env_cfg.__class__.__name__)
-    root = WM_GOAL_DIR / task_name
-    return root / f"{external_key}_{suffix}.png", root / f"{wrist_key}_{suffix}.png"
+def _load_rgb_image(path: Path) -> torch.Tensor:
+    image_np = cv2.imread(str(path), cv2.IMREAD_COLOR)
+    if image_np is None:
+        raise FileNotFoundError(f"Could not read goal image: {path}")
+    image_np = cv2.cvtColor(image_np, cv2.COLOR_BGR2RGB)
+    return torch.from_numpy(image_np.copy())
 
-
-def set_client_goal_images_for_stage(
+def set_client_goal_images(
     client,
     env,
     env_cfg,
+    subgoal_state,
     instruction: str,
-    stage: int,
     *,
     run_idx: int | None = None,
-    env_ids=None,
 ):
-    """Set stage-specific goal images on the client and clear local chunks."""
-    external_path, wrist_path = _stage_goal_paths(env_cfg, stage)
-    external_goal = _load_rgb_image(external_path)
-    wrist_goal = _load_rgb_image(wrist_path)
+    """Load cached goal images and set them on the policy client."""
+    
+    REPO_ROOT = Path(__file__).resolve().parents[2]
+    WM_GOAL_DIR = REPO_ROOT / "assets" / "wm_tasks"
+    
 
-    if env_ids is None:
-        env_ids = range(env.num_envs)
-
-    for env_id in env_ids:
+    for env_id in range(env.num_envs):
+        external_key = env_cfg.goal.get(f"external_camera_{subgoal_state[env_id]}")
+        wrist_key = env_cfg.goal.get(f"wrist_camera_{subgoal_state[env_id]}")
+        task_name = getattr(env_cfg, "_task_name", env_cfg.__class__.__name__)
+    
+        external_goal = _load_rgb_image(WM_GOAL_DIR / task_name / f"{external_key}.png")
+        wrist_goal = _load_rgb_image(WM_GOAL_DIR / task_name / f"{wrist_key}.png")
         client.set_goal_images(
             external_goal,
             wrist_goal,
-            env_id=int(env_id),
+            env_id=env_id,
             instruction=instruction,
             run_idx=run_idx,
         )
-        # Keep the new goal from inheriting an old open-loop chunk. Avoid the
-        # VALP client's server-side reset here; set_goal_images already updates
-        # server goal state.
-        InferenceClient.reset(client, env_id=int(env_id))
+    
+    return
 
+def run_episode(env, env_cfg, episode, client: InferenceClient, *, headless=False, save_videos=True, video_mode="all"):
+    """Run a policy-controlled episode across all parallel envs.
 
-def _first_condition_sequence(env_cfg):
-    subtasks = getattr(env_cfg, "subtasks", None) or []
-    if not subtasks:
-        return []
-    conditions = getattr(subtasks[0], "conditions", {})
-    if not conditions:
-        return []
-    first_group = next(iter(conditions.values()))
-    return [condition for condition, _score in first_group]
+    The policy client is constructed by the caller (typically via
+    :func:`robolab.eval.create_client`). This function stays policy-agnostic.
 
+    Args:
+        env: The environment instance (RobolabEnv with num_envs >= 1)
+        env_cfg: Environment configuration
+        episode: Run index (each run produces num_envs episodes)
+        client: Constructed inference client. One connection shared across envs
+            with per-env chunk state keyed by ``env_id``.
+        headless: If True, don't display video
+        save_videos: If True, save per-env episode videos
+        video_mode: Which videos to save: 'all', 'viewport', 'sensor', or 'none'
 
-def _condition_result_for_env(result, env_id: int) -> bool:
-    if isinstance(result, torch.Tensor):
-        if result.ndim == 0:
-            return bool(result.item())
-        return bool(result[env_id].item())
-    return bool(result)
-
-
-def _condition_met(condition, env, env_id: int) -> bool:
-    try:
-        return _condition_result_for_env(condition(env, env_id=env_id), env_id)
-    except TypeError:
-        return _condition_result_for_env(condition(env), env_id)
-
-
-def _stage_floor_from_step(env_cfg, step: int) -> int:
-    angled_steps = getattr(env_cfg, "angledreach_steps", None)
-    grasp_steps = getattr(env_cfg, "grasp_steps", None)
-    if angled_steps is None:
-        return 0
-    if grasp_steps is not None and step >= angled_steps + grasp_steps:
-        return 2
-    if step >= angled_steps:
-        return 1
-    return 0
-
-
-def _update_goal_stages(env, env_cfg, stages: list[int], stage_enter_steps: list[int], conditions, step: int) -> list[int]:
-    """Advance per-env goal stages from conditions, with step budgets as fallback."""
-    changed_envs: list[int] = []
-    max_goal_stage = 2
-    grasp_steps = getattr(env_cfg, "grasp_steps", 0) or 0
-
-    for env_id in range(env.num_envs):
-        if env._frozen_envs[env_id]:
-            continue
-
-        old_stage = stages[env_id]
-        target_stage = max(stages[env_id], _stage_floor_from_step(env_cfg, step))
-
-        if target_stage > 1 and (old_stage < 1 or step - stage_enter_steps[env_id] < grasp_steps):
-            target_stage = 1
-
-        while target_stage < len(conditions):
-            if target_stage == 1 and (old_stage < 1 or step - stage_enter_steps[env_id] < grasp_steps):
-                break
-            if not _condition_met(conditions[target_stage], env, env_id):
-                break
-            target_stage += 1
-
-        target_stage = min(target_stage, max_goal_stage)
-        if target_stage != old_stage:
-            stages[env_id] = target_stage
-            stage_enter_steps[env_id] = step
-            changed_envs.append(env_id)
-
-    return changed_envs
-
-
-def run_multi_subtasks_episode(env, env_cfg, episode, client: InferenceClient, *, headless=False, save_videos=True, video_mode="all"):
-    """Run an episode while swapping WM goal images across pickup subtasks."""
+    Returns:
+        tuple: (env_results, subtask_status, timing)
+            env_results: per-env dicts with {env_id, success, step}
+            subtask_status: list of per-step subtask info dicts
+            timing: dict with wall-clock timing breakdown
+    """
     timer = TimingStats()
 
     obs, _ = env.reset()
     obs, _ = env.reset()
+
+    # max_steps = env.max_episode_length
     max_steps = getattr(env_cfg, "episode_steps", None)
-    video_fps = 1 / (env_cfg.sim.render_interval * env_cfg.sim.dt)
+    angledreach_steps = getattr(env_cfg, "angledreach_steps", None)
+    grasp_steps = getattr(env_cfg, "grasp_steps", None)
+    pickup_steps = getattr(env_cfg, "pickup_steps", None)
+   
+    video_fps = 1 / (env_cfg.sim.render_interval * env_cfg.sim.dt) # Hz
     instruction = env_cfg.instruction
-    action_dim = getattr(getattr(env, "action_manager", None), "total_action_dim", None) or env.action_space.shape[-1]
+    # Pull action dim from the env's action manager (IsaacLab canonical),
+    # falling back to the gym action space if the manager isn't available.
+    action_dim = getattr(
+        getattr(env, "action_manager", None),
+        "total_action_dim",
+        None,
+    ) or env.action_space.shape[-1]
 
     subtask_status = []
-    clients = [client] * env.num_envs
-    stages = [0 for _ in range(env.num_envs)]
-    stage_enter_steps = [0 for _ in range(env.num_envs)]
-    conditions = _first_condition_sequence(env_cfg)
+    subgoal_state = [1 for _ in range(env.num_envs)]  # 1st initial subgoal state for goal image selection
 
+    clients = [client] * env.num_envs
     if hasattr(client, "reset"):
         client.reset()
     if hasattr(client, "set_goal_images"):
-        set_client_goal_images_for_stage(client, env, env_cfg, instruction, 0, run_idx=episode)
-
-    if env.recorder_manager is not None and hasattr(env.recorder_manager, "set_hdf5_file"):
+        set_client_goal_images(client, env, env_cfg, subgoal_state, instruction, run_idx=episode)
+        # set different initial config
+        # actions = torch.tensor([[0.0, 0.0, 0.0, 0.0, 0.0, -1.5, 0.0]], device=env.device).repeat(env.num_envs, 1)
+        # env.step(actions)  # step to update visuals after setting goal images
+    
+    # Set up per-run HDF5 file and per-env demo indices
+    if env.recorder_manager is not None and hasattr(env.recorder_manager, 'set_hdf5_file'):
         env.recorder_manager.set_hdf5_file(f"run_{episode}.hdf5")
         for env_id in range(env.num_envs):
             env.recorder_manager.set_episode_index(env_id, env_ids=[env_id])
 
+    # Setup per-env streaming video writers
     save_sensor = save_videos and video_mode in ("all", "sensor")
     save_viewport = save_videos and video_mode in ("all", "viewport")
-    cleaned_instruction = re.sub(r"[^\w\s]", "", instruction).replace(" ", "_")
+    cleaned_instruction = re.sub(r'[^\w\s]', '', instruction).replace(' ', '_')
+    # Define unconditionally so the finally clause below can iterate them either way.
     video_writers_obs: list[VideoWriter] = []
     video_writers_viewport: list[VideoWriter] = []
     if save_videos:
         for env_id in range(env.num_envs):
             suffix = f"_{episode}_env{env_id}" if env.num_envs > 1 else f"_{episode}"
             if save_sensor:
-                video_writers_obs.append(VideoWriter(os.path.join(get_output_dir(), f"{cleaned_instruction}{suffix}.mp4"), video_fps))
+                video_path = os.path.join(get_output_dir(), f"{cleaned_instruction}{suffix}.mp4")
+                video_writers_obs.append(VideoWriter(video_path, video_fps))
             if save_viewport:
-                video_writers_viewport.append(VideoWriter(os.path.join(get_output_dir(), f"{cleaned_instruction}{suffix}_viewport.mp4"), video_fps))
+                video_path_viewport = os.path.join(get_output_dir(), f"{cleaned_instruction}{suffix}_viewport.mp4")
+                video_writers_viewport.append(VideoWriter(video_path_viewport, video_fps))
 
     import omni.kit.app
     import omni.timeline
-
     timeline = omni.timeline.get_timeline_interface()
     kit_app = omni.kit.app.get_app()
 
     actual_steps = 0
     try:
         for step in tqdm(range(max_steps)):
+
             while not timeline.is_playing():
                 kit_app.update()
 
             timer.start("policy_inference")
+            # Infer actions for all active (non-frozen) envs
             actions = torch.zeros(env.num_envs, action_dim, device=env.device)
             last_viz = None
             for env_id in env.active_env_ids:
@@ -205,6 +196,10 @@ def run_multi_subtasks_episode(env, env_cfg, episode, client: InferenceClient, *
                 if env_id == 0 or last_viz is None:
                     last_viz = ret.get("viz")
             timer.stop("policy_inference")
+
+            # TODO: for each env, check if subgoal has been achieved, if so update subgoal_state and call set_client_goal_images to update goal images for remaining subgoals
+            
+
 
             if not headless and last_viz is not None:
                 cv2.imshow(f"{instruction}", cv2.cvtColor(last_viz, cv2.COLOR_RGB2BGR))
@@ -217,27 +212,11 @@ def run_multi_subtasks_episode(env, env_cfg, episode, client: InferenceClient, *
             obs, reward, term, trunc, info = env.step(actions)
             timer.stop("env_step")
 
+            # Collect per-env subtask info (list of dicts, one per env)
             per_env_infos = get_all_env_subtask_infos(env)
             subtask_status.append(per_env_infos)
 
-            if hasattr(client, "set_goal_images"):
-                current_step = step + 1
-                changed_envs = _update_goal_stages(env, env_cfg, stages, stage_enter_steps, conditions, current_step)
-                for env_id in changed_envs:
-                    if stages[env_id] == 1:
-                        print(f"[multi_subtasks_episode] env {env_id}: switching to goal _2 at step {current_step}", flush=True)
-                    elif stages[env_id] == 2:
-                        print(f"[multi_subtasks_episode] env {env_id}: switching to goal _3 at step {current_step}", flush=True)
-                    set_client_goal_images_for_stage(
-                        client,
-                        env,
-                        env_cfg,
-                        instruction,
-                        stages[env_id],
-                        run_idx=episode,
-                        env_ids=[env_id],
-                    )
-
+            # Write per-env video frames (skip frozen envs)
             if save_videos:
                 timer.start("video_write")
                 for env_id in range(env.num_envs):
@@ -252,6 +231,8 @@ def run_multi_subtasks_episode(env, env_cfg, episode, client: InferenceClient, *
                 timer.stop("video_write")
 
             actual_steps += 1
+
+            # RobolabEnv freezes terminated envs and exports recordings automatically
             if env.all_terminated:
                 break
     finally:
