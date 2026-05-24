@@ -47,11 +47,14 @@ chown -R 10175:101010 /workspace/robolab/output && chmod -R u+rw /workspace/robo
 
 
 - serve model has configs of rot now 
-TODO:
-- rotatedreach:
-    - check statistics on rotated reach tasks
+TODO: 
 - pickup:
-    - change angledhome return condition
+    - setup exp on kit-rtx
+    - change angledhome subgoal-3 return termination condition (include angle and pos)
+    - check if switching goal imges is correct
+    - sweep script
+    - save gripper states in recording
+
 - visual robustness experiments:
     3 table textures
     10 background 
@@ -60,6 +63,7 @@ TODO:
     camera, rcs int
 
 Paper:
+    - statistics on rotated reach tasks
     - inf time and speed
     - write expt section
        
