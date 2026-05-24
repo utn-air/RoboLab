@@ -38,6 +38,7 @@ python examples/demo/run_env_keys.py --headless --task AngledReachShelfForkTask
 
 # more handy commands
 pkill -f "valp/inference/serve_policy.py"
+pkill -f "valp/inference/serve_policy_pickup.py"
 screen -S valp_sweep
 Ctrl-a d
 screen -r valp_sweep

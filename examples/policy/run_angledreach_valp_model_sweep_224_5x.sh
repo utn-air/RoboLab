@@ -19,6 +19,8 @@ MODEL_CONFIGS=(
     droid-224px-8f-roboarena.yaml
     droid-224px-8f-ind.yaml
     droid-224px-8f-right.yaml
+    droid-224px-8f-wrist.yaml
+    droid-224px-8f-dual.yaml
 )
 
 SERVER_PID=""
