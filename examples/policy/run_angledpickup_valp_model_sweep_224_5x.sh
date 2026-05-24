@@ -297,11 +297,11 @@ for cfg_file in "${MODEL_CONFIGS[@]}"; do
     DEVICE="$DEVICE" \
         "$ISAAC_PYTHON" examples/policy/run_eval_pickup.py \
     --policy valp \
-    --num-runs 1 \
-    --num-envs 5 \
+    --num-runs 5 \
+    --num-envs 1 \
     --device "$DEVICE" \
     --task-dirs wm_tasks/angledpickup \
-    --task AngledPickupKetchupTask AngledPickupAngledHomeKetchupTask\
+    --task AngledPickupKetchupTask \
     --remote-host "$REMOTE_HOST" \
     --remote-port "$REMOTE_PORT" \
     --output-folder-name "$output_folder_name" \

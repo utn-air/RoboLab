@@ -76,8 +76,8 @@ fi
 PROTOCOL_BUFFERS_PYTHON_IMPLEMENTATION=python \
     "$ISAAC_PYTHON" examples/policy/run_eval_angled.py \
     --policy valp \
-    --num-runs 1 \
-    --num-envs 5 \
+    --num-runs 5 \
+    --num-envs 1 \
     --device "$DEVICE" \
     --task-dirs wm_tasks/angledreach \
     --task "${TASKS[@]}" \
