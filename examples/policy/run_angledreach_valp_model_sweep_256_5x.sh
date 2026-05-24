@@ -292,7 +292,7 @@ for cfg_file in "${MODEL_CONFIGS[@]}"; do
     VIDEO_MODE="$VIDEO_MODE" \
     OUTPUT_FOLDER_NAME="$output_folder_name" \
     DEVICE="$DEVICE" \
-        bash examples/policy/run_angledreach_valp_eval_5x_256.sh
+        bash examples/policy/run_angledreach_valp_eval_5x.sh
 
     archive_model_output "$output_folder_name"
     cleanup_server

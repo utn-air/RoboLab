@@ -39,7 +39,6 @@ import sys
 from isaaclab.app import AppLauncher
 from robolab.constants import get_timestamp, DEFAULT_TASK_SUBFOLDERS # noqa
 
-DEFAULT_KIT_ARGS = "--/app/livestream/publicEndpointAddress=172.29.5.11  --/app/livestream/port=49100"
 
 # add argparse arguments
 parser = argparse.ArgumentParser(description="")
@@ -107,8 +106,7 @@ parser.add_argument("--background-seed", "--background_seed", type=int, default=
 args_cli, _= parser.parse_known_args()
 
 # isaac webRTC live streaming settings
-args_cli.livestream = 0 if args_cli.headless else 2
-args_cli.kit_args = DEFAULT_KIT_ARGS
+args_cli.livestream = 0
 
 args_cli.enable_cameras = True
 args_cli.save_videos = args_cli.video_mode != "none"
