@@ -68,6 +68,7 @@ def set_client_goal_images(
     client,
     env,
     env_cfg,
+    env_id,
     subgoal_state,
     instruction: str,
     *,
@@ -79,20 +80,19 @@ def set_client_goal_images(
     WM_GOAL_DIR = REPO_ROOT / "assets" / "wm_tasks"
     
 
-    for env_id in range(env.num_envs):
-        external_key = env_cfg.goal.get(f"external_camera_{subgoal_state[env_id]}")
-        wrist_key = env_cfg.goal.get(f"wrist_camera_{subgoal_state[env_id]}")
-        task_name = getattr(env_cfg, "_task_name", env_cfg.__class__.__name__)
+    external_key = env_cfg.goal.get("external_camera")
+    wrist_key = env_cfg.goal.get("wrist_camera")
+    task_name = getattr(env_cfg, "_task_name", env_cfg.__class__.__name__)
     
-        external_goal = _load_rgb_image(WM_GOAL_DIR / task_name / f"{external_key}.png")
-        wrist_goal = _load_rgb_image(WM_GOAL_DIR / task_name / f"{wrist_key}.png")
-        client.set_goal_images(
-            external_goal,
-            wrist_goal,
-            env_id=env_id,
-            instruction=instruction,
-            run_idx=run_idx,
-        )
+    external_goal = _load_rgb_image(WM_GOAL_DIR / task_name / f"{external_key}_{subgoal_state}.png")
+    wrist_goal = _load_rgb_image(WM_GOAL_DIR / task_name / f"{wrist_key}_{subgoal_state}.png")
+    client.set_goal_images(
+        external_goal,
+        wrist_goal,
+        env_id=env_id,
+        instruction=instruction,
+        run_idx=run_idx,
+    )
     
     return
 
@@ -146,10 +146,9 @@ def run_episode(env, env_cfg, episode, client: InferenceClient, *, headless=Fals
     if hasattr(client, "reset"):
         client.reset()
     if hasattr(client, "set_goal_images"):
-        set_client_goal_images(client, env, env_cfg, subgoal_state, instruction, run_idx=episode)
-        # set different initial config
-        # actions = torch.tensor([[0.0, 0.0, 0.0, 0.0, 0.0, -1.5, 0.0]], device=env.device).repeat(env.num_envs, 1)
-        # env.step(actions)  # step to update visuals after setting goal images
+        for env_id in range(env.num_envs):
+            set_client_goal_images(client, env, env_cfg, env_id, subgoal_state[env_id], instruction, run_idx=episode)
+        
     
     # Set up per-run HDF5 file and per-env demo indices
     if env.recorder_manager is not None and hasattr(env.recorder_manager, 'set_hdf5_file'):
@@ -180,6 +179,7 @@ def run_episode(env, env_cfg, episode, client: InferenceClient, *, headless=Fals
     kit_app = omni.kit.app.get_app()
 
     actual_steps = 0
+    curr_grasp_step = 0
     try:
         for step in tqdm(range(max_steps)):
 
@@ -197,9 +197,99 @@ def run_episode(env, env_cfg, episode, client: InferenceClient, *, headless=Fals
                     last_viz = ret.get("viz")
             timer.stop("policy_inference")
 
-            # TODO: for each env, check if subgoal has been achieved, if so update subgoal_state and call set_client_goal_images to update goal images for remaining subgoals
-            
+            if hasattr(client, "set_goal_images") and env.recorder_manager is not None:
+                subtask_state_machines = None
+                for term in env.recorder_manager._terms.values():
+                    if hasattr(term, "subtask_state_machines"):
+                        subtask_state_machines = term.subtask_state_machines
+                        break
 
+                if subtask_state_machines is not None:
+                    for env_id in env.active_env_ids:
+                        conditionals_sm = subtask_state_machines[env_id].conditionals_state_machine
+
+                        condition_counts = [
+                            len(conditions)
+                            for conditions in conditionals_sm.subtask.conditions.values()
+                        ]
+                        if conditionals_sm.subtask.logical == "all":
+                            completed_conditions = min(conditionals_sm.object_tracker.values())
+                        else:
+                            completed_conditions = max(conditionals_sm.object_tracker.values())
+
+                        next_subgoal_state = completed_conditions + 1
+
+
+                        # subgoal achieved, move to next subgoal and update goal images on client
+                        if next_subgoal_state > subgoal_state[env_id]:
+                            # angled reach satisfied
+                            if next_subgoal_state == 2:
+                                print(f"Env {env_id} completed subgoal state {subgoal_state[env_id]} at step {step} with conditions satisfied")
+                                subgoal_state[env_id] = next_subgoal_state
+
+                                set_client_goal_images(
+                                    client,
+                                    env,
+                                    env_cfg,
+                                    env_id,
+                                    subgoal_state[env_id],
+                                    instruction,
+                                    run_idx=episode     
+                                )
+                                continue 
+                        
+                            if next_subgoal_state == 3:
+                                if curr_grasp_step == grasp_steps:
+                                    print(f"Env {env_id} completed grasp subgoal state {subgoal_state[env_id]} -> {next_subgoal_state}")
+                                    subgoal_state[env_id] = next_subgoal_state
+
+                                    set_client_goal_images(
+                                        client,
+                                        env,
+                                        env_cfg,
+                                        env_id,
+                                        subgoal_state[env_id],
+                                        instruction,
+                                        run_idx=episode     
+                                    )
+                                    continue
+
+                                curr_grasp_step = curr_grasp_step + 1
+                            
+                            
+                        # reached max angled reach steps
+                        if step + 1 > angledreach_steps and subgoal_state[env_id] == 1:
+                            print(f"Env {env_id} to next subgoal state due to step count {step+1} > angledreach_steps {angledreach_steps}")
+                            subgoal_state[env_id] = subgoal_state[env_id] + 1
+                            set_client_goal_images(
+                                client,
+                                env,
+                                env_cfg,        
+                                env_id,
+                                subgoal_state[env_id],
+                                instruction,
+                                run_idx=episode     
+                            )
+                            curr_grasp_step = curr_grasp_step + 1
+                            continue  
+
+                        if subgoal_state[env_id] == 2 and curr_grasp_step == grasp_steps:
+                            print(f"Env {env_id} to next subgoal state due to grasp step count {curr_grasp_step} == grasp_steps {grasp_steps}")
+                            subgoal_state[env_id] = subgoal_state[env_id] + 1
+                            set_client_goal_images(
+                                client,
+                                env,
+                                env_cfg,        
+                                env_id,
+                                subgoal_state[env_id],
+                                instruction,
+                                run_idx=episode     
+                            )
+                            continue
+                        
+                        
+
+                        
 
             if not headless and last_viz is not None:
                 cv2.imshow(f"{instruction}", cv2.cvtColor(last_viz, cv2.COLOR_RGB2BGR))
