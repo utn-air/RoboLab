@@ -96,7 +96,7 @@ def set_client_goal_images(
     
     return
 
-def run_episode(env, env_cfg, episode, client: InferenceClient, *, headless=False, save_videos=True, video_mode="all"):
+def run_multi_subtasks_episode(env, env_cfg, episode, client: InferenceClient, *, headless=False, save_videos=True, video_mode="all"):
     """Run a policy-controlled episode across all parallel envs.
 
     The policy client is constructed by the caller (typically via
@@ -236,7 +236,6 @@ def run_episode(env, env_cfg, episode, client: InferenceClient, *, headless=Fals
                                     instruction,
                                     run_idx=episode     
                                 )
-                                continue 
                         
                             if next_subgoal_state == 3:
                                 if curr_grasp_step == grasp_steps:
@@ -252,13 +251,12 @@ def run_episode(env, env_cfg, episode, client: InferenceClient, *, headless=Fals
                                         instruction,
                                         run_idx=episode     
                                     )
-                                    continue
-
-                                curr_grasp_step = curr_grasp_step + 1
+                                else:
+                                    curr_grasp_step = curr_grasp_step + 1
                             
                             
                         # reached max angled reach steps
-                        if step + 1 > angledreach_steps and subgoal_state[env_id] == 1:
+                        elif step + 1 > angledreach_steps and subgoal_state[env_id] == 1:
                             print(f"Env {env_id} to next subgoal state due to step count {step+1} > angledreach_steps {angledreach_steps}")
                             subgoal_state[env_id] = subgoal_state[env_id] + 1
                             set_client_goal_images(
@@ -271,9 +269,9 @@ def run_episode(env, env_cfg, episode, client: InferenceClient, *, headless=Fals
                                 run_idx=episode     
                             )
                             curr_grasp_step = curr_grasp_step + 1
-                            continue  
+                              
 
-                        if subgoal_state[env_id] == 2 and curr_grasp_step == grasp_steps:
+                        elif subgoal_state[env_id] == 2 and curr_grasp_step == grasp_steps:
                             print(f"Env {env_id} to next subgoal state due to grasp step count {curr_grasp_step} == grasp_steps {grasp_steps}")
                             subgoal_state[env_id] = subgoal_state[env_id] + 1
                             set_client_goal_images(
@@ -285,11 +283,11 @@ def run_episode(env, env_cfg, episode, client: InferenceClient, *, headless=Fals
                                 instruction,
                                 run_idx=episode     
                             )
-                            continue
-                        
-                        
-
-                        
+                            
+                            
+                        elif subgoal_state[env_id] == 2 and curr_grasp_step < grasp_steps:
+                            curr_grasp_step = curr_grasp_step + 1
+                              
 
             if not headless and last_viz is not None:
                 cv2.imshow(f"{instruction}", cv2.cvtColor(last_viz, cv2.COLOR_RGB2BGR))
