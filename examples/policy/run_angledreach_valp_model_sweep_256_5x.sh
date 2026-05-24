@@ -285,7 +285,7 @@ for cfg_file in "${MODEL_CONFIGS[@]}"; do
 
     MODEL_NAMES+=("$model_name")
 
-    echo "=== Running 30 angledreach eval episodes for hosted model $model_name ==="
+    echo "=== Running angledreach eval episodes for hosted model $model_name ==="
     REMOTE_HOST="$REMOTE_HOST" \
     REMOTE_PORT="$REMOTE_PORT" \
     HEADLESS="$HEADLESS" \

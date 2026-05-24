@@ -25,7 +25,7 @@ class AngledPickupKetchupTerminations:
         func=object_picked_up,
         params={"object": "ketchup_bottle", 
                 "surface": "table", 
-                "distance": 0.05, #0.19m
+                "distance": 0.40, #0.19m
                 },
 
     )
@@ -83,7 +83,7 @@ class AngledPickupKetchupTask(Task):
                             object_picked_up,
                             object="ketchup_bottle",
                             surface="table",
-                            distance=0.10,
+                            distance=0.40,
                         ),
                         1.0,
                     ),

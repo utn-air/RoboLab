@@ -328,15 +328,15 @@ def save_steps_summary_plot(model_steps, output_path):
 	plt.close()
 
 
-zip_paths = ["output/cleandata/right_vjepa.zip",
-			"output/cleandata/right_dinov3.zip",
-			 "output/cleandata/wrist_vjepa.zip",
-			 "output/cleandata/wrist_dinov3.zip",
-			 "output/cleandata/ind_vjepa.zip",
-			 "output/cleandata/ind_dinov3.zip",
-			 "output/cleandata/dual_vjepa.zip",
-			 "output/cleandata/dual_dinov3.zip",
-			 "output/cleandata/dual_dinov3_roboarena.zip",
+zip_paths = ["output_reach/cleandata/right_vjepa.zip",
+			"output_reach/cleandata/right_dinov3.zip",
+			 "output_reach/cleandata/wrist_vjepa.zip",
+			 "output_reach/cleandata/wrist_dinov3.zip",
+			 "output_reach/cleandata/ind_vjepa.zip",
+			 "output_reach/cleandata/ind_dinov3.zip",
+			 "output_reach/cleandata/dual_vjepa.zip",
+			 "output_reach/cleandata/dual_dinov3.zip",
+			 "output_reach/cleandata/dual_dinov3_roboarena.zip",
 			 ]
 
 zip_paths = [Path(zip_path) for zip_path in zip_paths]
