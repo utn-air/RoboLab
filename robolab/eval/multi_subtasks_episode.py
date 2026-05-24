@@ -112,10 +112,11 @@ def _stage_floor_from_step(env_cfg, step: int) -> int:
     return 0
 
 
-def _update_goal_stages(env, env_cfg, stages: list[int], conditions, step: int) -> list[int]:
+def _update_goal_stages(env, env_cfg, stages: list[int], stage_enter_steps: list[int], conditions, step: int) -> list[int]:
     """Advance per-env goal stages from conditions, with step budgets as fallback."""
     changed_envs: list[int] = []
     max_goal_stage = 2
+    grasp_steps = getattr(env_cfg, "grasp_steps", 0) or 0
 
     for env_id in range(env.num_envs):
         if env._frozen_envs[env_id]:
@@ -124,7 +125,12 @@ def _update_goal_stages(env, env_cfg, stages: list[int], conditions, step: int) 
         old_stage = stages[env_id]
         target_stage = max(stages[env_id], _stage_floor_from_step(env_cfg, step))
 
+        if target_stage > 1 and (old_stage < 1 or step - stage_enter_steps[env_id] < grasp_steps):
+            target_stage = 1
+
         while target_stage < len(conditions):
+            if target_stage == 1 and (old_stage < 1 or step - stage_enter_steps[env_id] < grasp_steps):
+                break
             if not _condition_met(conditions[target_stage], env, env_id):
                 break
             target_stage += 1
@@ -132,6 +138,7 @@ def _update_goal_stages(env, env_cfg, stages: list[int], conditions, step: int) 
         target_stage = min(target_stage, max_goal_stage)
         if target_stage != old_stage:
             stages[env_id] = target_stage
+            stage_enter_steps[env_id] = step
             changed_envs.append(env_id)
 
     return changed_envs
@@ -151,6 +158,7 @@ def run_multi_subtasks_episode(env, env_cfg, episode, client: InferenceClient, *
     subtask_status = []
     clients = [client] * env.num_envs
     stages = [0 for _ in range(env.num_envs)]
+    stage_enter_steps = [0 for _ in range(env.num_envs)]
     conditions = _first_condition_sequence(env_cfg)
 
     if hasattr(client, "reset"):
@@ -213,8 +221,13 @@ def run_multi_subtasks_episode(env, env_cfg, episode, client: InferenceClient, *
             subtask_status.append(per_env_infos)
 
             if hasattr(client, "set_goal_images"):
-                changed_envs = _update_goal_stages(env, env_cfg, stages, conditions, step + 1)
+                current_step = step + 1
+                changed_envs = _update_goal_stages(env, env_cfg, stages, stage_enter_steps, conditions, current_step)
                 for env_id in changed_envs:
+                    if stages[env_id] == 1:
+                        print(f"[multi_subtasks_episode] env {env_id}: switching to goal _2 at step {current_step}", flush=True)
+                    elif stages[env_id] == 2:
+                        print(f"[multi_subtasks_episode] env {env_id}: switching to goal _3 at step {current_step}", flush=True)
                     set_client_goal_images_for_stage(
                         client,
                         env,

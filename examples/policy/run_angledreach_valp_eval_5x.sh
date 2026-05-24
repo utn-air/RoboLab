@@ -18,8 +18,8 @@ if [[ -n "$VIDEO_MODE" ]]; then
 fi
 
 TASKS=(
-    AngledReachCartoonTask
     AngledReachDrillTask
+    AngledReachCartoonTask
     AngledReachKetchupTask
 )
 

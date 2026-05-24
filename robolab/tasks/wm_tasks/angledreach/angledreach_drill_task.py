@@ -36,11 +36,10 @@ class AngledReachDrillTask(Task):
     contact_object_list = [
         "table",
         "cordless_drill",
-        "husky_hammer",
         "left_bin",
         "right_bin",
     ]
-    scene = import_scene("tools_container.usda", contact_object_list)
+    scene = import_scene("tools_container2.usda", contact_object_list)
     terminations = AngledReachDrillTerminations
     instruction = {
         "default": "AngledReachDrill",

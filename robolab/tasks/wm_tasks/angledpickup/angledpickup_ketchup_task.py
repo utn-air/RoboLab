@@ -53,7 +53,7 @@ class AngledPickupKetchupTask(Task):
     }
     episode_steps: int = 110
     angledreach_steps: int = 75
-    grasp_steps: int = 5
+    grasp_steps: int = 10
     pickup_steps: int = 30
 
     attributes = ["angled_reach", "pickup", "grasp", "lift", "dominant_yaw", "+rz", "goal"]
