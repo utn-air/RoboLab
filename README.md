@@ -150,7 +150,7 @@ uv run robolab-dashboard
 ```
 
 <video src="https://github.com/user-attachments/assets/5992e61b-9043-4602-8402-04459da38421" autoplay controls muted loop playsinline width="800">
-  Your viewer doesn't render inline video — see <a href="docs/images/robolab_dashboard.mp4">robolab_dashboard.mp4</a>.
+  Your viewer doesn't render inline video — see <a href="https://github.com/user-attachments/assets/5992e61b-9043-4602-8402-04459da38421">robolab_dashboard.mp4</a>.
 </video>
 
 See **[docs/dashboard.md](docs/dashboard.md)** for the full feature tour, CLI
