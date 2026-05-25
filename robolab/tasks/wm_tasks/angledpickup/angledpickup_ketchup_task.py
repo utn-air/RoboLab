@@ -11,7 +11,7 @@ from isaaclab.utils import configclass
 
 from robolab.constants import ASSET_DIR
 from robolab.core.scenes.utils import import_scene
-from robolab.core.task.conditionals import angled_reach_object, object_grabbed, object_picked_up
+from robolab.core.task.conditionals import angled_reach_object, object_grabbed
 from robolab.core.task.subtask import Subtask
 from robolab.core.task.task import Task
 
@@ -22,11 +22,13 @@ STATUS_PATH = Path(ASSET_DIR) / "wm_tasks" / "AngledPickupKetchupTask" / "status
 class AngledPickupKetchupTerminations:
     time_out = DoneTerm(func=mdp.time_out, time_out=True)
     success = DoneTerm(
-        func=object_picked_up,
-        params={"object": "ketchup_bottle", 
-                "surface": "table", 
-                "distance": 0.40, #0.19m
-                },
+        func=angled_reach_object,
+        params={
+            "pos_tolerance": 0.04,
+            "angle_tolerance": 0.09,
+            "status_path": STATUS_PATH,
+            "ee_pose_key": "last_ee_pose_3"
+            },
 
     )
 
@@ -80,10 +82,11 @@ class AngledPickupKetchupTask(Task):
                     (partial(object_grabbed, object="ketchup_bottle"), 1.0),
                     (
                         partial(
-                            object_picked_up,
-                            object="ketchup_bottle",
-                            surface="table",
-                            distance=0.40,
+                            angled_reach_object,
+                            pos_tolerance=0.04,
+                            angle_tolerance=0.09,
+                            status_path=STATUS_PATH,
+                            ee_pose_key="last_ee_pose_3",
                         ),
                         1.0,
                     ),

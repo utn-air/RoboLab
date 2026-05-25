@@ -179,7 +179,7 @@ def run_multi_subtasks_episode(env, env_cfg, episode, client: InferenceClient, *
     kit_app = omni.kit.app.get_app()
 
     actual_steps = 0
-    curr_grasp_step = 0
+    curr_grasp_step = [0 for _ in range(env.num_envs)]
     try:
         for step in tqdm(range(max_steps)):
 
@@ -238,7 +238,7 @@ def run_multi_subtasks_episode(env, env_cfg, episode, client: InferenceClient, *
                                 )
                         
                             if next_subgoal_state == 3:
-                                if curr_grasp_step == grasp_steps:
+                                if curr_grasp_step[env_id] == grasp_steps:
                                     print(f"Env {env_id} completed grasp subgoal state {subgoal_state[env_id]} -> {next_subgoal_state}")
                                     subgoal_state[env_id] = next_subgoal_state
 
@@ -252,7 +252,7 @@ def run_multi_subtasks_episode(env, env_cfg, episode, client: InferenceClient, *
                                         run_idx=episode     
                                     )
                                 else:
-                                    curr_grasp_step = curr_grasp_step + 1
+                                    curr_grasp_step[env_id] = curr_grasp_step[env_id] + 1
                             
                             
                         # reached max angled reach steps
@@ -268,11 +268,11 @@ def run_multi_subtasks_episode(env, env_cfg, episode, client: InferenceClient, *
                                 instruction,
                                 run_idx=episode     
                             )
-                            curr_grasp_step = curr_grasp_step + 1
+                            curr_grasp_step[env_id] = curr_grasp_step[env_id] + 1
                               
 
-                        elif subgoal_state[env_id] == 2 and curr_grasp_step == grasp_steps:
-                            print(f"Env {env_id} to next subgoal state due to grasp step count {curr_grasp_step} == grasp_steps {grasp_steps}")
+                        elif subgoal_state[env_id] == 2 and curr_grasp_step[env_id] == grasp_steps:
+                            print(f"Env {env_id} to next subgoal state due to grasp step count {curr_grasp_step[env_id]} == grasp_steps {grasp_steps}")
                             subgoal_state[env_id] = subgoal_state[env_id] + 1
                             set_client_goal_images(
                                 client,
@@ -285,8 +285,8 @@ def run_multi_subtasks_episode(env, env_cfg, episode, client: InferenceClient, *
                             )
                             
                             
-                        elif subgoal_state[env_id] == 2 and curr_grasp_step < grasp_steps:
-                            curr_grasp_step = curr_grasp_step + 1
+                        elif subgoal_state[env_id] == 2 and curr_grasp_step[env_id] < grasp_steps:
+                            curr_grasp_step[env_id] = curr_grasp_step[env_id] + 1
                               
 
             if not headless and last_viz is not None:

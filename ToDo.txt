@@ -50,8 +50,6 @@ chown -R 10175:101010 /workspace/robolab/output && chmod -R u+rw /workspace/robo
 TODO: 
 - pickup:
     - setup exp on kit-rtx
-    - change angledhome subgoal-3 return termination condition (include angle and pos)
-    - check if switching goal imges is correct
     - sweep script
     - save gripper states in recording
 

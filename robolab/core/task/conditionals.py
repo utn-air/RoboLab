@@ -115,6 +115,7 @@ def pick_and_place_on_surface(
 def reach_object(
     env,
     tolerance: float = 0.04,
+    ee_pose_key: str = "last_ee_pose",
     link_name: str = "panda_link8",
     status_path: str | Path | None = None,
     env_id: int | None = None,
@@ -129,7 +130,7 @@ def reach_object(
     # target ee_pose
     with status_path.open("r", encoding="utf-8") as handle:
         status_payload = json.load(handle)
-    target_ee_pose = status_payload.get("last_ee_pose")
+    target_ee_pose = status_payload.get(ee_pose_key)
     target_pos = torch.tensor(target_ee_pose[:3], dtype=torch.float32, device=env.device)
 
     # current gripper pose
@@ -176,6 +177,7 @@ def angled_reach_object(
     env,
     pos_tolerance: float = 0.04,
     angle_tolerance: float = 0.20,  # radians, ~11.5 degrees
+    ee_pose_key: str = "last_ee_pose",
     link_name: str = "panda_link8",
     status_path: str | Path | None = None,
     env_id: int | None = None,
@@ -191,7 +193,7 @@ def angled_reach_object(
     with status_path.open("r", encoding="utf-8") as handle:
         status_payload = json.load(handle)
 
-    target_ee_pose = status_payload.get("last_ee_pose")
+    target_ee_pose = status_payload.get(ee_pose_key)
     target_pos = torch.tensor(
         target_ee_pose[:3],
         dtype=torch.float32,
