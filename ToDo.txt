@@ -49,7 +49,6 @@ chown -R 10175:101010 /workspace/robolab/output && chmod -R u+rw /workspace/robo
 - serve model has configs of rot now 
 TODO: 
 - pickup:
-    - setup exp on kit-rtx
     - sweep script
     - save gripper states in recording
 
