@@ -3,7 +3,14 @@ import zipfile
 import h5py
 import json 
 
-folder_paths = ["output/dual_dinov3_roboarena_angledreach"]
+folder_paths = ["output_angledreach/dual_dinov3_roboarena_angledreach",
+                "output_angledreach/dual_dinov3_dual",
+                "output_angledreach/dual_dinov3_right",
+                "output_angledreach/dual_dinov3_wrist",
+                "output_angledreach/dual_vjepa_dual",
+                "output_angledreach/dual_vjepa_right",
+                "output_angledreach/dual_vjepa_wrist"
+                ]
 
 
 simple_tasks = [
