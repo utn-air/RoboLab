@@ -98,6 +98,44 @@ class PreStepFlatPolicyObservationsRecorder(RecorderTerm):
         return "obs", self._env.obs_buf
 
 
+class PostStepGripperStateRecorder(RecorderTerm):
+    """Recorder term that stores gripper state at the end of each step."""
+
+    def __init__(self, cfg: "PostStepGripperStateRecorderCfg", env):
+        super().__init__(cfg, env)
+        self._robot_cfg_name = cfg.robot_cfg_name
+        self._gripper_joint_name = cfg.ee_body_name
+        self._robot = None
+        self._gripper_joint_idx = None
+        self._initialized = False
+
+    def record_post_step(self):
+        # Lazy initialization to find robot and gripper joint index
+        if not self._initialized:
+            self._initialized = True
+            if self._robot_cfg_name in self._env.scene.articulations:
+                self._robot = self._env.scene[self._robot_cfg_name]
+                joint_names = self._robot.data.joint_names
+                if self._gripper_joint_name in joint_names:
+                    self._gripper_joint_idx = joint_names.index(self._gripper_joint_name)
+                else:
+                    for i, name in enumerate(joint_names):
+                        if self._gripper_joint_name in name:
+                            self._gripper_joint_idx = i
+                            break
+                    if self._gripper_joint_idx is None:
+                        print(f"[PostStepGripperStateRecorder] Joint '{self._gripper_joint_name}' not found. Available: {joint_names}")
+            else:
+                print(f"[PostStepGripperStateRecorder] Robot '{self._robot_cfg_name}' not found in scene.")
+
+        if self._robot is None or self._gripper_joint_idx is None:
+            return None, None
+
+        gripper_state = self._robot.data.joint_pos[:, self._gripper_joint_idx].unsqueeze(1)
+
+        return "gripper_state", gripper_state
+
+
 class PostStepEndEffectorPoseRecorder(RecorderTerm):
     """Recorder term that records the end effector pose and velocity at the end of each step.
 
@@ -263,6 +301,15 @@ class PreStepFlatPolicyObservationsRecorderCfg(RecorderTermCfg):
     """Configuration for the step policy observation recorder term."""
 
     class_type: type[RecorderTerm] = PreStepFlatPolicyObservationsRecorder
+
+
+@configclass
+class PostStepGripperStateRecorderCfg(RecorderTermCfg):
+    """Configuration for the gripper state recorder term."""
+
+    class_type: type[RecorderTerm] = PostStepGripperStateRecorder
+    robot_cfg_name: str = "robot"
+    ee_body_name: str = "finger_joint"
 
 
 @configclass

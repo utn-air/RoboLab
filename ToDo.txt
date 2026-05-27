@@ -38,32 +38,25 @@ python examples/demo/run_env_keys.py --headless --task AngledReachShelfForkTask
 
 # more handy commands
 pkill -f "valp/inference/serve_policy.py"
-pkill -f "valp/inference/serve_policy_pickup.py"
 screen -S valp_sweep
 Ctrl-a d
 screen -r valp_sweep
 screen -ls
 chown -R 10175:101010 /workspace/robolab/output && chmod -R u+rw /workspace/robolab/output
 
-
-- serve model has configs of rot now 
 TODO: 
-- pickup:
-    - sweep script
-    - save gripper states in recording
-
-- visual robustness experiments:
-    3 table textures
-    10 background 
-    3 initial gripper positions
-- hardware experiments:
-    camera, rcs int
-
+- serve model has configs of rot now 
+- hardware experiments
 Paper:
     - statistics on rotated reach tasks
     - inf time and speed
     - write expt section
        
+supplementary:
+    visual robustness experiments:
+    - 3 table textures
+    - 10 background 
+    - 3 initial gripper positions
 Statistics:
 # Bug with reach tasks recording: if success, concatenates run buffer to the next run. If run fail, next run start fresh
 python clean_concatenated_hdf5.py output/dual_dinov3.zip --overwrite

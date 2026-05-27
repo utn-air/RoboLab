@@ -21,6 +21,7 @@ from robolab.core.events.basic_recorders import (
     InitialStateRecorderCfg,
     PostStepBBoxRecorderCfg,
     PostStepEndEffectorPoseRecorderCfg,
+    PostStepGripperStateRecorderCfg,
     PostStepStatesRecorderCfg,
     PreStepActionsRecorderCfg,
     PreStepFlatPolicyObservationsRecorderCfg,
@@ -52,6 +53,7 @@ class BaseRecorderManagerCfg(RecorderManagerBaseCfg):
     record_initial_state: InitialStateRecorderCfg = InitialStateRecorderCfg()
     record_states: PostStepStatesRecorderCfg = PostStepStatesRecorderCfg()
     record_actions: PreStepActionsRecorderCfg = PreStepActionsRecorderCfg()
+    record_gripper_state: PostStepGripperStateRecorderCfg = PostStepGripperStateRecorderCfg()
     record_ee_pose: PostStepEndEffectorPoseRecorderCfg = PostStepEndEffectorPoseRecorderCfg()
     record_bbox: PostStepBBoxRecorderCfg = PostStepBBoxRecorderCfg()
     record_policy_observations: PreStepFlatPolicyObservationsRecorderCfg | None = None
