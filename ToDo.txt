@@ -29,7 +29,7 @@ HEADLESS=1 VIDEO_MODE=sensor bash examples/policy/run_angledreach_valp_model_swe
 mkdir -p output && HEADLESS=1 VIDEO_MODE=sensor bash examples/policy/run_angledreach_valp_model_sweep_224_5x.sh > output/sweep_224.log 2>&1
 mkdir -p output && HEADLESS=1 VIDEO_MODE=sensor bash examples/policy/run_angledreach_valp_model_sweep_256_5x.sh > output/sweep_256.log 2>&1
 
-mkdir -p output && HEADLESS=1 VIDEO_MODE=sensor bash examples/policy/run_angledpickup_valp_model_sweep_224_5x.sh > output/sweep_pickup_224.log 2>&1
+mkdir -p output && HEADLESS=1 VIDEO_MODE=sensor bash examples/policy/run_angledpickup_valp_model_sweep.sh > output/sweep_pickup_224.log 2>&1
 
 python examples/demo/run_env_keys.py --headless --task AngledReachShelfForkTask
 /workspace/isaaclab/_isaac_sim/python.sh examples/demo/run_pickup_home_goals.py \

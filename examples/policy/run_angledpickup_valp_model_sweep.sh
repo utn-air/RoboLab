@@ -17,6 +17,10 @@ DELETE_UNZIPPED_AFTER_ARCHIVE="${DELETE_UNZIPPED_AFTER_ARCHIVE:-1}"
 
 MODEL_CONFIGS=(
     droid-224px-8f-roboarena.yaml
+    droid-224px-8f-dual.yaml
+    droid-224px-8f-ind.yaml
+    droid-256px-8f-dual.yaml
+    droid-256px-8f-ind.yaml
 )
 
 SERVER_PID=""
@@ -197,7 +201,7 @@ trap 'cleanup_server; exit 143' TERM
 if port_open; then
     echo "Port $REMOTE_HOST:$REMOTE_PORT is already open."
     echo "Stop the existing VALP server before running the model sweep, so each cfg is evaluated against the intended hosted model."
-    pkill -f "valp/inference/serve_policy_pickup.py.*--port $REMOTE_PORT" || true
+    pkill -f "valp/inference/serve_policy.py.*--port $REMOTE_PORT" || true
 fi
 
 mkdir -p "$SERVER_LOG_DIR"
@@ -253,16 +257,16 @@ for cfg_file in "${MODEL_CONFIGS[@]}"; do
     fi
 
     cfg_name="${cfg_file%.yaml}"
-    server_log="$SERVER_LOG_DIR/${cfg_name}_serve_policy_pickup.log"
+    server_log="$SERVER_LOG_DIR/${cfg_name}_serve_policy.log"
 
     echo
     echo "=== Starting VALP server: $cfg_file ==="
 
-    pkill -f "valp/inference/serve_policy_pickup.py.*--port $REMOTE_PORT" || true
+    pkill -f "valp/inference/serve_policy.py.*--port $REMOTE_PORT" || true
     sleep 2
 
     PROTOCOL_BUFFERS_PYTHON_IMPLEMENTATION=python \
-        "$ISAAC_PYTHON" valp/inference/serve_policy_pickup.py \
+        "$ISAAC_PYTHON" valp/inference/serve_policy.py \
         --cfg-file "$cfg_file" \
         --host "$SERVER_HOST" \
         --port "$REMOTE_PORT" \
@@ -288,7 +292,7 @@ for cfg_file in "${MODEL_CONFIGS[@]}"; do
 
     MODEL_NAMES+=("$model_name")
 
-    echo "=== Running 5 angledpickup eval episodes for hosted model $model_name ==="
+    echo "=== Running 3 angledpickup eval episodes for hosted model $model_name ==="
     REMOTE_HOST="$REMOTE_HOST" \
     REMOTE_PORT="$REMOTE_PORT" \
     HEADLESS="$HEADLESS" \
@@ -297,7 +301,7 @@ for cfg_file in "${MODEL_CONFIGS[@]}"; do
     DEVICE="$DEVICE" \
         "$ISAAC_PYTHON" examples/policy/run_eval_pickup.py \
     --policy valp \
-    --num-runs 5 \
+    --num-runs 3 \
     --num-envs 1 \
     --device "$DEVICE" \
     --task-dirs wm_tasks/angledpickup \
