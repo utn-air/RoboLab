@@ -149,6 +149,9 @@ def generate_task_env_cfg(task_class: Task,
                 self.goal = task_class.goal
             if getattr(task_class, "episode_steps", None) is not None:
                 self.episode_steps = task_class.episode_steps
+            for step_attr in ("angledreach_steps", "grasp_steps", "pickup_steps"):
+                if getattr(task_class, step_attr, None) is not None:
+                    setattr(self, step_attr, getattr(task_class, step_attr))
 
             # Set optional rewards if provided by the task
             if getattr(task_class, 'rewards', None) is not None:

@@ -11,24 +11,58 @@ from isaaclab.utils import configclass
 
 from robolab.constants import ASSET_DIR
 from robolab.core.scenes.utils import import_scene
-from robolab.core.task.conditionals import angled_reach_object, object_grabbed
+from robolab.core.task.conditionals import angled_reach_object, object_grabbed, object_picked_up
+from robolab.core.task.predicate_logic import _and
 from robolab.core.task.subtask import Subtask
 from robolab.core.task.task import Task
 
 STATUS_PATH = Path(ASSET_DIR) / "wm_tasks" / "AngledPickupKetchupTask" / "status.json"
 
 
+def angled_pickup_object(
+    env,
+    object: str,
+    surface: str,
+    pos_tolerance: float = 0.04,
+    angle_tolerance: float = 0.09,
+    lift_distance: float = 0.10,
+    ee_pose_key: str = "last_ee_pose_3",
+    status_path: str | Path | None = None,
+    env_id: int | None = None,
+):
+    return _and(
+        angled_reach_object(
+            env,
+            pos_tolerance=pos_tolerance,
+            angle_tolerance=angle_tolerance,
+            ee_pose_key=ee_pose_key,
+            status_path=status_path,
+            env_id=env_id,
+        ),
+        object_picked_up(
+            env,
+            object=object,
+            surface=surface,
+            distance=lift_distance,
+            env_id=env_id,
+        ),
+    )
+
+
 @configclass
 class AngledPickupKetchupTerminations:
     time_out = DoneTerm(func=mdp.time_out, time_out=True)
     success = DoneTerm(
-        func=angled_reach_object,
+        func=angled_pickup_object,
         params={
+            "object": "ketchup_bottle",
+            "surface": "table",
             "pos_tolerance": 0.04,
             "angle_tolerance": 0.09,
+            "lift_distance": 0.10,
             "status_path": STATUS_PATH,
-            "ee_pose_key": "last_ee_pose_3"
-            },
+            "ee_pose_key": "last_ee_pose_3",
+        },
 
     )
 
@@ -53,10 +87,10 @@ class AngledPickupKetchupTask(Task):
         "vague": "Reach the ketchup bottle with a yawed wrist, grasp it, and lift it up",
         "specific": "Move the robot gripper to the ketchup bottle with the wrist yawed to face the bottle from the side, grasp the bottle, and lift it off the table",
     }
-    episode_steps: int = 135
-    angledreach_steps: int = 75
+    episode_steps: int = 30
+    angledreach_steps: int = 10
     grasp_steps: int = 10
-    pickup_steps: int = 50
+    pickup_steps: int = 10
 
     attributes = ["angled_reach", "pickup", "grasp", "lift", "dominant_yaw", "+rz", "goal"]
     goal = {
@@ -82,9 +116,12 @@ class AngledPickupKetchupTask(Task):
                     (partial(object_grabbed, object="ketchup_bottle"), 1.0),
                     (
                         partial(
-                            angled_reach_object,
+                            angled_pickup_object,
+                            object="ketchup_bottle",
+                            surface="table",
                             pos_tolerance=0.04,
                             angle_tolerance=0.09,
+                            lift_distance=0.10,
                             status_path=STATUS_PATH,
                             ee_pose_key="last_ee_pose_3",
                         ),
