@@ -4,12 +4,14 @@ import h5py
 import json 
 
 folder_paths = ["output_angledreach/dual_dinov3_roboarena_angledreach",
-                "output_angledreach/dual_dinov3_dual",
-                "output_angledreach/dual_dinov3_right",
-                "output_angledreach/dual_dinov3_wrist",
-                "output_angledreach/dual_vjepa_dual",
-                "output_angledreach/dual_vjepa_right",
-                "output_angledreach/dual_vjepa_wrist"
+                "output_angledreach/dual_dinov3_dual_angledreach",
+                "output_angledreach/ind_dinov3_wrist_angledreach",
+                "output_angledreach/right_dinov3_angledreach",
+                "output_angledreach/wrist_dinov3_wrist_angledreach",
+                "output_angledreach/dual_vjepa_angledreach",
+                "output_angledreach/ind_vjepa_angledreach",
+                "output_angledreach/right_vjepa_angledreach",
+                "output_angledreach/wrist_vjepa_angledreach"
                 ]
 
 
