@@ -215,6 +215,7 @@ def run_multi_subtasks_episode(env, env_cfg, episode, client: InferenceClient, *
             if hasattr(client, "set_goal_images"):
                 changed_envs = _update_goal_stages(env, env_cfg, stages, conditions, step + 1)
                 for env_id in changed_envs:
+                    print(f"Env {env_id} advancing to stage {stages[env_id]} at step {step+1}")
                     set_client_goal_images_for_stage(
                         client,
                         env,

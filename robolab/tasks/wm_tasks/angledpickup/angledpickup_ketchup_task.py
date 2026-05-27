@@ -71,8 +71,8 @@ class AngledPickupKetchupTask(Task):
                     (
                         partial(
                             angled_reach_object,
-                            pos_tolerance=0.04,
-                            angle_tolerance=0.09,
+                            pos_tolerance=0.05,
+                            angle_tolerance=0.1,
                             status_path=STATUS_PATH,
                         ),
                         1.0,
