@@ -124,10 +124,11 @@ def _update_goal_stages(env, env_cfg, stages: list[int], conditions, step: int) 
         old_stage = stages[env_id]
         target_stage = max(stages[env_id], _stage_floor_from_step(env_cfg, step))
 
-        while target_stage < len(conditions):
-            if not _condition_met(conditions[target_stage], env, env_id):
-                break
-            target_stage += 1
+        if target_stage < 1:
+            while target_stage < len(conditions):
+                if not _condition_met(conditions[target_stage], env, env_id):
+                    break
+                target_stage += 1
 
         target_stage = min(target_stage, max_goal_stage)
         if target_stage != old_stage:

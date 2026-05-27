@@ -320,17 +320,17 @@ class DroidIKActionCfg:
         open_command_expr = {"finger_joint": 0.0},
         close_command_expr={"finger_joint": np.pi / 4},
     )
-    # finger_joint = StepRelativeJointPositionActionCfg(
-    #     asset_name="robot",
-    #     joint_names=["finger_joint"],
-    #     scale=np.pi / 4,
-    # )
-    finger_joint = BinaryJointPositionZeroToOneActionCfg(
+    finger_joint = StepRelativeJointPositionActionCfg(
         asset_name="robot",
         joint_names=["finger_joint"],
-        open_command_expr = {"finger_joint": 0.0},
-        close_command_expr={"finger_joint": np.pi / 4},
+        scale=np.pi / 4,
     )
+    # finger_joint = BinaryJointPositionZeroToOneActionCfg(
+    #     asset_name="robot",
+    #     joint_names=["finger_joint"],
+    #     open_command_expr = {"finger_joint": 0.0},
+    #     close_command_expr={"finger_joint": np.pi / 4},
+    # )
 
 ########################################################
 # Observations
