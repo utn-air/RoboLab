@@ -128,6 +128,11 @@ def run_result(position, orientation, goal_pos, goal_quat) -> dict[str, float | 
     final_distance = 0.0
     final_angle_error = 0.0
 
+    # first_position = position[0, :]
+    # print(f"start position: {first_position}, goal position: {goal_pos}")
+    # goal_distance = euclidean_distance(first_position, goal_pos)
+    # print(f"initial distance to goal: {goal_distance:.4f}")
+
     for step in range(position.shape[0]):
         current_position = position[step, :]
         current_orientation = orientation[step, :]
