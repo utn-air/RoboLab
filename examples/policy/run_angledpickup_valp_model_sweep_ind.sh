@@ -3,7 +3,7 @@ set -euo pipefail
 
 ISAAC_PYTHON="${ISAAC_PYTHON:-/workspace/isaaclab/_isaac_sim/python.sh}"
 REMOTE_HOST="${REMOTE_HOST:-localhost}"
-REMOTE_PORT="${REMOTE_PORT:-8000}"
+REMOTE_PORT="${REMOTE_PORT:-8001}"
 SERVER_HOST="${SERVER_HOST:-0.0.0.0}"
 SERVER_START_TIMEOUT="${SERVER_START_TIMEOUT:-600}"
 OUTPUT_ROOT="${OUTPUT_ROOT:-/workspace/robolab/output}"
