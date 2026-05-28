@@ -51,9 +51,9 @@ class AngledPickupKetchupTask(Task):
         "vague": "Reach the ketchup bottle with a yawed wrist, grasp it, and lift it up",
         "specific": "Move the robot gripper to the ketchup bottle with the wrist yawed to face the bottle from the side, grasp the bottle, and lift it off the table",
     }
-    episode_steps: int = 165
+    episode_steps: int = 160
     angledreach_steps: int = 75
-    grasp_steps: int = 15
+    grasp_steps: int = 10
     pickup_steps: int = 75
 
     attributes = ["angled_reach", "pickup", "grasp", "lift", "dominant_yaw", "+rz", "goal"]
