@@ -100,20 +100,34 @@ def _condition_met(condition, env, env_id: int) -> bool:
         return _condition_result_for_env(condition(env), env_id)
 
 
-def _stage_floor_from_step(env_cfg, step: int) -> int:
+def _stage_floor_from_step(env_cfg, step: int, stage0_completion_step: int | None) -> int:
     angled_steps = getattr(env_cfg, "angledreach_steps", None)
     grasp_steps = getattr(env_cfg, "grasp_steps", None)
+
+    # Once stage 0 is reached, hold stage 1 and only advance to stage 2
+    # after `grasp_steps` relative to that completion step.
+    if stage0_completion_step is not None:
+        if grasp_steps is not None and step >= stage0_completion_step + grasp_steps:
+            return 2
+        return 1
+
+    # Fallback: if stage 0 never triggers by condition, force stage 1 by time.
     if angled_steps is None:
         return 0
-    if grasp_steps is not None and step >= angled_steps + grasp_steps:
-        return 2
     if step >= angled_steps:
         return 1
     return 0
 
 
-def _update_goal_stages(env, env_cfg, stages: list[int], conditions, step: int) -> list[int]:
-    """Advance per-env goal stages from conditions, with step budgets as fallback."""
+def _update_goal_stages(
+    env,
+    env_cfg,
+    stages: list[int],
+    stage0_completion_steps: list[int | None],
+    conditions,
+    step: int,
+) -> list[int]:
+    """Advance per-env goal stages from conditions, with relative step fallback for stage 2."""
     changed_envs: list[int] = []
     max_goal_stage = 2
 
@@ -122,13 +136,19 @@ def _update_goal_stages(env, env_cfg, stages: list[int], conditions, step: int) 
             continue
 
         old_stage = stages[env_id]
-        target_stage = max(stages[env_id], _stage_floor_from_step(env_cfg, step))
+        target_stage = max(
+            stages[env_id],
+            _stage_floor_from_step(env_cfg, step, stage0_completion_steps[env_id]),
+        )
 
         if target_stage < 1:
             while target_stage < len(conditions):
                 if not _condition_met(conditions[target_stage], env, env_id):
                     break
                 target_stage += 1
+
+        if stage0_completion_steps[env_id] is None and target_stage >= 1:
+            stage0_completion_steps[env_id] = step
 
         target_stage = min(target_stage, max_goal_stage)
         if target_stage != old_stage:
@@ -152,6 +172,7 @@ def run_multi_subtasks_episode(env, env_cfg, episode, client: InferenceClient, *
     subtask_status = []
     clients = [client] * env.num_envs
     stages = [0 for _ in range(env.num_envs)]
+    stage0_completion_steps: list[int | None] = [None for _ in range(env.num_envs)]
     conditions = _first_condition_sequence(env_cfg)
 
     if hasattr(client, "reset"):
@@ -214,7 +235,14 @@ def run_multi_subtasks_episode(env, env_cfg, episode, client: InferenceClient, *
             subtask_status.append(per_env_infos)
 
             if hasattr(client, "set_goal_images"):
-                changed_envs = _update_goal_stages(env, env_cfg, stages, conditions, step + 1)
+                changed_envs = _update_goal_stages(
+                    env,
+                    env_cfg,
+                    stages,
+                    stage0_completion_steps,
+                    conditions,
+                    step + 1,
+                )
                 for env_id in changed_envs:
                     print(f"Env {env_id} advancing to stage {stages[env_id]} at step {step+1}")
                     set_client_goal_images_for_stage(

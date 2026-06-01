@@ -101,10 +101,6 @@ parser.add_argument(
 AppLauncher.add_app_launcher_args(parser)
 args_cli = parser.parse_args()
 
-if args_cli.force_livestream:
-    args_cli.livestream = 2
-    args_cli.kit_args = DEFAULT_KIT_ARGS
-
 args_cli.enable_cameras = True
 args_cli.activate_contact_sensors = True
 args_cli.save_videos = False

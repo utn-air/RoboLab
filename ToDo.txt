@@ -33,7 +33,7 @@ mkdir -p output && HEADLESS=1 VIDEO_MODE=sensor bash examples/policy/run_angledp
 mkdir -p output && HEADLESS=1 VIDEO_MODE=sensor bash examples/policy/run_angledpickup_valp_model_sweep_ind.sh > output/sweep_pickup_ind.log 2>&1
 
 
-python examples/demo/run_env_keys.py --headless --task AngledReachShelfForkTask
+python examples/demo/run_env_keys.py --headless --task AngledReachCartoon2Task
 /workspace/isaaclab/_isaac_sim/python.sh examples/demo/run_pickup_home_goals.py \
   --task AngledPickupAngledHomeKetchupTask \
   --headless
