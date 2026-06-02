@@ -215,7 +215,7 @@ def _save_goal(env, env_cfg, obs, status_payload: dict, suffix: int, label: str)
     status_payload["manual_capture"] = True
     status_payload["automated_pickup_home"] = True
     status_payload["last_distance"] = 0.0
-    status_payload[f"last_ee_pose"] = ee_pose
+    status_payload[f"last_ee_pose_{suffix}"] = ee_pose
     _write_output_status(env_cfg, status_payload)
 
     print(f"saved {label}: {external_path.name}, {wrist_path.name}, last_ee_pose_{suffix}", flush=True)
