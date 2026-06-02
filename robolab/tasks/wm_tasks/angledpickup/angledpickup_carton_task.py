@@ -11,28 +11,26 @@ from isaaclab.utils import configclass
 
 from robolab.constants import ASSET_DIR
 from robolab.core.scenes.utils import import_scene
-from robolab.core.task.conditionals import angled_reach_object, object_grabbed, object_picked_up
+from robolab.core.task.conditionals import angled_reach_object
 from robolab.core.task.subtask import Subtask
 from robolab.core.task.task import Task
 
-STATUS_PATH = Path(ASSET_DIR) / "wm_tasks" / "AngledPickupKetchupTask" / "status.json"
-
+STATUS_PATH = Path(ASSET_DIR) / "wm_tasks" / "AngledPickupCartoon2Task" / "status.json"
 
 @configclass
-class AngledPickupKetchupTerminations:
+class AngledPickupCartoon2Terminations:
     time_out = DoneTerm(func=mdp.time_out, time_out=True)
     success = DoneTerm(
         func=object_picked_up,
-        params={"object": "ketchup_bottle", 
+        params={"object": "orange_juice_carton", 
                 "surface": "table", 
                 "distance": 0.16,
                 },
-
     )
 
 
 @dataclass
-class AngledPickupKetchupTask(Task):
+class AngledPickupCartoon2Task(Task):
     contact_object_list = [
         "table",
         "alphabet_soup_can",
@@ -44,49 +42,46 @@ class AngledPickupKetchupTask(Task):
         "ketchup_bottle",
         "cubebox_a02",
     ]
-    scene = import_scene("cartons_on_box.usda", contact_object_list)
-    terminations = AngledPickupKetchupTerminations
+    scene = import_scene("cartons_on_box_orange_center2.usda", contact_object_list)
+    terminations = AngledPickupCartoon2Terminations
     instruction = {
-        "default": "AngledPickupKetchup",
-        "vague": "Reach the ketchup bottle with a yawed wrist, grasp it, and lift it up",
-        "specific": "Move the robot gripper to the ketchup bottle with the wrist yawed to face the bottle from the side, grasp the bottle, and lift it off the table",
+        "default": "AngledPickupCartoon2",
+        "vague": "Pick up the orange juice carton near the center of the packing table with a yawed approach",
+        "specific": "Move the robot gripper above the orange juice carton lying on the table with a yawed approach, such that the gripper is aligned with the longer side of the carton. Grab the orange juice carton and pick it back to home.",
     }
-    episode_steps: int = 160
-    angledreach_steps: int = 75
-    grasp_steps: int = 10
-    pickup_steps: int = 75
-
-    attributes = ["angled_reach", "pickup", "grasp", "lift", "dominant_yaw", "+rz", "goal"]
+    episode_steps: int = 75
+    attributes = ["angled_pickup", "dominant_yaw", "+rz", "goal"]
     goal = {
         "mode": "angled_pickup",
-        "object": "ketchup_bottle",
+        "object": "orange_juice_carton",
         "external_camera": "over_shoulder_right_camera",
         "wrist_camera": "wrist_cam",
     }
     subtasks = [
         Subtask(
-            name="angled_pickup_ketchup",
+            name="angled_pickup_cartoon",
             conditions={
-                "ketchup_bottle": [
+                "orange_juice_carton": [
                     (
                         partial(
-                            angled_reach_object,
-                            pos_tolerance=0.05,
-                            angle_tolerance=0.1745,
-                            status_path=STATUS_PATH,
+                            angled_reach_object, 
+                            pos_tolerance=0.05, 
+                            angle_tolerance=0.1745, 
+                            status_path=STATUS_PATH
                         ),
                         1.0,
                     ),
-                    (partial(object_grabbed, object="ketchup_bottle"), 1.0),
+                    (partial(object_grabbed, object="orange_juice_carton"), 1.0),
                     (
                         partial(
-                            object_picked_up,
-                            object="ketchup_bottle",
-                            surface="table",
-                            distance=0.16,
-                        ),
+                            object_picked_up, 
+                            object="orange_juice_carton", 
+                            surface="table", 
+                            distance=0.16
+                        ), 
                         1.0,
                     ),
+
                 ]
             },
             logical="all",

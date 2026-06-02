@@ -35,7 +35,7 @@ mkdir -p output && HEADLESS=1 VIDEO_MODE=sensor bash examples/policy/run_angledp
 
 python examples/demo/run_env_keys.py --headless --task AngledReachCartoon2Task
 /workspace/isaaclab/_isaac_sim/python.sh examples/demo/run_pickup_home_goals.py \
-  --task AngledPickupAngledHomeKetchupTask \
+  --task AngledPickupCartoon2Task \
   --headless
 
 # more handy commands
