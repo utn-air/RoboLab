@@ -35,7 +35,7 @@ parser.add_argument("--task", required=True, help="Task name, e.g. AngledPickupD
 parser.add_argument(
     "--task-dirs",
     nargs="+",
-    default=["wm_tasks/andgedpickup", "wm_tasks/angledreach"],
+    default=["wm_tasks/angledpickup", "wm_tasks/angledreach"],
     help="Python task source folders under robolab/tasks; goal assets are inferred from --task.",
 )
 parser.add_argument("--num_envs", type=int, default=1, help="Number of environments to spawn.")
@@ -67,7 +67,7 @@ if any(str(task_dir).startswith("assets/wm_tasks") for task_dir in args_cli.task
         "Using WM Python task source folders instead.",
         flush=True,
     )
-    args_cli.task_dirs = ["wm_tasks/andgedpickup", "wm_tasks/angledreach"]
+    args_cli.task_dirs = ["wm_tasks/angledpickup", "wm_tasks/angledreach"]
 
 if args_cli.force_livestream:
     args_cli.livestream = 2

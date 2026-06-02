@@ -16,7 +16,9 @@ ARCHIVE_AFTER_MODEL="${ARCHIVE_AFTER_MODEL:-1}"
 DELETE_UNZIPPED_AFTER_ARCHIVE="${DELETE_UNZIPPED_AFTER_ARCHIVE:-1}"
 
 MODEL_CONFIGS=(
+    droid-224px-8f-ind.yaml
     droid-224px-8f-wrist.yaml
+    droid-256px-8f-ind.yaml
 )
 
 SERVER_PID=""

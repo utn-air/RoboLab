@@ -11,7 +11,7 @@ from isaaclab.utils import configclass
 
 from robolab.constants import ASSET_DIR
 from robolab.core.scenes.utils import import_scene
-from robolab.core.task.conditionals import angled_reach_object
+from robolab.core.task.conditionals import angled_reach_object, object_grabbed, object_picked_up
 from robolab.core.task.subtask import Subtask
 from robolab.core.task.task import Task
 
