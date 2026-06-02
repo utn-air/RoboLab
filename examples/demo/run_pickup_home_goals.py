@@ -12,7 +12,7 @@ The script expects the first goal capture to already exist under:
     assets/wm_tasks/<TaskName>/status_draft.json
 
 Goal assets are always loaded from and saved to ``assets/wm_tasks/<TaskName>/``.
-``status_draft.json`` must contain ``last_ee_pose_1``. The script drives the
+``status_draft.json`` must contain ``last_ee_pose``. The script drives the
 end-effector to that pose, closes the gripper, saves goal images with suffix
 ``_2`` and writes ``last_ee_pose_2`` back into ``status_draft.json``. It then
 drives back to the reset/home end-effector pose while keeping the gripper
@@ -41,7 +41,7 @@ parser.add_argument(
 parser.add_argument("--num_envs", type=int, default=1, help="Number of environments to spawn.")
 parser.add_argument("--status-in", default="status_draft.json", help="Input status file in the task goal folder.")
 parser.add_argument("--status-out", default="status_draft.json", help="Output status file in the task goal folder.")
-parser.add_argument("--pose-key", default="last_ee_pose_1", help="Pose key to drive to from the input status file.")
+parser.add_argument("--pose-key", default="last_ee_pose", help="Pose key to drive to from the input status file.")
 parser.add_argument("--drive-steps", type=int, default=140, help="Maximum steps for each automated pose drive.")
 parser.add_argument("--drive-pos-tol", type=float, default=0.01, help="Position tolerance in meters.")
 parser.add_argument("--drive-angle-tol", type=float, default=0.08, help="Orientation tolerance in radians.")
@@ -245,7 +245,7 @@ def main():
 
         input_status = _load_status(env_cfg)
         status_payload = _read_output_status(env_cfg, input_status)
-        status_payload["last_ee_pose_1"] = input_status[args_cli.pose_key]
+        status_payload["] = input_status[args_cli.pose_key]
         _write_output_status(env_cfg, status_payload)
 
         home_pose = _pose_to_list(_current_ee_pose(env, env_cfg))
