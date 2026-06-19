@@ -1,4 +1,6 @@
-"""Summarize angled-reach position and angle error by model and task.
+
+
+"""Summarize pickup position and angle error by model and task.
 
 For each run, this script does NOT blindly use the final ee_pose. It scans the
 trajectory for the first timestep that satisfies the success criteria. If the
@@ -19,7 +21,7 @@ import zipfile
 import h5py
 
 
-DEFAULT_ZIP_GLOB = "output_angledreach/*.zip"
+DEFAULT_ZIP_GLOB = "output_pickup/*.zip"
 
 DISTANCE_THRESHOLD = 0.05
 ANGLE_THRESHOLD_DEGREES = 15.0
@@ -57,7 +59,7 @@ def quat_angle_error_degrees_wxyz(current_quat, target_quat) -> float:
 
 def model_variant_from_zip(zip_path: Path) -> str:
     name = zip_path.stem
-    suffix = "_angledreach"
+    suffix = "_pickup"
     if name.endswith(suffix):
         return name[: -len(suffix)]
     return name
@@ -68,7 +70,7 @@ def load_goal_pose(task: str, assets_root: Path) -> tuple[list[float], list[floa
     with status_path.open("r", encoding="utf-8") as handle:
         status_data = json.load(handle)
 
-    goal_pose = status_data["last_ee_pose"]
+    goal_pose = status_data["last_ee_pose_3"]
     return goal_pose[:3], goal_pose[3:7]
 
 
@@ -228,73 +230,4 @@ def print_table(rows: list[dict[str, object]]) -> None:
     )
     print("-" * 130)
     for row in rows:
-        print(
-            f"{row['model']:<30} {row['task']:<32} "
-            f"{row['runs']:>4} {row['successes']:>4} {row['success_rate']:>6.2f} "
-            f"{row['position_error_mean']:>10.6f} {row['position_error_std']:>10.6f} "
-            f"{row['angle_error_mean_deg']:>10.3f} {row['angle_error_std_deg']:>10.3f}"
-        )
-
-
-def write_csv(rows: list[dict[str, object]], csv_path: Path) -> None:
-    if not rows:
-        return
-    with csv_path.open("w", encoding="utf-8", newline="") as handle:
-        writer = csv.DictWriter(handle, fieldnames=list(rows[0].keys()))
-        writer.writeheader()
-        writer.writerows(rows)
-
-
-def parse_args() -> argparse.Namespace:
-    parser = argparse.ArgumentParser()
-    parser.add_argument(
-        "--zip",
-        dest="zip_patterns",
-        action="append",
-        default=None,
-        help="Zip path or glob. Can be repeated. Default: output_angledreach/*.zip",
-    )
-    parser.add_argument(
-        "--assets-root",
-        type=Path,
-        default=Path("assets"),
-        help="Root containing wm_tasks/<Task>/status.json. Default: assets",
-    )
-    parser.add_argument(
-        "--task",
-        dest="tasks",
-        action="append",
-        default=None,
-        help="Task name to include. Can be repeated. Default: all tasks found in zips",
-    )
-    parser.add_argument(
-        "--csv",
-        type=Path,
-        default=Path("angledreach_error_summary.csv"),
-        help="CSV output path. Default: angledreach_error_summary.csv",
-    )
-    parser.add_argument("--verbose-runs", action="store_true")
-    return parser.parse_args()
-
-
-def main() -> None:
-    args = parse_args()
-    patterns = args.zip_patterns or [DEFAULT_ZIP_GLOB]
-    zip_paths = resolve_zip_paths(patterns)
-    tasks_filter = set(args.tasks) if args.tasks else None
-
-    print(
-        "success thresholds: "
-        f"position error < {DISTANCE_THRESHOLD} m, "
-        f"angle error < {ANGLE_THRESHOLD_DEGREES} deg"
-    )
-
-    rows = summarize(zip_paths, args.assets_root, tasks_filter, args.verbose_runs)
-    print_table(rows)
-    write_csv(rows, args.csv)
-    if rows:
-        print(f"\nWrote CSV: {args.csv}")
-
-
-if __name__ == "__main__":
-    main()
+  
