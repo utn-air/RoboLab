@@ -39,7 +39,7 @@ python examples/demo/run_env_keys.py --headless --task AngledPickupCartoon2Task
   --headless
 
 # more handy commands
-pkill -f "valpaa/inference/serve_policy.py"
+pkill -f "valpa/inference/serve_policy.py"
 screen -S valpa_sweep
 Ctrl-a d
 screen -r valpa_sweep
@@ -63,3 +63,8 @@ Statistics:
 # Bug with reach tasks recording: if success, concatenates run buffer to the next run. If run fail, next run start fresh
 python clean_concatenated_hdf5.py output/dual_dinov3.zip --overwrite
 python clean_concatenated_hdf5.py output/dual_dinov3.zip --overwrite --keep-folder
+
+
+- reach configs folder in serve_policy.py
+- wm_wrapper uses one view for shared latent now
+- single view baselines does not normalise loss (for all experiments till now)

@@ -17,9 +17,9 @@ DELETE_UNZIPPED_AFTER_ARCHIVE="${DELETE_UNZIPPED_AFTER_ARCHIVE:-1}"
 
 MODEL_CONFIGS=(
     droid-256px-8f-dual.yaml
-    droid-256px-8f-ind.yaml
-    droid-256px-8f-right.yaml
-    droid-256px-8f-wrist.yaml
+    # droid-256px-8f-ind.yaml
+    # droid-256px-8f-right.yaml
+    # droid-256px-8f-wrist.yaml
 )
 
 TASKS=(
@@ -206,7 +206,7 @@ echo "=== GPU visibility: CUDA_VISIBLE_DEVICES=${CUDA_VISIBLE_DEVICES:-unset}, D
 FILTERED_MODEL_CONFIGS=()
 
 for cfg_file in "${MODEL_CONFIGS[@]}"; do
-    if ! model_name="$(cfg_model_name "/workspace/robolab/valpa/configs/inference/vjepa2-ac-vitg/$cfg_file")"; then
+    if ! model_name="$(cfg_model_name "/workspace/robolab/valpa/configs/inference/valpa-reach/$cfg_file")"; then
         echo "Could not find modelname in config file: $cfg_file"
         exit 1
     fi
@@ -236,7 +236,7 @@ fi
 
 
 for cfg_file in "${MODEL_CONFIGS[@]}"; do
-    cfg_path="/workspace/robolab/valpa/configs/inference/vjepa2-ac-vitg/$cfg_file"
+    cfg_path="/workspace/robolab/valpa/configs/inference/valpa-reach/$cfg_file"
 
     if ! cfg_model_name_value="$(cfg_model_name "$cfg_path")"; then
         echo "Could not find modelname in config file: $cfg_file"
