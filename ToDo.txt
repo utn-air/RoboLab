@@ -1,9 +1,9 @@
-# Start RoboLab Docker with the VALP image:
+# Start RoboLab Docker with the VALPA image:
 ./docker/run_docker.sh nisarga
 
 RUN EVALUATIONS:
-# Terminal 1 inside Docker: load VALP once and keep this running:
-/workspace/isaaclab/_isaac_sim/python.sh valp/inference/serve_policy.py \
+# Terminal 1 inside Docker: load VALPA once and keep this running:
+/workspace/isaaclab/_isaac_sim/python.sh valpa/inference/serve_policy.py \
     --cfg-file droid-224px-8f-dual.yaml \
     --host 0.0.0.0 \
     --port 8000
@@ -11,7 +11,7 @@ RUN EVALUATIONS:
 # Terminal 2 inside the same Docker container: run/rerun eval:
 PROTOCOL_BUFFERS_PYTHON_IMPLEMENTATION=python \
     /workspace/isaaclab/_isaac_sim/python.sh examples/policy/run_eval.py \
-    --policy valp \
+    --policy valpa \
     --num-runs 3 \
     --num-envs 1 \
     --task ReachBananaTask \
@@ -19,18 +19,18 @@ PROTOCOL_BUFFERS_PYTHON_IMPLEMENTATION=python \
     --remote-port 8000
 
 # All model versions:
-HEADLESS=1 VIDEO_MODE=sensor bash examples/policy/run_reach_valp_model_sweep_224_5x.sh
-HEADLESS=1 VIDEO_MODE=sensor bash examples/policy/run_reach_valp_model_sweep_256_5x.sh
-mkdir -p output && HEADLESS=1 VIDEO_MODE=sensor bash examples/policy/run_reach_valp_model_sweep_224_5x.sh > output/sweep_224.log 2>&1
-mkdir -p output && HEADLESS=1 VIDEO_MODE=sensor bash examples/policy/run_reach_valp_model_sweep_256_5x.sh > output/sweep_256.log 2>&1
+HEADLESS=1 VIDEO_MODE=sensor bash examples/policy/run_reach_valpa_model_sweep_224_5x.sh
+HEADLESS=1 VIDEO_MODE=sensor bash examples/policy/run_reach_valpa_model_sweep_256_5x.sh
+mkdir -p output && HEADLESS=1 VIDEO_MODE=sensor bash examples/policy/run_reach_valpa_model_sweep_224_5x.sh > output/sweep_224.log 2>&1
+mkdir -p output && HEADLESS=1 VIDEO_MODE=sensor bash examples/policy/run_reach_valpa_model_sweep_256_5x.sh > output/sweep_256.log 2>&1
 
-HEADLESS=1 VIDEO_MODE=sensor bash examples/policy/run_angledreach_valp_model_sweep_224_5x.sh
-HEADLESS=1 VIDEO_MODE=sensor bash examples/policy/run_angledreach_valp_model_sweep_256_5x.sh
-mkdir -p output && HEADLESS=1 VIDEO_MODE=sensor bash examples/policy/run_angledreach_valp_model_sweep_224_5x.sh > output/sweep_224.log 2>&1
-mkdir -p output && HEADLESS=1 VIDEO_MODE=sensor bash examples/policy/run_angledreach_valp_model_sweep_256_5x.sh > output/sweep_256.log 2>&1
+HEADLESS=1 VIDEO_MODE=sensor bash examples/policy/run_angledreach_valpa_model_sweep_224_5x.sh
+HEADLESS=1 VIDEO_MODE=sensor bash examples/policy/run_angledreach_valpa_model_sweep_256_5x.sh
+mkdir -p output && HEADLESS=1 VIDEO_MODE=sensor bash examples/policy/run_angledreach_valpa_model_sweep_224_5x.sh > output/sweep_224.log 2>&1
+mkdir -p output && HEADLESS=1 VIDEO_MODE=sensor bash examples/policy/run_angledreach_valpa_model_sweep_256_5x.sh > output/sweep_256.log 2>&1
 
-mkdir -p output && HEADLESS=1 VIDEO_MODE=sensor bash examples/policy/run_angledpickup_valp_model_sweep_dual.sh > output/sweep_pickup_dual.log 2>&1
-mkdir -p output && HEADLESS=1 VIDEO_MODE=sensor bash examples/policy/run_angledpickup_valp_model_sweep_ind.sh > output/sweep_pickup_ind.log 2>&1
+mkdir -p output && HEADLESS=1 VIDEO_MODE=sensor bash examples/policy/run_angledpickup_valpa_model_sweep_dual.sh > output/sweep_pickup_dual.log 2>&1
+mkdir -p output && HEADLESS=1 VIDEO_MODE=sensor bash examples/policy/run_angledpickup_valpa_model_sweep_ind.sh > output/sweep_pickup_ind.log 2>&1
 
 
 python examples/demo/run_env_keys.py --headless --task AngledPickupCartoon2Task
@@ -39,10 +39,10 @@ python examples/demo/run_env_keys.py --headless --task AngledPickupCartoon2Task
   --headless
 
 # more handy commands
-pkill -f "valp/inference/serve_policy.py"
-screen -S valp_sweep
+pkill -f "valpaa/inference/serve_policy.py"
+screen -S valpa_sweep
 Ctrl-a d
-screen -r valp_sweep
+screen -r valpa_sweep
 screen -ls
 chown -R 10175:101010 /workspace/robolab/output && chmod -R u+rw /workspace/robolab/output
 

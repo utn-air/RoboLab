@@ -33,7 +33,7 @@ pyrightconfig.json
 
 ${data}/*
 checkpoints/*
-valp/
+valpa/
 logs/
 droid/
 

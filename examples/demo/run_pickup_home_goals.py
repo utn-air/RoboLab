@@ -238,7 +238,7 @@ def main():
             device=args_cli.device,
             num_envs=args_cli.num_envs,
             use_fabric=True,
-            policy="valp",
+            policy="a",
         )
         obs, _ = env.reset()
         obs, _, _, _, _ = env.step(_zero_action(env))

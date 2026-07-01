@@ -1,7 +1,7 @@
 # SPDX-FileCopyrightText: Copyright (c) 2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: CC-BY-NC-4.0
 
-"""Goal image cache/generation helpers for VALP world-model tasks.
+"""Goal image cache/generation helpers for VALPA world-model tasks.
 
 This module keeps task goal-image capture out of the policy episode runner.
 It can also be run directly inside an Isaac Lab Python session to precompute
@@ -58,7 +58,7 @@ def _compute_reach_goal_positions(env, target_object: str, z_offset: float) -> t
     return target_positions + env.scene.env_origins
 
 
-def drive_to_valp_goal(env, env_cfg, obs: dict | None = None) -> dict:
+def drive_to_valpa_goal(env, env_cfg, obs: dict | None = None) -> dict:
     """Drive the robot to the task's configured goal pose and return latest obs."""
     from robolab.core.world.world_state import get_world
 
@@ -119,7 +119,7 @@ def generate_goal_images(env, env_cfg, obs: dict | None = None):
 
     task_name = getattr(env_cfg, "_task_name")
     print(f"\033[96m[RoboLab] Generating goal images for {task_name}\033[0m")
-    goal_obs, reached, last_dist, last_gripper_pose = drive_to_valp_goal(env, env_cfg, obs=obs)
+    goal_obs, reached, last_dist, last_gripper_pose = drive_to_valpa_goal(env, env_cfg, obs=obs)
 
     # save images
     external_key = env_cfg.goal.get("external_camera", "over_shoulder_right_camera")
@@ -177,7 +177,7 @@ def main() -> int:
             num_envs=args_cli.num_envs,
             use_fabric=True,
             instruction_type=args_cli.instruction_type,
-            policy="valp",
+            policy="valpa",
         )
         generate_goal_images(env, env_cfg)
         env.close()

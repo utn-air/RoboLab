@@ -4,7 +4,7 @@
 """Policy episode runner for RoboLab.
 
 This module contains the run_episode function that executes policy-controlled
-episodes using various policy backends (pi0, gr00t, dreamzero, valp).
+episodes using various policy backends (pi0, gr00t, dreamzero, valpa).
 
 Supports multi-env: one PolicyClient per env, per-env video writers,
 actions inferred per active env and stacked for env.step().

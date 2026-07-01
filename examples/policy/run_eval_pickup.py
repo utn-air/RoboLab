@@ -52,7 +52,7 @@ parser.add_argument("--tag", nargs='+', default=None,
 parser.add_argument("--task-dirs", nargs='+', default=DEFAULT_TASK_SUBFOLDERS,
                        help="List of task directories to evaluate on")
 parser.add_argument("--policy",
-                    choices=["pi0", "pi0_fast", "paligemma", "paligemma_fast", "pi05", "gr00t", "dreamzero", "valp", "molmo", "openvla", "openvla_oft"], default="pi05",
+                    choices=["pi0", "pi0_fast", "paligemma", "paligemma_fast", "pi05", "gr00t", "dreamzero", "valpa", "molmo", "openvla", "openvla_oft"], default="pi05",
                        help="Action-prediction backend to use (default: pi05)")
 parser.add_argument("--num-runs", "--num_runs", type=int, default=1,
                        help="Number of sequential runs per task (default: 1). Total episodes = num_runs * num_envs. Prefer increasing --num_envs for more episodes. Only increase --num-runs if you run out of GPU memory with the desired num_envs.")
@@ -129,7 +129,7 @@ robolab.constants.RECORD_IMAGE_DATA = args_cli.record_image_data
 robolab.constants.VERBOSE = args_cli.enable_verbose
 robolab.constants.DEBUG = args_cli.enable_debug
 
-if args_cli.policy == "valp":
+if args_cli.policy == "valpa":
     from robolab.registrations.droid_ee.auto_env_registrations_angled import auto_register_droid_ee_envs  # noqa
     # from robolab.registrations.droid_ee.auto_env_registrations_angled import auto_register_droid_ee_envs 
     auto_register_droid_ee_envs(task_dirs=args_cli.task_dirs, task=args_cli.task)
@@ -153,10 +153,10 @@ else:
 def main():
     """Main function."""
     if args_cli.output_folder_name is None:
-        if args_cli.policy == "valp":
-            from robolab_policy_client.valp import VALPDroidEEClient
+        if args_cli.policy == "valpa":
+            from robolab_policy_client.valpa import VALPADroidEEClient
 
-            policy_client = VALPDroidEEClient(
+            policy_client = VALPADroidEEClient(
                 remote_host=args_cli.remote_host,
                 remote_port=args_cli.remote_port,
             )

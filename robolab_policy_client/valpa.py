@@ -25,7 +25,7 @@ def _recv_exact(sock: socket.socket, size: int) -> bytes:
     while remaining:
         chunk = sock.recv(remaining)
         if not chunk:
-            raise ConnectionError("VALP policy socket closed")
+            raise ConnectionError("VALPA policy socket closed")
         chunks.append(chunk)
         remaining -= len(chunk)
     return b"".join(chunks)
@@ -34,8 +34,8 @@ def _recv_message(sock: socket.socket) -> dict:
     size = _HEADER.unpack(_recv_exact(sock, _HEADER.size))[0]
     return pickle.loads(_recv_exact(sock, size))
 
-class VALPDroidEEClient(InferenceClient):
-    """Local RoboLab inference client for the VALP world model on DroidIK envs."""
+class VALPADroidEEClient(InferenceClient):
+    """Local RoboLab inference client for the VALPA world model on DroidIK envs."""
 
     def __init__(
         self,
@@ -48,12 +48,12 @@ class VALPDroidEEClient(InferenceClient):
         self.sock = self._connect()
 
     def _connect(self) -> socket.socket:
-        print(f"[{self.__class__.__name__}] Waiting for VALP server on {self.remote_host}:{self.remote_port}...")
+        print(f"[{self.__class__.__name__}] Waiting for VALPA server on {self.remote_host}:{self.remote_port}...")
         while True:
             try:
                 sock = socket.create_connection((self.remote_host, self.remote_port), timeout=10)
                 sock.settimeout(None)
-                print(f"[{self.__class__.__name__}] Connected to VALP server.")
+                print(f"[{self.__class__.__name__}] Connected to VALPA server.")
                 return sock
             except OSError:
                 time.sleep(2)
@@ -62,7 +62,7 @@ class VALPDroidEEClient(InferenceClient):
         _send_message(self.sock, payload)
         response = _recv_message(self.sock)
         if error := response.get("error"):
-            raise RuntimeError(f"VALP server error:\n{error}")
+            raise RuntimeError(f"VALPA server error:\n{error}")
         return response
 
     def reset(self, *, env_id: int | None = None):
@@ -139,7 +139,7 @@ class VALPDroidEEClient(InferenceClient):
         if action is None:
             action = response.get("actions")
         if action is None:
-            raise KeyError("VALP response did not contain 'action' or 'actions'.")
+            raise KeyError("VALPA response did not contain 'action' or 'actions'.")
 
         action = np.asarray(action, dtype=np.float32)
         if action.ndim == 1:
@@ -149,5 +149,5 @@ class VALPDroidEEClient(InferenceClient):
     def metadata(self):
         return self._request({"method": "metadata"})
 
-MyPolicyClient = VALPDroidEEClient
+MyPolicyClient = VALPADroidEEClient
 
