@@ -19,7 +19,7 @@
 
 ## Getting Started
 
-Requires [uv](https://docs.astral.sh/uv/getting-started/installation/) and a system `ffmpeg` (used for video recording). Isaac Sim 5.0 and Isaac Lab 2.2.0 are installed automatically via `uv sync`. See [Requirements](#requirements) for hardware.
+Requires [uv](https://docs.astral.sh/uv/getting-started/installation/) and a system `ffmpeg` (used for video recording). The IsaacSim/IsaacLab stack is selected at install time via a mutually-exclusive extra — `isaac50` (IsaacSim 5.0 / IsaacLab 2.2.0, default) or `isaac51` (IsaacSim 5.1 / IsaacLab 2.3.2.post1). See [Requirements](#requirements) for hardware.
 
 ### Installation
 
@@ -29,7 +29,15 @@ git clone <repo_url>
 cd robolab
 uv venv --python 3.11
 source .venv/bin/activate
-uv sync
+uv sync --extra isaac50          # IsaacSim 5.0 / IsaacLab 2.2.0 (default)
+# uv sync --extra isaac51        # IsaacSim 5.1 / IsaacLab 2.3.2.post1
+```
+
+The two stacks cannot coexist in one environment. To keep both available, install each into its own venv via `UV_PROJECT_ENVIRONMENT`:
+
+```bash
+UV_PROJECT_ENVIRONMENT=.venv    uv sync --extra isaac50
+UV_PROJECT_ENVIRONMENT=.venv-51 uv sync --extra isaac51
 ```
 
 Verify installation:
@@ -143,8 +151,8 @@ Full documentation is at **[docs/README.md](docs/README.md)**, covering:
 
 | Dependency | Version |
 |---|---|
-| Isaac Sim | 5.0 |
-| Isaac Lab | 2.2.0 |
+| Isaac Sim | 5.0 (default) or 5.1 |
+| Isaac Lab | 2.2.0 (default) or 2.3.2.post1 |
 | Python | 3.11 |
 | Linux | Ubuntu 22.04+ |
 

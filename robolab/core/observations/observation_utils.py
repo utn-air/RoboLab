@@ -12,6 +12,23 @@ from isaaclab.sensors import CameraCfg
 from isaaclab.utils import configclass
 
 
+def _image_observation_func():
+    """Resolve the IsaacLab image observation function across versions.
+
+    IsaacLab 2.2 (IsaacSim 5.0) exposes it as ``mdp.observations.image``;
+    IsaacLab 2.3 (IsaacSim 5.1) also exposes it directly as ``mdp.image``.
+    Prefer the direct attribute, then fall back to the nested module.
+    """
+    image_func = getattr(mdp, "image", None)
+    if image_func is not None:
+        return image_func
+    observations = getattr(mdp, "observations", None)
+    image_func = getattr(observations, "image", None) if observations is not None else None
+    if image_func is None:
+        raise AttributeError("IsaacLab image observation function not found")
+    return image_func
+
+
 def generate_image_obs_from_cameras(camera_cfgs: List[Any] | Any):
     """
     Dynamically create an image observation group configuration from one or more camera configs.
@@ -59,7 +76,7 @@ def generate_image_obs_from_cameras(camera_cfgs: List[Any] | Any):
                 # if hasattr(attr_value, 'prim_path'):
                     camera_name = attr_name
                     obs_terms[camera_name] = ObsTerm(
-                        func=mdp.observations.image,
+                        func=_image_observation_func(),
                         params={
                             "sensor_cfg": SceneEntityCfg(camera_name),
                             "data_type": "rgb",

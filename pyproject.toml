@@ -11,8 +11,11 @@ license = {text = "Apache-2.0"}
 authors = [{name = "Xuning Yang"}]
 dependencies = [
     # Core
-    "isaaclab==2.2.0",
-    "isaacsim[all,extscache]==5.0.0",
+    # IsaacLab + IsaacSim are NOT pinned here: they are mutually-exclusive,
+    # version-specific stacks selected via the `isaac50` / `isaac51` extras
+    # below (see [tool.uv].conflicts). Install with e.g.
+    #   uv sync --extra isaac50   # IsaacLab 2.2.0 / IsaacSim 5.0.0  (default)
+    #   uv sync --extra isaac51   # IsaacLab 2.3.2.post1 / IsaacSim 5.1.0
     "torch",
     "numpy",
     "gymnasium",
@@ -46,6 +49,16 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
+# Mutually-exclusive IsaacLab/IsaacSim stacks. Exactly one must be selected at
+# install time; they are declared as conflicting under [tool.uv].
+isaac50 = [
+    "isaaclab==2.2.0",
+    "isaacsim[all,extscache]==5.0.0",
+]
+isaac51 = [
+    "isaaclab==2.3.2.post1",
+    "isaacsim[all,extscache]==5.1.0",
+]
 analysis = ["sbi"]
 test = ["pytest"]
 all = ["sbi", "pytest"]
@@ -68,6 +81,10 @@ dashboard = ["templates/*.html", "static/*"]
 [tool.uv]
 prerelease = "allow"
 index-strategy = "unsafe-best-match"
+# The two IsaacLab/IsaacSim stacks cannot be co-installed in one environment.
+# Declaring them conflicting lets a single lockfile cover both; pick one per
+# environment with `uv sync --extra isaac50` or `--extra isaac51`.
+conflicts = [[{ extra = "isaac50" }, { extra = "isaac51" }]]
 # warp-lang 1.13.0.dev20260418 on pypi.nvidia.com only published the macOS
 # wheel — no Linux build — so any resolver pass that picked it would break
 # `uv sync` on Linux. Exclude that specific version.
