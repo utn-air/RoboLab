@@ -16,10 +16,10 @@ ARCHIVE_AFTER_MODEL="${ARCHIVE_AFTER_MODEL:-1}"
 DELETE_UNZIPPED_AFTER_ARCHIVE="${DELETE_UNZIPPED_AFTER_ARCHIVE:-1}"
 
 MODEL_CONFIGS=(
-    droid-256px-8f-dual.yaml
-    # droid-256px-8f-ind.yaml
-    # droid-256px-8f-right.yaml
-    # droid-256px-8f-wrist.yaml
+    # droid-256px-8f-dual.yaml
+    droid-256px-8f-ind.yaml
+    droid-256px-8f-right.yaml
+    droid-256px-8f-wrist.yaml
 )
 
 TASKS=(
@@ -295,7 +295,7 @@ for cfg_file in "${MODEL_CONFIGS[@]}"; do
     VIDEO_MODE="$VIDEO_MODE" \
     OUTPUT_FOLDER_NAME="$OUTPUT_FOLDER_NAME" \
     DEVICE="$DEVICE" \
-        bash examples/policy/run_reach_valpa_eval_5x.sh
+        bash examples/policy/run_reach_valpa_eval_10x.sh
 
     archive_model_output "$model_name"
     cleanup_server

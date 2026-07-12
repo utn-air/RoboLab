@@ -83,7 +83,7 @@ fi
 PROTOCOL_BUFFERS_PYTHON_IMPLEMENTATION=python \
     "$ISAAC_PYTHON" examples/policy/run_eval.py \
     --policy valpa \
-    --num-runs 5 \
+    --num-runs 10 \
     --num-envs 1 \
     --device "$DEVICE" \
     --task "${TASKS[@]}" \
