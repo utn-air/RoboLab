@@ -61,7 +61,7 @@ isaac51 = [
     "isaacsim[all,extscache]==5.1.0",
 ]
 isaac61 = [
-    "isaaclab",
+    "isaaclab==3.0.0b2",
     "isaacsim[all,extscache]==6.0.1.0"
 ]
 analysis = ["sbi"]
@@ -89,7 +89,7 @@ index-strategy = "unsafe-best-match"
 # The two IsaacLab/IsaacSim stacks cannot be co-installed in one environment.
 # Declaring them conflicting lets a single lockfile cover both; pick one per
 # environment with `uv sync --extra isaac50` or `--extra isaac51`.
-conflicts = [[{ extra = "isaac50" }, { extra = "isaac51" }]]
+conflicts = [[{ extra = "isaac50" }, { extra = "isaac51" }, { extra = "isaac61" }]]
 # warp-lang 1.13.0.dev20260418 on pypi.nvidia.com only published the macOS
 # wheel — no Linux build — so any resolver pass that picked it would break
 # `uv sync` on Linux. Exclude that specific version.
