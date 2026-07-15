@@ -24,7 +24,7 @@ class ReachSpoonBigTerminations:
     time_out = DoneTerm(func=mdp.time_out, time_out=True)
     success = DoneTerm(
         func=reach_object,
-        params={"tolerance": 0.05, "status_path": STATUS_PATH},
+        params={"tolerance": 0.01, "status_path": STATUS_PATH},
     )
 
 
@@ -54,7 +54,7 @@ class ReachSpoonBigTask(Task):
             name="reach_above_spoon",
             conditions={
                 "spoon_big": [
-                    (partial(reach_object, tolerance=0.05, status_path=STATUS_PATH), 1.0)
+                    (partial(reach_object, tolerance=0.04, status_path=STATUS_PATH), 1.0)
                 ]
             },
             logical="all",

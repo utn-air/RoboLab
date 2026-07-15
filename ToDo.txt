@@ -65,6 +65,5 @@ python clean_concatenated_hdf5.py output/dual_dinov3.zip --overwrite
 python clean_concatenated_hdf5.py output/dual_dinov3.zip --overwrite --keep-folder
 
 
-- reach configs folder in serve_policy.py
-- wm_wrapper uses one view for shared latent now
-- single view baselines does not normalise loss (for all experiments till now)
+- reach configs folder pointed in serve_policy.py
+- does reach/angled reach expts use gripper?

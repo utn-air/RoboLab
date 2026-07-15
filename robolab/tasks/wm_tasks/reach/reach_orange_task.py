@@ -24,7 +24,7 @@ class ReachOrangeTerminations:
     time_out = DoneTerm(func=mdp.time_out, time_out=True)
     success = DoneTerm(
         func=reach_object,
-        params={"tolerance": 0.05, "status_path": STATUS_PATH},
+        params={"tolerance": 0.04, "status_path": STATUS_PATH},
     )
 
 
@@ -54,7 +54,7 @@ class ReachOrangeTask(Task):
             name="reach_above_orange",
             conditions={
                 "orange2": [
-                    (partial(reach_object, tolerance=0.05, status_path=STATUS_PATH), 1.0)
+                    (partial(reach_object, tolerance=0.04, status_path=STATUS_PATH), 1.0)
                 ]
             },
             logical="all",

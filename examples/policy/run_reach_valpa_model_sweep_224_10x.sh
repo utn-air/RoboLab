@@ -3,7 +3,7 @@ set -euo pipefail
 
 ISAAC_PYTHON="${ISAAC_PYTHON:-/workspace/isaaclab/_isaac_sim/python.sh}"
 REMOTE_HOST="${REMOTE_HOST:-localhost}"
-REMOTE_PORT="${REMOTE_PORT:-8001}"
+REMOTE_PORT="${REMOTE_PORT:-8000}"
 SERVER_HOST="${SERVER_HOST:-0.0.0.0}"
 SERVER_START_TIMEOUT="${SERVER_START_TIMEOUT:-600}"
 OUTPUT_ROOT="${OUTPUT_ROOT:-/workspace/robolab/output}"
@@ -14,12 +14,13 @@ DEVICE="${DEVICE:-cuda:0}"
 SERVER_LOG_DIR="${SERVER_LOG_DIR:-$OUTPUT_ROOT/valpa_model_sweep_logs_${REMOTE_PORT}}"
 ARCHIVE_AFTER_MODEL="${ARCHIVE_AFTER_MODEL:-1}"
 DELETE_UNZIPPED_AFTER_ARCHIVE="${DELETE_UNZIPPED_AFTER_ARCHIVE:-1}"
+NUM_RUNS_PER_TASK="${NUM_RUNS_PER_TASK:-10}"
 
 MODEL_CONFIGS=(
-    # droid-256px-8f-dual.yaml
-    droid-256px-8f-ind.yaml
-    droid-256px-8f-right.yaml
-    droid-256px-8f-wrist.yaml
+    # droid-224px-8f-dual.yaml
+    droid-224px-8f-ind.yaml
+    droid-224px-8f-right.yaml
+    droid-224px-8f-wrist.yaml
 )
 
 TASKS=(
@@ -177,6 +178,7 @@ archive_model_output() {
         return 1
     fi
 
+
     echo "=== Zipping $model_dir -> $archive_file ==="
     rm -f "$archive_file"
     (
@@ -188,6 +190,59 @@ archive_model_output() {
         echo "=== Removing expanded output folder after successful zip: $model_dir ==="
         rm -rf "$model_dir"
     fi
+}
+
+check_model_output_complete() {
+    local model_name="$1"
+    local expected_runs="$2"
+    local model_dir="$OUTPUT_ROOT/$model_name"
+    local episode_results_file="$model_dir/episode_results.jsonl"
+
+    if [[ ! -f "$episode_results_file" ]]; then
+        echo "Missing episode results file: $episode_results_file"
+        return 1
+    fi
+
+    PROTOCOL_BUFFERS_PYTHON_IMPLEMENTATION=python \
+        "$ISAAC_PYTHON" - "$episode_results_file" "$expected_runs" "${TASKS[@]}" <<'PY'
+import json
+import pathlib
+import sys
+
+episode_results_file = pathlib.Path(sys.argv[1])
+expected_runs = int(sys.argv[2])
+tasks = sys.argv[3:]
+
+episodes_per_task = {task: set() for task in tasks}
+
+with episode_results_file.open("r", encoding="utf-8") as f:
+    for line in f:
+        line = line.strip()
+        if not line:
+            continue
+        try:
+            ep = json.loads(line)
+        except json.JSONDecodeError:
+            continue
+
+        env_name = ep.get("env_name")
+        episode = ep.get("episode")
+
+        if env_name in episodes_per_task and isinstance(episode, int):
+            episodes_per_task[env_name].add(episode)
+
+incomplete = []
+for task in tasks:
+    count = len(episodes_per_task[task])
+    if count < expected_runs:
+        incomplete.append((task, count, expected_runs))
+
+if incomplete:
+    print("Model output is incomplete. Missing episodes:", file=sys.stderr)
+    for task, count, expected in incomplete:
+        print(f"  {task}: {count}/{expected}", file=sys.stderr)
+    raise SystemExit(1)
+PY
 }
 
 trap cleanup_server EXIT
@@ -233,7 +288,6 @@ if ((${#MODEL_CONFIGS[@]} == 0)); then
     echo "All model configs already have archives in $OUTPUT_ROOT. Nothing to run."
     exit 0
 fi
-
 
 for cfg_file in "${MODEL_CONFIGS[@]}"; do
     cfg_path="/workspace/robolab/valpa/configs/inference/valpa-reach/$cfg_file"
@@ -288,14 +342,25 @@ for cfg_file in "${MODEL_CONFIGS[@]}"; do
 
     MODEL_NAMES+=("$model_name")
 
-    echo "=== Running 50 eval episodes for hosted model $model_name ==="
-    REMOTE_HOST="$REMOTE_HOST" \
-    REMOTE_PORT="$REMOTE_PORT" \
-    HEADLESS="$HEADLESS" \
-    VIDEO_MODE="$VIDEO_MODE" \
-    OUTPUT_FOLDER_NAME="$OUTPUT_FOLDER_NAME" \
-    DEVICE="$DEVICE" \
-        bash examples/policy/run_reach_valpa_eval_10x.sh
+    echo "=== Running eval for hosted model $model_name (${NUM_RUNS_PER_TASK} runs/task) ==="
+    if ! REMOTE_HOST="$REMOTE_HOST" \
+        REMOTE_PORT="$REMOTE_PORT" \
+        HEADLESS="$HEADLESS" \
+        VIDEO_MODE="$VIDEO_MODE" \
+        OUTPUT_FOLDER_NAME="$OUTPUT_FOLDER_NAME" \
+        DEVICE="$DEVICE" \
+        NUM_RUNS_PER_TASK="$NUM_RUNS_PER_TASK" \
+        bash examples/policy/run_reach_valpa_eval_10x.sh; then
+        echo "=== Eval failed for $model_name. Skipping archive to preserve partial outputs. ==="
+        cleanup_server
+        exit 1
+    fi
+
+    if ! check_model_output_complete "$model_name" "$NUM_RUNS_PER_TASK"; then
+        echo "=== Output for $model_name is incomplete. Skipping archive to preserve partial outputs. ==="
+        cleanup_server
+        exit 1
+    fi
 
     archive_model_output "$model_name"
     cleanup_server

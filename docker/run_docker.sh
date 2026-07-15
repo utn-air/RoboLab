@@ -7,7 +7,7 @@ ROBOLAB_DOCKER_DIR="$(dirname "$(realpath -s "$0")")"
 ROBOLAB_DIR="$(realpath "${ROBOLAB_DOCKER_DIR}/../")"
 
 docker run --rm -it \
-    --gpus '"device=1"' \
+    --gpus '"device=0"' \
     --network=host \
     -e ACCEPT_EULA=Y \
     --entrypoint /bin/bash \
