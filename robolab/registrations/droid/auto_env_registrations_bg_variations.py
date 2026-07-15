@@ -26,9 +26,9 @@ BACKGROUND_FILES = [
     "billiard_hall.hdr",
     "art_studio_2k.hdr",
     "aircraft_workshop_01_2k.hdr",
-    "hotel_room_2k.hdr",
+    "hotel_room_4k.hdr",
     "garage_2k.hdr",
-    "machine_shop_01_2k.hdr",
+    "machine_shop_01_4k.hdr",
     "reading_room_2k.hdr",
     "industrial_pipe_and_valve_01_2k.hdr",
 ]

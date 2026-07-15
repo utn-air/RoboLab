@@ -161,20 +161,34 @@ class RobolabDefaultEnvCfg(ManagerBasedRLEnvCfg):
         self.scene.env_spacing = 2.0
         self.sim.use_fabric = True
 
-        # PhysX settings
-        self.sim.physx.gpu_temp_buffer_capacity = 2**30
-        self.sim.physx.gpu_heap_capacity = 2**30
-        self.sim.physx.gpu_collision_stack_size = 2**30
-        self.sim.physx.enable_ccd = True
-        self.sim.physx.contact_offset = 0.02
-        self.sim.physx.rest_offset = 0.01
-        self.sim.physx.num_position_iterations = 32
-        self.sim.physx.num_velocity_iterations = 1
-        self.sim.physx.bounce_threshold_velocity = 0.2
-        self.sim.physx.max_depenetration_velocity = 100.0
-        self.sim.physx.solver_type = 1
-        self.sim.physx.num_threads = 4
-        self.sim.physx.relaxation = 0.75
-        self.sim.physx.warm_start = 0.4
-        self.sim.physx.shape_collision_distance = 0.0
-        self.sim.physx.shape_collision_margin = 0.0
+        # PhysX settings. Field availability differs between IsaacLab 2.2
+        # (IsaacSim 5.0) and IsaacLab 2.3 (IsaacSim 5.1): the solver iteration
+        # fields were renamed from num_{position,velocity}_iterations to
+        # max_{position,velocity}_iteration_count. Both name sets are listed
+        # below and each assignment is guarded with hasattr so a single block
+        # configures whichever PhysxCfg schema is present.
+        physx = getattr(self.sim, "physx", None)
+        physx_settings = {
+            "gpu_temp_buffer_capacity": 2**30,
+            "gpu_heap_capacity": 2**30,
+            "gpu_collision_stack_size": 2**30,
+            "enable_ccd": True,
+            "contact_offset": 0.02,
+            "rest_offset": 0.01,
+            "num_position_iterations": 32,        # IsaacLab 2.2
+            "num_velocity_iterations": 1,         # IsaacLab 2.2
+            "max_position_iteration_count": 32,   # IsaacLab 2.3
+            "max_velocity_iteration_count": 1,    # IsaacLab 2.3
+            "bounce_threshold_velocity": 0.2,
+            "max_depenetration_velocity": 100.0,
+            "solver_type": 1,
+            "num_threads": 4,
+            "relaxation": 0.75,
+            "warm_start": 0.4,
+            "shape_collision_distance": 0.0,
+            "shape_collision_margin": 0.0,
+        }
+        if physx is not None:
+            for attr_name, value in physx_settings.items():
+                if hasattr(physx, attr_name):
+                    setattr(physx, attr_name, value)
