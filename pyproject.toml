@@ -61,7 +61,7 @@ isaac51 = [
     "isaacsim[all,extscache]==5.1.0",
 ]
 isaac61 = [
-    "isaaclab @ git+https://github.com/isaac-sim/IsaacLab.git@v3.0.0-beta2.patch1#subdirectory=source/isaaclab",
+    "isaaclab==3.0.0b2.post1",
     "isaacsim[all,extscache]==6.0.1.0"
 ]
 analysis = ["sbi"]
