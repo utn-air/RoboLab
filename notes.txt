@@ -1,17 +1,21 @@
 
 
+# build apptainer
 apptainer build --fakeroot \
-  robolab-compat.sif \
-  RoboLab/docker/Apptainer.compat.def
+  robolab.sif \
+  RoboLab/docker/Apptainer.def
 
 salloc --nodes=1 --partition=rtxpro6k --gres=gpu:rtxpro6k:1 --time=04:00:00
+
+# 4GB overlay image to store isaac-sim cache
+apptainer overlay create --size 4096 robolab-overlay.img
 
 cd RoboLab
 apptainer exec --nv \
   --overlay ../robolab-overlay.img \
-  ../robolab-compat.sif \
+  ../robolab.sif \
   python-rtx-compat examples/run_empty.py \
   --headless \
   --task MustardInLeftBinTask \
   --num-steps 5 \
-  > ../sweep_vulkan_debug6.log 2>&1
+  > ../sweep_vulkan_debug.log 2>&1

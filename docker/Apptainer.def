@@ -1,39 +1,37 @@
-# Build from the RoboLab repository root, for example:
-#   apptainer build --fakeroot robolab.sif docker/Apptainer.def
-#
-# Select another IsaacLab/IsaacSim stack with:
-#   apptainer build --fakeroot --build-arg ISAACLAB_TAG=2.3.0 \
-#       robolab-isaac51.sif docker/Apptainer.def
+# Experimental Isaac Sim 5.1 image for NVIDIA drivers newer than the validated
+# R580 branch. Build from the RoboLab repository root.
 
 Bootstrap: docker
 From: nvcr.io/nvidia/isaac-lab:{{ ISAACLAB_TAG }}
 
 %arguments
-    # 2.2.0 -> IsaacLab 2.2.0 / IsaacSim 5.0
-    # 2.3.0 -> IsaacLab 2.3.x / IsaacSim 5.1
-    ISAACLAB_TAG=2.2.0
+    ISAACLAB_TAG=2.3.0
     OPENPI_COMMIT=aa6420561529593114160d05e5ad155792b272f3
+    VULKAN_PROFILES_COMMIT=a400d0b10059b2cc3cd285475593eee79975a5c4
 
 %files
-    # Sources are relative to the directory where `apptainer build` is run.
-    # Run the build from the RoboLab repository root.
-    . /workspace/robolab
+    RoboLab/. /workspace/robolab
 
 %post
     apt-get update
     apt-get install -y --no-install-recommends \
         build-essential \
+        ca-certificates \
+        cmake \
+        curl \
+        git \
         htop \
         iputils-ping \
         git-lfs \
+        ninja-build \
         nvtop \
+        python3-jsonschema \
         tmux \
         vim \
-        zip
+        zip \
+        zstd
     rm -rf /var/lib/apt/lists/*
 
-    # Install only the client package. The base image already supplies the
-    # matching IsaacLab/IsaacSim stack.
     /workspace/isaaclab/_isaac_sim/python.sh -m pip install \
         --no-cache-dir \
         --no-deps \
@@ -41,9 +39,43 @@ From: nvcr.io/nvidia/isaac-lab:{{ ISAACLAB_TAG }}
 
     cd /workspace/robolab
     /workspace/isaaclab/_isaac_sim/python.sh -m pip install \
-    --no-cache-dir "docstring-parser==0.16"
+        --no-cache-dir "docstring-parser==0.16"
     GIT_LFS_SKIP_SMUDGE=1 /workspace/isaaclab/_isaac_sim/python.sh \
         -m pip install --no-cache-dir -e .
+
+    # Build the pinned Khronos Profiles layer inside this Ubuntu image.
+    # UPDATE_DEPS builds jsoncpp 1.9.6 as a static library, avoiding the
+    # Arch package incompatible runtime dependency on libjsoncpp.so.26.
+    compat_root=/opt/vulkan-rtx-compat
+    profiles_src=/tmp/Vulkan-Profiles
+    profiles_build=/tmp/Vulkan-Profiles-build
+    install -d \
+        "$compat_root/profiles" \
+        "$compat_root/share/vulkan/implicit_layer.d"
+    git clone --filter=blob:none --no-checkout \
+        https://github.com/KhronosGroup/Vulkan-Profiles.git "$profiles_src"
+    git -C "$profiles_src" checkout --detach {{ VULKAN_PROFILES_COMMIT }}
+    cmake -S "$profiles_src" -B "$profiles_build" -G Ninja \
+        -D CMAKE_BUILD_TYPE=Release \
+        -D BUILD_TESTS=OFF \
+        -D UPDATE_DEPS=ON
+    cmake --build "$profiles_build" --target ProfilesLayer --parallel
+    install -m 0755 \
+        "$profiles_build/layer/libVkLayer_khronos_profiles.so" \
+        "$compat_root/libVkLayer_khronos_profiles.so"
+
+    # The layer must be self-contained with respect to jsoncpp.
+    if ldd "$compat_root/libVkLayer_khronos_profiles.so" | grep -q libjsoncpp; then
+        echo "ERROR: Vulkan Profiles layer unexpectedly links dynamic jsoncpp" >&2
+        exit 1
+    fi
+    install -m 0644 docker/vulkan-rtx-compat/VP_RTX_driver_compat_generated.json \
+        "$compat_root/profiles/VP_RTX_driver_compat_generated.json"
+    install -m 0644 docker/vulkan-rtx-compat/VkLayer_KHRONOS_profiles.json \
+        "$compat_root/share/vulkan/implicit_layer.d/VkLayer_KHRONOS_profiles.json"
+    install -m 0755 docker/vulkan-rtx-compat/python-rtx-compat \
+        /usr/local/bin/python-rtx-compat
+    rm -rf "$profiles_src" "$profiles_build"
 
 %environment
     export OMNI_KIT_ACCEPT_EULA=YES
@@ -51,4 +83,4 @@ From: nvcr.io/nvidia/isaac-lab:{{ ISAACLAB_TAG }}
 
 %labels
     org.opencontainers.image.title RoboLab
-    org.opencontainers.image.description "RoboLab with NVIDIA Isaac Lab and Isaac Sim"
+    org.opencontainers.image.description "RoboLab with experimental Vulkan RTX driver compatibility profile"
