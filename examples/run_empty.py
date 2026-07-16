@@ -115,8 +115,8 @@ def main():
                 num_envs=args_cli.num_envs,
                 num_steps=args_cli.num_steps,
                 episode=i,
-                save_image=False,
-                save_videos=False)
+                save_image=True,
+                save_videos=True)
 
             # Pull events before end_episode (which may reset the env)
             per_env_events = get_all_env_events(env) or []

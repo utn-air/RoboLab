@@ -1,0 +1,54 @@
+# Build from the RoboLab repository root, for example:
+#   apptainer build --fakeroot robolab.sif docker/Apptainer.def
+#
+# Select another IsaacLab/IsaacSim stack with:
+#   apptainer build --fakeroot --build-arg ISAACLAB_TAG=2.3.0 \
+#       robolab-isaac51.sif docker/Apptainer.def
+
+Bootstrap: docker
+From: nvcr.io/nvidia/isaac-lab:{{ ISAACLAB_TAG }}
+
+%arguments
+    # 2.2.0 -> IsaacLab 2.2.0 / IsaacSim 5.0
+    # 2.3.0 -> IsaacLab 2.3.x / IsaacSim 5.1
+    ISAACLAB_TAG=2.2.0
+    OPENPI_COMMIT=aa6420561529593114160d05e5ad155792b272f3
+
+%files
+    # Sources are relative to the directory where `apptainer build` is run.
+    # Run the build from the RoboLab repository root.
+    . /workspace/robolab
+
+%post
+    apt-get update
+    apt-get install -y --no-install-recommends \
+        build-essential \
+        htop \
+        iputils-ping \
+        git-lfs \
+        nvtop \
+        tmux \
+        vim \
+        zip
+    rm -rf /var/lib/apt/lists/*
+
+    # Install only the client package. The base image already supplies the
+    # matching IsaacLab/IsaacSim stack.
+    /workspace/isaaclab/_isaac_sim/python.sh -m pip install \
+        --no-cache-dir \
+        --no-deps \
+        "openpi-client @ git+https://github.com/xuningy/openpi@{{ OPENPI_COMMIT }}#subdirectory=packages/openpi-client"
+
+    cd /workspace/robolab
+    /workspace/isaaclab/_isaac_sim/python.sh -m pip install \
+    --no-cache-dir "docstring-parser==0.16"
+    GIT_LFS_SKIP_SMUDGE=1 /workspace/isaaclab/_isaac_sim/python.sh \
+        -m pip install --no-cache-dir -e .
+
+%environment
+    export OMNI_KIT_ACCEPT_EULA=YES
+    export ACCEPT_EULA=Y
+
+%labels
+    org.opencontainers.image.title RoboLab
+    org.opencontainers.image.description "RoboLab with NVIDIA Isaac Lab and Isaac Sim"

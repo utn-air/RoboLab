@@ -1,0 +1,17 @@
+
+
+apptainer build --fakeroot \
+  robolab-compat.sif \
+  RoboLab/docker/Apptainer.compat.def
+
+salloc --nodes=1 --partition=rtxpro6k --gres=gpu:rtxpro6k:1 --time=04:00:00
+
+cd RoboLab
+apptainer exec --nv \
+  --overlay ../robolab-overlay.img \
+  ../robolab-compat.sif \
+  python-rtx-compat examples/run_empty.py \
+  --headless \
+  --task MustardInLeftBinTask \
+  --num-steps 5 \
+  > ../sweep_vulkan_debug6.log 2>&1
