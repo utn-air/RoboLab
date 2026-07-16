@@ -1,0 +1,36 @@
+{
+  "$schema": "https://schema.khronos.org/vulkan/profiles-0.8-latest.json#",
+  "capabilities": {
+    "RTX_DRIVER_COMPAT": {
+      "properties": {
+        "VkPhysicalDeviceMaintenance3Properties": {
+          "maxMemoryAllocationSize": 4292870144
+        }
+      }
+    }
+  },
+  "profiles": {
+    "VP_RTX_driver_compat_generated": {
+      "version": 1,
+      "api-version": "1.1.0",
+      "label": "Isaac Sim 5.1 RTX Driver Compatibility",
+      "description": "Cap maxMemoryAllocationSize below 4 GiB for newer NVIDIA drivers.",
+      "contributors": {
+        "local": {
+          "github": "https://github.com/yushijinhun"
+        }
+      },
+      "history": [
+        {
+          "revision": 1,
+          "date": "2026-05-10",
+          "author": "local",
+          "comment": "Generated compatibility profile."
+        }
+      ],
+      "capabilities": [
+        "RTX_DRIVER_COMPAT"
+      ]
+    }
+  }
+}
