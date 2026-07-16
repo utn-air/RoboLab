@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-ISAAC_PYTHON="${ISAAC_PYTHON:-/workspace/isaaclab/_isaac_sim/python.sh}"
+ISAAC_PYTHON="${ISAAC_PYTHON:-python-rtx-compat}"
 REMOTE_HOST="${REMOTE_HOST:-localhost}"
 REMOTE_PORT="${REMOTE_PORT:-8000}"
 HEADLESS="${HEADLESS:-1}"
@@ -90,4 +90,5 @@ PROTOCOL_BUFFERS_PYTHON_IMPLEMENTATION=python \
     --task "${TASKS[@]}" \
     --remote-host "$REMOTE_HOST" \
     --remote-port "$REMOTE_PORT" \
-    "${EXTRA_ARGS[@]}"
+    "${EXTRA_ARGS[@]}" \
+    --kit_args "--reset-user --/rtx/post/aa/op=1 --/rtx/post/dlss/enabled=false --/rtx-transient/dlssg/enabled=0 --/rtx-transient/dldenoiser/enabled=0"

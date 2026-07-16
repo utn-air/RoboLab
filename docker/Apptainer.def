@@ -1,0 +1,113 @@
+# RoboLab + VALPA on Isaac Lab 2.2.0 / Isaac Sim 5.0, with the experimental
+# Vulkan Profiles workaround for the host NVIDIA 610 driver.
+# Build from /anvme/workspace/v106be10-valpa-robolab.
+
+Bootstrap: docker
+From: nvcr.io/nvidia/isaac-lab:{{ ISAACLAB_TAG }}
+
+%arguments
+    ISAACLAB_TAG=2.2.0
+    OPENPI_COMMIT=aa6420561529593114160d05e5ad155792b272f3
+    VULKAN_PROFILES_COMMIT=a400d0b10059b2cc3cd285475593eee79975a5c4
+
+%files
+    # Mirror Docker context without copying .git, output, or 40 GB of model
+    # checkpoints. Bind the host checkout at runtime to expose those models.
+    RoboLab/README.md /workspace/robolab/README.md
+    RoboLab/LICENSE /workspace/robolab/LICENSE
+    RoboLab/pyproject.toml /workspace/robolab/pyproject.toml
+    RoboLab/requirements.txt /workspace/robolab/requirements.txt
+    RoboLab/analysis /workspace/robolab/analysis
+    RoboLab/assets /workspace/robolab/assets
+    RoboLab/docs /workspace/robolab/docs
+    RoboLab/droid /workspace/robolab/droid
+    RoboLab/eval_statistics /workspace/robolab/eval_statistics
+    RoboLab/examples /workspace/robolab/examples
+    RoboLab/robolab /workspace/robolab/robolab
+    RoboLab/robolab_policy_client /workspace/robolab/robolab_policy_client
+    RoboLab/scripts /workspace/robolab/scripts
+    RoboLab/skills /workspace/robolab/skills
+    RoboLab/valpa /workspace/robolab/valpa
+    RoboLab/docker/vulkan-rtx-compat /workspace/robolab/docker/vulkan-rtx-compat
+
+%post
+    apt-get update
+    apt-get install -y --no-install-recommends \
+        build-essential \
+        ca-certificates \
+        cmake \
+        curl \
+        git \
+        htop \
+        iputils-ping \
+        git-lfs \
+        ninja-build \
+        nvtop \
+        python3-jsonschema \
+        tmux \
+        vim \
+        zip \
+        zstd
+    rm -rf /var/lib/apt/lists/*
+
+    /workspace/isaaclab/_isaac_sim/python.sh -m pip install \
+        --no-cache-dir \
+        --no-deps \
+        "openpi-client @ git+https://github.com/xuningy/openpi@{{ OPENPI_COMMIT }}#subdirectory=packages/openpi-client"
+
+    cd /workspace/robolab
+    GIT_LFS_SKIP_SMUDGE=1 /workspace/isaaclab/_isaac_sim/python.sh \
+        -m pip install --no-cache-dir -e .
+
+    # Match the Dockerfile VALPA installation exactly. The Isaac base image
+    # and RoboLab provide the common stack; avoid resolving VALPA broad deps.
+    /workspace/isaaclab/_isaac_sim/python.sh -m pip install \
+        --no-cache-dir --no-deps timm einops
+    cd /workspace/robolab/valpa
+    GIT_LFS_SKIP_SMUDGE=1 /workspace/isaaclab/_isaac_sim/python.sh \
+        -m pip install --no-cache-dir --no-deps -e .
+    cd /workspace/robolab
+    install -d /workspace/robolab/checkpoints /workspace/robolab/output
+
+    # Build the pinned Khronos Profiles layer inside this Ubuntu image.
+    # UPDATE_DEPS builds jsoncpp 1.9.6 as a static library, avoiding the
+    # Arch package incompatible runtime dependency on libjsoncpp.so.26.
+    compat_root=/opt/vulkan-rtx-compat
+    profiles_src=/tmp/Vulkan-Profiles
+    profiles_build=/tmp/Vulkan-Profiles-build
+    install -d \
+        "$compat_root/profiles" \
+        "$compat_root/share/vulkan/implicit_layer.d"
+    git clone --filter=blob:none --no-checkout \
+        https://github.com/KhronosGroup/Vulkan-Profiles.git "$profiles_src"
+    git -C "$profiles_src" checkout --detach {{ VULKAN_PROFILES_COMMIT }}
+    cmake -S "$profiles_src" -B "$profiles_build" -G Ninja \
+        -D CMAKE_BUILD_TYPE=Release \
+        -D BUILD_TESTS=OFF \
+        -D UPDATE_DEPS=ON
+    cmake --build "$profiles_build" --target ProfilesLayer --parallel
+    install -m 0755 \
+        "$profiles_build/layer/libVkLayer_khronos_profiles.so" \
+        "$compat_root/libVkLayer_khronos_profiles.so"
+
+    # The layer must be self-contained with respect to jsoncpp.
+    if ldd "$compat_root/libVkLayer_khronos_profiles.so" | grep -q libjsoncpp; then
+        echo "ERROR: Vulkan Profiles layer unexpectedly links dynamic jsoncpp" >&2
+        exit 1
+    fi
+    install -m 0644 docker/vulkan-rtx-compat/VP_RTX_driver_compat_generated.json \
+        "$compat_root/profiles/VP_RTX_driver_compat_generated.json"
+    install -m 0644 docker/vulkan-rtx-compat/VkLayer_KHRONOS_profiles.json \
+        "$compat_root/share/vulkan/implicit_layer.d/VkLayer_KHRONOS_profiles.json"
+    install -m 0755 docker/vulkan-rtx-compat/python-rtx-compat \
+        /usr/local/bin/python-rtx-compat
+    rm -rf "$profiles_src" "$profiles_build"
+
+%environment
+    export OMNI_KIT_ACCEPT_EULA=YES
+    export ACCEPT_EULA=Y
+    export PROTOCOL_BUFFERS_PYTHON_IMPLEMENTATION=python
+
+%labels
+    org.opencontainers.image.title RoboLab
+    org.opencontainers.image.description "RoboLab + VALPA on Isaac Lab 2.2.0 with Vulkan RTX driver compatibility profile"

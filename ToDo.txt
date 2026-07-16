@@ -21,8 +21,8 @@ PROTOCOL_BUFFERS_PYTHON_IMPLEMENTATION=python \
 # All model versions:
 HEADLESS=1 VIDEO_MODE=sensor bash examples/policy/run_reach_valpa_model_sweep_224_5x.sh
 HEADLESS=1 VIDEO_MODE=sensor bash examples/policy/run_reach_valpa_model_sweep_256_5x.sh
-mkdir -p output && HEADLESS=1 VIDEO_MODE=sensor bash examples/policy/run_reach_valpa_model_sweep_224_5x.sh > output/sweep_224.log 2>&1
-mkdir -p output && HEADLESS=1 VIDEO_MODE=sensor bash examples/policy/run_reach_valpa_model_sweep_256_5x.sh > output/sweep_256.log 2>&1
+mkdir -p output && HEADLESS=1 VIDEO_MODE=sensor bash examples/policy/run_reach_valpa_model_sweep_224_10x.sh > output/sweep_224.log 2>&1
+mkdir -p output && HEADLESS=1 VIDEO_MODE=sensor bash examples/policy/run_reach_valpa_model_sweep_256_10x.sh > output/sweep_256.log 2>&1
 
 HEADLESS=1 VIDEO_MODE=sensor bash examples/policy/run_angledreach_valpa_model_sweep_224_5x.sh
 HEADLESS=1 VIDEO_MODE=sensor bash examples/policy/run_angledreach_valpa_model_sweep_256_5x.sh
@@ -67,3 +67,10 @@ python clean_concatenated_hdf5.py output/dual_dinov3.zip --overwrite --keep-fold
 
 - reach configs folder pointed in serve_policy.py
 - does reach/angled reach expts use gripper?
+
+apptainer build --fakeroot \
+  robolab-valpa.sif \
+  RoboLab/docker/Apptainer.def
+
+apptainer overlay create --size 4096 \
+  robolab-valpa-overlay.img

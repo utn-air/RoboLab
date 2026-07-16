@@ -1,12 +1,11 @@
-#!/usr/bin/env bash
 set -euo pipefail
 
-ISAAC_PYTHON="${ISAAC_PYTHON:-/workspace/isaaclab/_isaac_sim/python.sh}"
+export ISAAC_PYTHON="${ISAAC_PYTHON:-python-rtx-compat}"
 REMOTE_HOST="${REMOTE_HOST:-localhost}"
 REMOTE_PORT="${REMOTE_PORT:-8000}"
 SERVER_HOST="${SERVER_HOST:-0.0.0.0}"
 SERVER_START_TIMEOUT="${SERVER_START_TIMEOUT:-600}"
-OUTPUT_ROOT="${OUTPUT_ROOT:-/workspace/robolab/output}"
+OUTPUT_ROOT="${OUTPUT_ROOT:-/anvme/workspace/v106be10-valpa-robolab/RoboLab/output}"
 HEADLESS="${HEADLESS:-1}"
 VIDEO_MODE="${VIDEO_MODE:-sensor}"
 OUTPUT_FOLDER_NAME="${OUTPUT_FOLDER_NAME:-}"
