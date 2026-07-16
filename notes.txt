@@ -1,11 +1,11 @@
 
 
+salloc --nodes=1 --partition=rtxpro6k --gres=gpu:rtxpro6k:1 --time=04:00:00
+
 # build apptainer
 apptainer build --fakeroot \
   robolab.sif \
   RoboLab/docker/Apptainer.def
-
-salloc --nodes=1 --partition=rtxpro6k --gres=gpu:rtxpro6k:1 --time=04:00:00
 
 # 4GB overlay image to store isaac-sim cache
 apptainer overlay create --size 4096 robolab-overlay.img
