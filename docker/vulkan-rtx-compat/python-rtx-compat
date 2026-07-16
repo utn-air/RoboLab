@@ -10,4 +10,5 @@ export VK_KHRONOS_PROFILES_PROFILE_DIRS="$compat_root/profiles${VK_KHRONOS_PROFI
 export XDG_DATA_DIRS="$compat_root/share${XDG_DATA_DIRS:+:$XDG_DATA_DIRS}"
 
 echo "RTX Vulkan compatibility profile enabled: maxMemoryAllocationSize=4292870144" >&2
-exec /workspace/isaaclab/_isaac_sim/python.sh "$@"
+
+exec /opt/venvs/robolab/bin/python "$@"
