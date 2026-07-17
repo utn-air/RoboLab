@@ -64,12 +64,13 @@ def auto_register_droid_envs(task_dirs=DEFAULT_TASK_SUBFOLDERS, lighting_intensi
         cameras = WRIST_LEFT
 
     ImageObsCfg = generate_image_obs_from_cameras(cameras)
-    ViewportCameraCfg = generate_image_obs_from_cameras([EgocentricMirroredCameraCfg])
+    # ViewportCameraCfg = generate_image_obs_from_cameras([EgocentricMirroredCameraCfg])
 
     ObservationCfg = generate_obs_cfg({
         "image_obs": ImageObsCfg(),
         "proprio_obs": ProprioceptionObservationCfg(),
-        "viewport_cam": ViewportCameraCfg()})
+        # "viewport_cam": ViewportCameraCfg()
+        })
 
     # WristCameraCfg is robot-mounted (wrist_cam is already attached via DroidCfg).
     # Including it as a scene mixin puts wrist_cam before robot in dataclass field
