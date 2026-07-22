@@ -3,7 +3,7 @@ set -euo pipefail
 
 ISAAC_PYTHON="${ISAAC_PYTHON:-/workspace/isaaclab/_isaac_sim/python.sh}"
 REMOTE_HOST="${REMOTE_HOST:-localhost}"
-REMOTE_PORT="${REMOTE_PORT:-8000}"
+REMOTE_PORT="${REMOTE_PORT:-8001}"
 SERVER_HOST="${SERVER_HOST:-0.0.0.0}"
 SERVER_START_TIMEOUT="${SERVER_START_TIMEOUT:-600}"
 OUTPUT_ROOT="${OUTPUT_ROOT:-/workspace/robolab/output}"
@@ -16,12 +16,13 @@ ARCHIVE_AFTER_MODEL="${ARCHIVE_AFTER_MODEL:-1}"
 DELETE_UNZIPPED_AFTER_ARCHIVE="${DELETE_UNZIPPED_AFTER_ARCHIVE:-1}"
 
 MODEL_CONFIGS=(
-    droid-224px-8f-roboarena.yaml
-    # droid-224px-8f-ind.yaml
-    # droid-224px-8f-right.yaml
-    # droid-224px-8f-wrist.yaml
-    # droid-224px-8f-dual.yaml
+    droid-256px-8f-dual.yaml
+    droid-256px-8f-ind.yaml
+    droid-256px-8f-right.yaml
+    droid-256px-8f-wrist.yaml
 )
+
+
 
 SERVER_PID=""
 MODEL_NAMES=()
@@ -291,7 +292,7 @@ for cfg_file in "${MODEL_CONFIGS[@]}"; do
     VIDEO_MODE="$VIDEO_MODE" \
     OUTPUT_FOLDER_NAME="$output_folder_name" \
     DEVICE="$DEVICE" \
-        bash examples/policy/run_angledreach_valpa_eval_5x.sh
+        bash examples/policy/run_angledreach_valpa_eval_10x.sh
 
     archive_model_output "$output_folder_name"
     cleanup_server

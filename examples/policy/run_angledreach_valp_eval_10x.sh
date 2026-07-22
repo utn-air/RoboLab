@@ -18,9 +18,9 @@ if [[ -n "$VIDEO_MODE" ]]; then
 fi
 
 TASKS=(
-    # AngledReachDrillTask
-    # AngledReachCartoonTask
-    # AngledReachKetchupTask
+    AngledReachDrillTask
+    AngledReachCartoonTask
+    AngledReachKetchupTask
     AngledReachCartoon2Task
 )
 
@@ -77,7 +77,7 @@ fi
 PROTOCOL_BUFFERS_PYTHON_IMPLEMENTATION=python \
     "$ISAAC_PYTHON" examples/policy/run_eval_angled.py \
     --policy valpa \
-    --num-runs 5 \
+    --num-runs 10 \
     --num-envs 1 \
     --device "$DEVICE" \
     --task-dirs wm_tasks/angledreach \
