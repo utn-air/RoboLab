@@ -1,12 +1,12 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-ISAAC_PYTHON="${ISAAC_PYTHON:-/workspace/isaaclab/_isaac_sim/python.sh}"
+ISAAC_PYTHON="${ISAAC_PYTHON:-python-rtx-compat}"
 REMOTE_HOST="${REMOTE_HOST:-localhost}"
-REMOTE_PORT="${REMOTE_PORT:-8000}"
+REMOTE_PORT="${REMOTE_PORT:-8005}"
 SERVER_HOST="${SERVER_HOST:-0.0.0.0}"
 SERVER_START_TIMEOUT="${SERVER_START_TIMEOUT:-600}"
-OUTPUT_ROOT="${OUTPUT_ROOT:-/workspace/robolab/output}"
+OUTPUT_ROOT="${OUTPUT_ROOT:-/workspace/robolab/output/}"
 HEADLESS="${HEADLESS:-1}"
 VIDEO_MODE="${VIDEO_MODE:-sensor}"
 OUTPUT_FOLDER_NAME="${OUTPUT_FOLDER_NAME:-}"
@@ -16,11 +16,8 @@ ARCHIVE_AFTER_MODEL="${ARCHIVE_AFTER_MODEL:-1}"
 DELETE_UNZIPPED_AFTER_ARCHIVE="${DELETE_UNZIPPED_AFTER_ARCHIVE:-1}"
 
 MODEL_CONFIGS=(
-    droid-224px-8f-roboarena.yaml
-    droid-224px-8f-dual.yaml
-    droid-256px-8f-dual.yaml
-    
-    
+    droid-224px-8f-ind.yaml
+    droid-224px-8f-wrist.yaml
 )
 
 SERVER_PID=""
@@ -267,7 +264,7 @@ for cfg_file in "${MODEL_CONFIGS[@]}"; do
 
     PROTOCOL_BUFFERS_PYTHON_IMPLEMENTATION=python \
         "$ISAAC_PYTHON" valpa/inference/serve_policy.py \
-        --cfg-file "$cfg_file" \
+        --cfg-file "valpa-angledpickup/$cfg_file" \
         --host "$SERVER_HOST" \
         --port "$REMOTE_PORT" \
         >"$server_log" 2>&1 &
@@ -292,24 +289,20 @@ for cfg_file in "${MODEL_CONFIGS[@]}"; do
 
     MODEL_NAMES+=("$model_name")
 
-    echo "=== Running 3 angledpickup eval episodes for hosted model $model_name ==="
-    REMOTE_HOST="$REMOTE_HOST" \
-    REMOTE_PORT="$REMOTE_PORT" \
-    HEADLESS="$HEADLESS" \
-    VIDEO_MODE="$VIDEO_MODE" \
-    OUTPUT_FOLDER_NAME="$output_folder_name" \
-    DEVICE="$DEVICE" \
+    echo "=== Running 10 angledpickup eval episodes for hosted model $model_name ==="
+
+    PROTOCOL_BUFFERS_PYTHON_IMPLEMENTATION=python \
         "$ISAAC_PYTHON" examples/policy/run_eval_pickup.py \
-    --policy valpa \
-    --num-runs 3 \
-    --num-envs 1 \
-    --device "$DEVICE" \
-    --task-dirs wm_tasks/angledpickup \
-    --task AngledPickupCarton2Task \
-    --remote-host "$REMOTE_HOST" \
-    --remote-port "$REMOTE_PORT" \
-    --output-folder-name "$output_folder_name" \
-    "${EVAL_EXTRA_ARGS[@]}"
+            --policy valpa \
+            --num-runs 10 \
+            --num-envs 1 \
+            --device "$DEVICE" \
+            --task-dirs wm_tasks/angledpickup \
+            --task AngledPickupKetchupTask \
+            --remote-host "$REMOTE_HOST" \
+            --remote-port "$REMOTE_PORT" \
+            --output-folder-name "$output_folder_name" \
+            "${EVAL_EXTRA_ARGS[@]}"
 
     archive_model_output "$output_folder_name"
     cleanup_server

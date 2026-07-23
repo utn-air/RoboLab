@@ -22,17 +22,17 @@ if [[ -n "$OUTPUT_FOLDER_NAME" ]]; then
 fi
 
 TASKS=(
-    ReachAppleTask
-    ReachBagelTask
     ReachBananaTask
-    ReachCeramicMugTask
     ReachCoffeeCanTask
     ReachCoffeePotTask
     ReachOrangeJuiceCartonTask
-    ReachOrangeTask
     ReachPitcherTask
     ReachSpoonBigTask
     ReachYogurtCupTask
+    ReachAppleTask
+    ReachBagelTask
+    ReachOrangeTask
+    ReachCeramicMugTask
 )
 
 hosted_model_name() {

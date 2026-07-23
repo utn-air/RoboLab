@@ -1,12 +1,12 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-ISAAC_PYTHON="${ISAAC_PYTHON:-/workspace/isaaclab/_isaac_sim/python.sh}"
+ISAAC_PYTHON="${ISAAC_PYTHON:-python-rtx-compat}"
 REMOTE_HOST="${REMOTE_HOST:-localhost}"
-REMOTE_PORT="${REMOTE_PORT:-8000}"
+REMOTE_PORT="${REMOTE_PORT:-8003}"
 SERVER_HOST="${SERVER_HOST:-0.0.0.0}"
 SERVER_START_TIMEOUT="${SERVER_START_TIMEOUT:-600}"
-OUTPUT_ROOT="${OUTPUT_ROOT:-/workspace/robolab/output}"
+OUTPUT_ROOT="${OUTPUT_ROOT:-/workspace/robolab/output/}"
 HEADLESS="${HEADLESS:-1}"
 VIDEO_MODE="${VIDEO_MODE:-sensor}"
 OUTPUT_FOLDER_NAME="${OUTPUT_FOLDER_NAME:-}"
@@ -16,11 +16,13 @@ ARCHIVE_AFTER_MODEL="${ARCHIVE_AFTER_MODEL:-1}"
 DELETE_UNZIPPED_AFTER_ARCHIVE="${DELETE_UNZIPPED_AFTER_ARCHIVE:-1}"
 
 MODEL_CONFIGS=(
-    droid-224px-8f-dual.yaml
-    droid-224px-8f-ind.yaml
-    droid-224px-8f-right.yaml
-    droid-224px-8f-wrist.yaml
+    droid-256px-8f-dual.yaml
+    droid-256px-8f-ind.yaml
+    droid-256px-8f-right.yaml
+    droid-256px-8f-wrist.yaml
 )
+
+
 
 SERVER_PID=""
 MODEL_NAMES=()
@@ -258,7 +260,7 @@ for cfg_file in "${MODEL_CONFIGS[@]}"; do
 
     PROTOCOL_BUFFERS_PYTHON_IMPLEMENTATION=python \
         "$ISAAC_PYTHON" valpa/inference/serve_policy.py \
-        --cfg-file "$cfg_file" \
+        --cfg-file "valpa-angledreach/$cfg_file" \
         --host "$SERVER_HOST" \
         --port "$REMOTE_PORT" \
         >"$server_log" 2>&1 &

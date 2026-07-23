@@ -23,17 +23,17 @@ MODEL_CONFIGS=(
 )
 
 TASKS=(
-    ReachAppleTask
-    ReachBagelTask
     ReachBananaTask
-    ReachCeramicMugTask
     ReachCoffeeCanTask
     ReachCoffeePotTask
     ReachOrangeJuiceCartonTask
-    ReachOrangeTask
     ReachPitcherTask
     ReachSpoonBigTask
     ReachYogurtCupTask
+    ReachAppleTask
+    ReachBagelTask
+    ReachOrangeTask
+    ReachCeramicMugTask
 )
 
 SERVER_PID=""
@@ -316,7 +316,7 @@ for cfg_file in "${MODEL_CONFIGS[@]}"; do
     
     PROTOCOL_BUFFERS_PYTHON_IMPLEMENTATION=python \
         "$ISAAC_PYTHON" valpa/inference/serve_policy.py \
-        --cfg-file "$cfg_file" \
+        --cfg-file "valpa-reach/$cfg_file" \
         --host "$SERVER_HOST" \
         --port "$REMOTE_PORT" \
         >"$server_log" 2>&1 &

@@ -17,23 +17,23 @@ NUM_RUNS_PER_TASK="${NUM_RUNS_PER_TASK:-10}"
 
 MODEL_CONFIGS=(
     droid-224px-8f-dual.yaml
-    # droid-224px-8f-ind.yaml
-    # droid-224px-8f-right.yaml
-    # droid-224px-8f-wrist.yaml
+    droid-224px-8f-ind.yaml
+    droid-224px-8f-right.yaml
+    droid-224px-8f-wrist.yaml
 )
 
 TASKS=(
-    ReachAppleTask
-    ReachBagelTask
     ReachBananaTask
-    ReachCeramicMugTask
     ReachCoffeeCanTask
     ReachCoffeePotTask
     ReachOrangeJuiceCartonTask
-    ReachOrangeTask
     ReachPitcherTask
     ReachSpoonBigTask
     ReachYogurtCupTask
+    ReachAppleTask
+    ReachBagelTask
+    ReachOrangeTask
+    ReachCeramicMugTask
 )
 
 SERVER_PID=""
@@ -316,7 +316,7 @@ for cfg_file in "${MODEL_CONFIGS[@]}"; do
     
     PROTOCOL_BUFFERS_PYTHON_IMPLEMENTATION=python \
         "$ISAAC_PYTHON" valpa/inference/serve_policy.py \
-        --cfg-file "$cfg_file" \
+        --cfg-file "valpa-reach/$cfg_file" \
         --host "$SERVER_HOST" \
         --port "$REMOTE_PORT" \
         >"$server_log" 2>&1 &
