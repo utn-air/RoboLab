@@ -292,7 +292,7 @@ for cfg_file in "${MODEL_CONFIGS[@]}"; do
     echo "=== Running 10 angledpickup eval episodes for hosted model $model_name ==="
 
     PROTOCOL_BUFFERS_PYTHON_IMPLEMENTATION=python \
-        "$ISAAC_PYTHON" examples/policy/run_eval_pickup.py \
+        "$ISAAC_PYTHON" examples/policy/run_angledpickup_eval.py \
             --policy valpa \
             --num-runs 10 \
             --num-envs 1 \

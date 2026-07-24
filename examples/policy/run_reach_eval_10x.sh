@@ -82,7 +82,7 @@ else
 fi
 
 PROTOCOL_BUFFERS_PYTHON_IMPLEMENTATION=python \
-    "$ISAAC_PYTHON" examples/policy/run_eval.py \
+    "$ISAAC_PYTHON" examples/policy/run_reach_eval.py \
     --policy valpa \
     --num-runs "$NUM_RUNS_PER_TASK" \
     --num-envs 1 \

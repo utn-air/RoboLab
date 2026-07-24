@@ -3,7 +3,7 @@ set -euo pipefail
 
 ISAAC_PYTHON="${ISAAC_PYTHON:-python-rtx-compat}"
 REMOTE_HOST="${REMOTE_HOST:-localhost}"
-REMOTE_PORT="${REMOTE_PORT:-8003}"
+REMOTE_PORT="${REMOTE_PORT:-8015}"
 SERVER_HOST="${SERVER_HOST:-0.0.0.0}"
 SERVER_START_TIMEOUT="${SERVER_START_TIMEOUT:-600}"
 OUTPUT_ROOT="${OUTPUT_ROOT:-/workspace/robolab/output/}"
@@ -11,14 +11,11 @@ HEADLESS="${HEADLESS:-1}"
 VIDEO_MODE="${VIDEO_MODE:-sensor}"
 OUTPUT_FOLDER_NAME="${OUTPUT_FOLDER_NAME:-}"
 DEVICE="${DEVICE:-cuda:0}"
-SERVER_LOG_DIR="${SERVER_LOG_DIR:-$OUTPUT_ROOT/valpa_angledreach_model_sweep_logs_${REMOTE_PORT}}"
+SERVER_LOG_DIR="${SERVER_LOG_DIR:-$OUTPUT_ROOT/${REMOTE_PORT}}"
 ARCHIVE_AFTER_MODEL="${ARCHIVE_AFTER_MODEL:-1}"
 DELETE_UNZIPPED_AFTER_ARCHIVE="${DELETE_UNZIPPED_AFTER_ARCHIVE:-1}"
 
 MODEL_CONFIGS=(
-    droid-256px-8f-dual.yaml
-    droid-256px-8f-ind.yaml
-    droid-256px-8f-right.yaml
     droid-256px-8f-wrist.yaml
 )
 
@@ -194,7 +191,7 @@ trap 'cleanup_server; exit 143' TERM
 if port_open; then
     echo "Port $REMOTE_HOST:$REMOTE_PORT is already open."
     echo "Stop the existing VALPA server before running the model sweep, so each cfg is evaluated against the intended hosted model."
-    pkill -f "valpa/inference/serve_policy.py.*--port $REMOTE_PORT" || true
+    pkill -f "valpa/inference/serve_policy_rotate.py.*--port $REMOTE_PORT" || true
 fi
 
 mkdir -p "$SERVER_LOG_DIR"
@@ -250,16 +247,16 @@ for cfg_file in "${MODEL_CONFIGS[@]}"; do
     fi
 
     cfg_name="${cfg_file%.yaml}"
-    server_log="$SERVER_LOG_DIR/${cfg_name}_serve_policy.log"
+    server_log="$SERVER_LOG_DIR/${cfg_name}_serve_policy_rotate.log"
 
     echo
     echo "=== Starting VALPA server: $cfg_file ==="
 
-    pkill -f "valpa/inference/serve_policy.py.*--port $REMOTE_PORT" || true
+    pkill -f "valpa/inference/serve_policy_rotate.py.*--port $REMOTE_PORT" || true
     sleep 2
 
     PROTOCOL_BUFFERS_PYTHON_IMPLEMENTATION=python \
-        "$ISAAC_PYTHON" valpa/inference/serve_policy.py \
+        "$ISAAC_PYTHON" valpa/inference/serve_policy_rotate.py \
         --cfg-file "valpa-angledreach/$cfg_file" \
         --host "$SERVER_HOST" \
         --port "$REMOTE_PORT" \
@@ -292,7 +289,7 @@ for cfg_file in "${MODEL_CONFIGS[@]}"; do
     VIDEO_MODE="$VIDEO_MODE" \
     OUTPUT_FOLDER_NAME="$output_folder_name" \
     DEVICE="$DEVICE" \
-        bash examples/policy/run_angledreach_valpa_eval_10x.sh
+        bash examples/policy/run_angledreach_eval_10x.sh
 
     archive_model_output "$output_folder_name"
     cleanup_server

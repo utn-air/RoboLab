@@ -33,7 +33,7 @@ mkdir -p output && HEADLESS=1 VIDEO_MODE=sensor bash examples/policy/run_angledp
 mkdir -p output && HEADLESS=1 VIDEO_MODE=sensor bash examples/policy/run_angledpickup_valpa_model_sweep_ind.sh > output/sweep_pickup_ind.log 2>&1
 
 
-python examples/demo/run_env_keys.py --headless --task AngledPickupCartoon2Task
+python-rtx-compat examples/demo/run_env_keys.py --headless --task AngledPickupCartoon2Task
 /workspace/isaaclab/_isaac_sim/python.sh examples/demo/run_pickup_home_goals.py \
   --task AngledPickupCartoon2Task \
   --headless
@@ -74,3 +74,9 @@ apptainer build --fakeroot \
 
 apptainer overlay create --size 4096 \
   robolab-valpa-overlay.img
+
+apptainer shell --nv \
+  --overlay overlay_interactive.img \
+  robolab-valpa.sif
+
+cd /workspace/robolab/

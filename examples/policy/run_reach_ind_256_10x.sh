@@ -2,7 +2,7 @@ set -euo pipefail
 
 export ISAAC_PYTHON="${ISAAC_PYTHON:-python-rtx-compat}"
 REMOTE_HOST="${REMOTE_HOST:-localhost}"
-REMOTE_PORT="${REMOTE_PORT:-8000}"
+REMOTE_PORT="${REMOTE_PORT:-8005}"
 SERVER_HOST="${SERVER_HOST:-0.0.0.0}"
 SERVER_START_TIMEOUT="${SERVER_START_TIMEOUT:-600}"
 OUTPUT_ROOT="${OUTPUT_ROOT:-/anvme/workspace/v106be10-valpa-robolab/RoboLab/output}"
@@ -10,16 +10,13 @@ HEADLESS="${HEADLESS:-1}"
 VIDEO_MODE="${VIDEO_MODE:-sensor}"
 OUTPUT_FOLDER_NAME="${OUTPUT_FOLDER_NAME:-}"
 DEVICE="${DEVICE:-cuda:0}"
-SERVER_LOG_DIR="${SERVER_LOG_DIR:-$OUTPUT_ROOT/valpa_model_sweep_logs_${REMOTE_PORT}}"
+SERVER_LOG_DIR="${SERVER_LOG_DIR:-$OUTPUT_ROOT/${REMOTE_PORT}}"
 ARCHIVE_AFTER_MODEL="${ARCHIVE_AFTER_MODEL:-1}"
 DELETE_UNZIPPED_AFTER_ARCHIVE="${DELETE_UNZIPPED_AFTER_ARCHIVE:-1}"
 NUM_RUNS_PER_TASK="${NUM_RUNS_PER_TASK:-10}"
 
 MODEL_CONFIGS=(
-    droid-224px-8f-dual.yaml
-    droid-224px-8f-ind.yaml
-    droid-224px-8f-right.yaml
-    droid-224px-8f-wrist.yaml
+    droid-256px-8f-ind.yaml
 )
 
 TASKS=(
@@ -177,7 +174,6 @@ archive_model_output() {
         return 1
     fi
 
-
     echo "=== Zipping $model_dir -> $archive_file ==="
     rm -f "$archive_file"
     (
@@ -288,6 +284,7 @@ if ((${#MODEL_CONFIGS[@]} == 0)); then
     exit 0
 fi
 
+
 for cfg_file in "${MODEL_CONFIGS[@]}"; do
     cfg_path="/workspace/robolab/valpa/configs/inference/valpa-reach/$cfg_file"
 
@@ -349,7 +346,7 @@ for cfg_file in "${MODEL_CONFIGS[@]}"; do
         OUTPUT_FOLDER_NAME="$OUTPUT_FOLDER_NAME" \
         DEVICE="$DEVICE" \
         NUM_RUNS_PER_TASK="$NUM_RUNS_PER_TASK" \
-        bash examples/policy/run_reach_valpa_eval_10x.sh; then
+        bash examples/policy/run_reach_eval_10x.sh; then
         echo "=== Eval failed for $model_name. Skipping archive to preserve partial outputs. ==="
         cleanup_server
         exit 1
