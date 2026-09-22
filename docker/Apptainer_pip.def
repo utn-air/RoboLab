@@ -11,6 +11,8 @@ From: nvcr.io/nvidia/isaac-lab:{{ ISAACLAB_TAG }}
 
 %files
     RoboLab/. /workspace/robolab
+    molmoact2/. /workspace/molmoact2
+    duet-dino/. /workshop/duet-dino
 
 %post
     apt-get update
@@ -32,6 +34,7 @@ From: nvcr.io/nvidia/isaac-lab:{{ ISAACLAB_TAG }}
         zstd
     rm -rf /var/lib/apt/lists/*
 
+    ################## ROBOLAB INSTALLATION #####################
     /workspace/isaaclab/_isaac_sim/python.sh -m pip install \
         --no-cache-dir \
         --no-deps \
@@ -42,6 +45,18 @@ From: nvcr.io/nvidia/isaac-lab:{{ ISAACLAB_TAG }}
         --no-cache-dir "docstring-parser==0.16"
     GIT_LFS_SKIP_SMUDGE=1 /workspace/isaaclab/_isaac_sim/python.sh \
         -m pip install --no-cache-dir -e .
+
+    ##################### DUET-DINO INSTALLATION #################
+    /workspace/isaaclab/_isaac_sim/python.sh -m pip install \
+        --no-cache-dir --no-deps timm einops
+    cd /workspace/duet-dino
+    GIT_LFS_SKIP_SMUDGE=1 /workspace/isaaclab/_isaac_sim/python.sh \
+        -m pip install --no-cache-dir --no-deps -e .
+    cd /workspace/robolab
+    install -d /workspace/duet-dino/checkpoints /workspace/robolab/output
+
+    ################### MOLMOACT2 INSTALLATION ######################
+    
 
     # Build the pinned Khronos Profiles layer inside this Ubuntu image.
     # UPDATE_DEPS builds jsoncpp 1.9.6 as a static library, avoiding the
