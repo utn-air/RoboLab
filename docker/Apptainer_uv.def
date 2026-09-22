@@ -1,0 +1,383 @@
+Bootstrap: docker
+From: nvidia/cuda:12.8.0-cudnn-devel-ubuntu24.04
+
+%arguments
+    MOLMOACT2_REF=main
+    ROBOLAB_REF=nayak/molmoact_deployment
+    VULKAN_PROFILES_COMMIT=a400d0b10059b2cc3cd285475593eee79975a5c4
+
+%labels
+    Description MolmoAct2 and RoboLab with externally bind-mounted source repositories
+    CUDA 12.8
+    MolmoAct2Ref {{ MOLMOACT2_REF }}
+    RoboLabRef {{ ROBOLAB_REF }}
+
+%files
+    /anvme/workspace/v106be14-vla/vulkan-icd/nvidia_icd.json /etc/vulkan/icd.d/nvidia_icd.json
+
+%environment
+    export DEBIAN_FRONTEND=noninteractive
+    export PYTHONUNBUFFERED=1
+    export PIP_NO_CACHE_DIR=1
+
+    export HF_HOME=/models/huggingface
+    export HF_HUB_ENABLE_HF_TRANSFER=1
+
+    export UV_LINK_MODE=copy
+    export UV_COMPILE_BYTECODE=0
+    export UV_NO_MODIFY_PATH=1
+    export UV_PYTHON_INSTALL_DIR=/opt/uv-python
+
+    export MPLCONFIGDIR=/tmp/matplotlib
+    export OMNI_KIT_ACCEPT_EULA=Y
+    export ACCEPT_EULA=Y
+    export PYOPENGL_PLATFORM=egl
+    export MUJOCO_GL=egl
+
+    # Source repositories are bind-mounted here at runtime.
+    export MOLMOACT2_ROOT=/workspace/molmoact2
+    export ROBOLAB_ROOT=/workspace/robolab
+
+    # Independent immutable environments inside the SIF.
+    export MOLMOACT2_VENV=/opt/venvs/molmoact2
+    export ROBOLAB_VENV=/opt/venvs/robolab
+
+    # NVIDIA Vulkan ICD copied into the image.
+    export VK_DRIVER_FILES=/etc/vulkan/icd.d/nvidia_icd.json
+
+    # Do not globally activate either project environment.
+    export PATH=/usr/local/bin:$PATH
+
+    # Prefer NVIDIA libraries injected by `apptainer --nv`.
+    export LD_LIBRARY_PATH=/.singularity.d/libs:$LD_LIBRARY_PATH
+
+%post -c /bin/bash
+    set -euo pipefail
+
+    export DEBIAN_FRONTEND=noninteractive
+    export PYTHONUNBUFFERED=1
+    export PIP_NO_CACHE_DIR=1
+    export UV_LINK_MODE=copy
+    export UV_COMPILE_BYTECODE=0
+    export UV_NO_MODIFY_PATH=1
+    export UV_PYTHON_INSTALL_DIR=/opt/uv-python
+
+    ############################################################################
+    # System dependencies
+    ############################################################################
+
+    apt-get update
+
+    apt-get install -y --no-install-recommends \
+        bash \
+        ca-certificates \
+        curl \
+        wget \
+        git \
+        git-lfs \
+        openssh-client \
+        build-essential \
+        gcc \
+        g++ \
+        make \
+        cmake \
+        ninja-build \
+        pkg-config \
+        python3 \
+        python3-dev \
+        python3-venv \
+        python3-pip \
+        python3-jsonschema \
+        ffmpeg \
+        libavcodec-dev \
+        libavformat-dev \
+        libavutil-dev \
+        libswscale-dev \
+        libgl1 \
+        libegl1 \
+        libglvnd0 \
+        libglx0 \
+        libopengl0 \
+        libosmesa6 \
+        libvulkan1 \
+        vulkan-tools \
+        mesa-utils \
+        libglu1-mesa \
+        libglib2.0-0 \
+        libsm6 \
+        libice6 \
+        libfontconfig1 \
+        libfreetype6 \
+        libdbus-1-3 \
+        libnss3 \
+        libnspr4 \
+        libatk1.0-0 \
+        libatk-bridge2.0-0 \
+        libcups2 \
+        libx11-6 \
+        libxext6 \
+        libxrender1 \
+        libxrandr2 \
+        libxcursor1 \
+        libxinerama1 \
+        libxfixes3 \
+        libxcomposite1 \
+        libxdamage1 \
+        libxss1 \
+        libxi6 \
+        libxt6 \
+        libxmu6 \
+        libxkbcommon-x11-0 \
+        libusb-1.0-0 \
+        libudev-dev \
+        libgomp1 \
+        pciutils \
+        iputils-ping \
+        htop \
+        tmux \
+        vim \
+        nano \
+        zip
+
+    rm -rf /var/lib/apt/lists/*
+
+    git lfs install --system --skip-smudge
+
+    ############################################################################
+    # Install uv and Python 3.11
+    ############################################################################
+
+    curl -LsSf https://astral.sh/uv/install.sh \
+        | env UV_UNMANAGED_INSTALL=/usr/local/bin sh
+
+    uv --version
+
+    mkdir -p \
+        /models/huggingface \
+        /tmp/matplotlib \
+        /workspace/molmoact2 \
+        /workspace/robolab \
+        /opt/venvs \
+        /opt/uv-python \
+        /opt/build-src
+
+    # Both projects use independent virtual environments backed by the same
+    # installed Python version.
+    uv python install 3.11
+
+    ############################################################################
+    # MolmoAct2 dependency environment
+    ############################################################################
+
+    GIT_LFS_SKIP_SMUDGE=1 git clone \
+        https://github.com/abhijeetknayak/molmoact2.git \
+        /opt/build-src/molmoact2
+
+    cd /opt/build-src/molmoact2
+
+    git checkout "{{ MOLMOACT2_REF }}"
+
+    # Install only dependencies. The editable source repository is supplied
+    # through a runtime bind mount.
+    UV_PROJECT_ENVIRONMENT=/opt/venvs/molmoact2 \
+    uv sync \
+        --no-dev \
+        --no-install-project \
+        --python 3.11
+
+    uv pip check \
+        --python /opt/venvs/molmoact2/bin/python
+
+    /opt/venvs/molmoact2/bin/python - <<'PY'
+import fastapi
+import json_numpy
+import torch
+import transformers
+
+print("MolmoAct2 dependency environment OK")
+print("torch:", torch.__version__)
+print("torch CUDA build:", torch.version.cuda)
+print("transformers:", transformers.__version__)
+PY
+
+    ############################################################################
+    # RoboLab dependency environment
+    ############################################################################
+
+    GIT_LFS_SKIP_SMUDGE=1 git clone \
+        https://github.com/utn-air/RoboLab.git \
+        /opt/build-src/robolab
+
+    cd /opt/build-src/robolab
+
+    git checkout "{{ ROBOLAB_REF }}"
+
+    UV_PROJECT_ENVIRONMENT=/opt/venvs/robolab \
+    uv sync \
+        --extra isaac50 \
+        --no-install-project \
+        --python 3.11
+
+    # Install a non-editable package snapshot to register package metadata and
+    # console entry points. The bind-mounted repository takes precedence at
+    # runtime through cwd and PYTHONPATH.
+    uv pip install \
+        --python /opt/venvs/robolab/bin/python \
+        --no-deps \
+        /opt/build-src/robolab
+
+    uv pip install \
+        --python /opt/venvs/robolab/bin/python \
+        pytest
+
+    uv pip check \
+        --python /opt/venvs/robolab/bin/python
+
+    /opt/venvs/robolab/bin/python - <<'PY'
+import json_numpy
+import requests
+
+print("RoboLab dependency environment OK")
+PY
+
+    ############################################################################
+    # RoboLab Vulkan RTX compatibility layer
+    ############################################################################
+
+    compat_root=/opt/vulkan-rtx-compat
+    compat_assets=/opt/build-src/robolab/docker/vulkan-rtx-compat
+    profiles_src=/tmp/Vulkan-Profiles
+    profiles_build=/tmp/Vulkan-Profiles-build
+
+    # Confirm that the selected RoboLab branch contains the required assets.
+    test -r "$compat_assets/VP_RTX_driver_compat_generated.json"
+    test -r "$compat_assets/VkLayer_KHRONOS_profiles.json"
+    test -r "$compat_assets/python-rtx-compat"
+
+    install -d \
+        "$compat_root/profiles" \
+        "$compat_root/share/vulkan/implicit_layer.d"
+
+    git clone \
+        --filter=blob:none \
+        --no-checkout \
+        https://github.com/KhronosGroup/Vulkan-Profiles.git \
+        "$profiles_src"
+
+    git -C "$profiles_src" checkout \
+        --detach \
+        "{{ VULKAN_PROFILES_COMMIT }}"
+
+    cmake \
+        -S "$profiles_src" \
+        -B "$profiles_build" \
+        -G Ninja \
+        -D CMAKE_BUILD_TYPE=Release \
+        -D BUILD_TESTS=OFF \
+        -D UPDATE_DEPS=ON
+
+    cmake --build \
+        "$profiles_build" \
+        --target ProfilesLayer \
+        --parallel
+
+    install -m 0755 \
+        "$profiles_build/layer/libVkLayer_khronos_profiles.so" \
+        "$compat_root/libVkLayer_khronos_profiles.so"
+
+    # jsoncpp must be statically linked. A dependency on libjsoncpp.so would
+    # make the layer dependent on the distribution-specific jsoncpp ABI.
+    if ldd "$compat_root/libVkLayer_khronos_profiles.so" \
+            | grep -q libjsoncpp; then
+        echo "ERROR: Vulkan Profiles layer unexpectedly links dynamic jsoncpp" >&2
+        exit 1
+    fi
+
+    install -m 0644 \
+        "$compat_assets/VP_RTX_driver_compat_generated.json" \
+        "$compat_root/profiles/VP_RTX_driver_compat_generated.json"
+
+    install -m 0644 \
+        "$compat_assets/VkLayer_KHRONOS_profiles.json" \
+        "$compat_root/share/vulkan/implicit_layer.d/VkLayer_KHRONOS_profiles.json"
+
+    # This wrapper enables the compatibility layer and launches the RoboLab
+    # Python interpreter at /opt/venvs/robolab/bin/python.
+    install -m 0755 \
+        "$compat_assets/python-rtx-compat" \
+        /usr/local/bin/python-rtx-compat
+
+    # Build-time verification that all installed files are present.
+    test -x "$compat_root/libVkLayer_khronos_profiles.so"
+    test -r "$compat_root/profiles/VP_RTX_driver_compat_generated.json"
+    test -r "$compat_root/share/vulkan/implicit_layer.d/VkLayer_KHRONOS_profiles.json"
+    test -x /usr/local/bin/python-rtx-compat
+
+    rm -rf \
+        "$profiles_src" \
+        "$profiles_build"
+
+    ############################################################################
+    # Cleanup
+    ############################################################################
+
+    # Leave the cloned repository before deleting the build-source directory.
+    cd /
+
+    rm -rf /opt/build-src
+
+%appenv robolab
+    # Activate only the RoboLab Python environment.
+    export VIRTUAL_ENV=/opt/venvs/robolab
+    export PATH=/opt/venvs/robolab/bin:$PATH
+
+    # Prefer the externally bind-mounted RoboLab source.
+    export ROBOLAB_ROOT=/workspace/robolab
+    export PYTHONPATH=/workspace/robolab${PYTHONPATH:+:$PYTHONPATH}
+
+    # Enable the implicit Khronos Profiles layer.
+    export RTX_VULKAN_COMPAT_ENABLE_LAYER=1
+    unset RTX_VULKAN_COMPAT_DISABLE_LAYER
+
+    # Select the generated RTX compatibility profile.
+    export VK_KHRONOS_PROFILES_PROFILE_NAME=VP_RTX_driver_compat_generated
+    export VK_KHRONOS_PROFILES_SIMULATE_CAPABILITIES=SIMULATE_PROPERTIES_BIT
+    export VK_KHRONOS_PROFILES_DEBUG_REPORTS=DEBUG_REPORT_ERROR_BIT
+
+    export VK_KHRONOS_PROFILES_PROFILE_DIRS=/opt/vulkan-rtx-compat/profiles${VK_KHRONOS_PROFILES_PROFILE_DIRS:+:$VK_KHRONOS_PROFILES_PROFILE_DIRS}
+
+    # Makes the Vulkan loader discover:
+    # /opt/vulkan-rtx-compat/share/vulkan/implicit_layer.d
+    export XDG_DATA_DIRS=/opt/vulkan-rtx-compat/share${XDG_DATA_DIRS:+:$XDG_DATA_DIRS}
+
+%apprun robolab
+    cd /workspace/robolab
+    exec /opt/venvs/robolab/bin/python "$@"
+
+%apphelp robolab
+    Runs Python from the RoboLab virtual environment with the RTX Vulkan
+    compatibility profile enabled.
+
+    Bind the RoboLab source repository to /workspace/robolab.
+
+    Example:
+
+        apptainer run --nv \
+            --app robolab \
+            --bind /path/to/RoboLab:/workspace/robolab \
+            IMAGE.sif \
+            examples/run_empty.py --headless
+
+%test
+    test -x /opt/venvs/molmoact2/bin/python
+    test -x /opt/venvs/robolab/bin/python
+    test -x /usr/local/bin/python-rtx-compat
+
+    test -r /etc/vulkan/icd.d/nvidia_icd.json
+
+    test -x /opt/vulkan-rtx-compat/libVkLayer_khronos_profiles.so
+    test -r /opt/vulkan-rtx-compat/profiles/VP_RTX_driver_compat_generated.json
+    test -r /opt/vulkan-rtx-compat/share/vulkan/implicit_layer.d/VkLayer_KHRONOS_profiles.json
+
+    /opt/venvs/molmoact2/bin/python --version
+    /opt/venvs/robolab/bin/python --version
