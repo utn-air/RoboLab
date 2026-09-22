@@ -43,6 +43,7 @@ class MolmoAct2Client(InferenceClient):
         endpoint = endpoint if endpoint.startswith("/") else f"/{endpoint}"
         self.url = f"http://{remote_host}:{remote_port}{endpoint}"
         self.session = requests.Session()
+        self.session.trust_env = False
 
         print(
             f"[MolmoAct2Client] Connecting to MolmoAct2 server: "
@@ -116,6 +117,8 @@ class MolmoAct2Client(InferenceClient):
 
     def _unpack_response(self, response: Any) -> np.ndarray:
         actions = np.asarray(response["actions"], dtype=np.float32)
+
+        print(f"Actions shape: {actions.shape}")
 
         if actions.ndim == 1:
             actions = actions[None, :]

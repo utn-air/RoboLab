@@ -1,5 +1,12 @@
 set -euo pipefail
 
+if (($# < 1)); then
+    echo "Usage: $0 OUTPUT_DIR" >&2
+    exit 2
+fi
+
+OUTPUT_DIR="$1"
+
 MOLMOACT2_DIR="${MOLMOACT2_DIR:-/workspace/molmoact2}"
 ROBOLAB_DIR="${ROBOLAB_DIR:-/workspace/robolab}"
 
@@ -30,20 +37,33 @@ SERVER_START_TIMEOUT="${SERVER_START_TIMEOUT:-600}"
 SERVER_STOP_TIMEOUT="${SERVER_STOP_TIMEOUT:-30}"
 SERVER_LOG="${SERVER_LOG:-/anvme/workspace/v106be14-vla/${REMOTE_PORT}.log}"
 
-TASKS=(
-    BananaOnPlateTask
-    BananasInBinThreeTotalTask
-    UnstackRubiksCubeTask
-    SauceBottlesCrateTask
-    RubiksCubeOrBananaTask
-    BananaInBowlTask
-    BananasInBinOneMoreTask
-    RubiksCubeTask
-    RubiksCubeThenBananaTask
-    BananasInCrateTask
+ID_TASKS=(
+    BananaInBowlTask 
+    RubiksCubeTask 
+    BananaOnPlateTask 
+    ThrowAwayAppleTask 
+    SauceBottlesCrateTask 
+    FoodPacking1BoxesTask 
+    SmartphoneInBinTask 
+    PickDrillTask 
+    RubiksCubeAndBananaTask 
+    AppleAndYogurtInBowlTask 
+) 
+
+OOD_TASKS=( 
+    MarkerInMugTask 
+    SpoonInMugTask 
+    ReorientJugTask 
+    ReorientAllMugsTask
+    Stack3RubiksCubeTask 
+    BlockStackingSpecifiedOrderTask
+    RubiksCubeBehindBowlTask 
+    BananasInBinThreeTotalTask 
+    FoodPackingByColorTask 
+    CleanUpToysTask
 )
 
-NUM_RUNS="${NUM_RUNS:-1}"
+NUM_RUNS="${NUM_RUNS:-5}"
 NUM_ENVS="${NUM_ENVS:-1}"
 
 SERVER_PID=""
@@ -139,7 +159,7 @@ run_simulation() {
 
     source "$ROBOLAB_ENV"
 
-    for task in "${TASKS[@]}"; do
+    for task in "${ID_TASKS[@]}"; do
         echo
         echo "=== Running RoboLab task: $task ==="
 
@@ -150,6 +170,28 @@ run_simulation() {
             --task "$task" \
             --num-runs "$NUM_RUNS" \
             --num-envs "$NUM_ENVS" \
+            --video-mode sensor \
+            --output-folder-name "$OUTPUT_DIR/ID" \
+            --instruction-type vague \
+            --record-image-data
+
+        echo "=== Completed task: $task ==="
+    done
+
+    for task in "${OOD_TASKS[@]}"; do
+        echo
+        echo "=== Running RoboLab task: $task ==="
+
+        python-rtx-compat policies/molmoact2/run.py \
+            --headless \
+            --remote-host "$REMOTE_HOST" \
+            --remote-port "$REMOTE_PORT" \
+            --task "$task" \
+            --num-runs "$NUM_RUNS" \
+            --num-envs "$NUM_ENVS" \
+            --video-mode sensor \
+            --output-folder-name "$OUTPUT_DIR/OOD" \
+            --instruction-type vague \
             --record-image-data
 
         echo "=== Completed task: $task ==="
