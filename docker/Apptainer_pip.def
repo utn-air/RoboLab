@@ -1,5 +1,7 @@
 # Experimental Isaac Sim 5.1 image for NVIDIA drivers newer than the validated
-# R580 branch. Build from the RoboLab repository root.
+# R580 branch. Build from the workspace containing Robolab, molmoact2, and duet-dino. 
+# Bind the host assets directory to receive downloaded assets:
+# apptainer build --bind "$PWD/Robolab/assets:/mnt/robolab-assets" Robolab.sif Robolab/docker/Apptainer_pip.def
 
 Bootstrap: docker
 From: nvcr.io/nvidia/isaac-lab:{{ ISAACLAB_TAG }}
@@ -9,12 +11,17 @@ From: nvcr.io/nvidia/isaac-lab:{{ ISAACLAB_TAG }}
     OPENPI_COMMIT=aa6420561529593114160d05e5ad155792b272f3
     VULKAN_PROFILES_COMMIT=a400d0b10059b2cc3cd285475593eee79975a5c4
 
+%setup
+    set -eu
+    mkdir -p "${APPTAINER_ROOTFS:?}/mnt/robolab-assets"
+
 %files
-    RoboLab/. /workspace/robolab
+    Robolab/. /workspace/robolab
     molmoact2/. /workspace/molmoact2
-    duet-dino/. /workshop/duet-dino
+    duet-dino/. /workspace/duet-dino
 
 %post
+    set -eu
     apt-get update
     apt-get install -y --no-install-recommends \
         build-essential \
@@ -28,11 +35,18 @@ From: nvcr.io/nvidia/isaac-lab:{{ ISAACLAB_TAG }}
         ninja-build \
         nvtop \
         python3-jsonschema \
+        rsync \
+        util-linux \
         tmux \
         vim \
         zip \
         zstd
     rm -rf /var/lib/apt/lists/*
+
+    # Download using the container's Git LFS, then export assets
+    git -C /workspace/robolab -c safe.directory=/workspace/robolab \
+        lfs pull --include="assets/**" --exclude=""
+    rsync -r --checksum /workspace/robolab/assets/ /mnt/robolab-assets/
 
     ################## ROBOLAB INSTALLATION #####################
     /workspace/isaaclab/_isaac_sim/python.sh -m pip install \
@@ -45,6 +59,7 @@ From: nvcr.io/nvidia/isaac-lab:{{ ISAACLAB_TAG }}
         --no-cache-dir "docstring-parser==0.16"
     GIT_LFS_SKIP_SMUDGE=1 /workspace/isaaclab/_isaac_sim/python.sh \
         -m pip install --no-cache-dir -e .
+    install -d /workspace/robolab/output
 
     ##################### DUET-DINO INSTALLATION #################
     /workspace/isaaclab/_isaac_sim/python.sh -m pip install \
@@ -53,10 +68,39 @@ From: nvcr.io/nvidia/isaac-lab:{{ ISAACLAB_TAG }}
     GIT_LFS_SKIP_SMUDGE=1 /workspace/isaaclab/_isaac_sim/python.sh \
         -m pip install --no-cache-dir --no-deps -e .
     cd /workspace/robolab
-    install -d /workspace/duet-dino/checkpoints /workspace/robolab/output
+    install -d /workspace/duet-dino/checkpoints
 
     ################### MOLMOACT2 INSTALLATION ######################
     
+    /workspace/isaaclab/_isaac_sim/python.sh -m pip install \
+        --no-cache-dir virtualenv
+    /workspace/isaaclab/_isaac_sim/python.sh -m virtualenv /opt/venvs/molmoact2
+
+    # Read dependencies from the copied project without packaging its examples
+    # or experiments. pip does not use the project's tool.uv index settings.
+    /opt/venvs/molmoact2/bin/python - <<'PYDEPS'
+from pathlib import Path
+import sys
+import tomllib
+
+assert (3, 11) <= sys.version_info[:2] < (3, 13), "MolmoAct2 requires Python 3.11 or 3.12"
+project = tomllib.loads(Path("/workspace/molmoact2/pyproject.toml").read_text())
+deps = project["project"]["dependencies"]
+Path("/tmp/molmoact2-torch.txt").write_text(
+    "\n".join(dep for dep in deps if dep.startswith(("torch==", "torchvision=="))) + "\n"
+)
+Path("/tmp/molmoact2-requirements.txt").write_text("\n".join(deps) + "\n")
+PYDEPS
+    /opt/venvs/molmoact2/bin/python -m pip install --no-cache-dir \
+        --index-url https://download.pytorch.org/whl/cu128 \
+        -r /tmp/molmoact2-torch.txt
+    /opt/venvs/molmoact2/bin/python -m pip install --no-cache-dir \
+        -r /tmp/molmoact2-requirements.txt
+    /opt/venvs/molmoact2/bin/python -m pip check
+    rm -f /tmp/molmoact2-torch.txt /tmp/molmoact2-requirements.txt
+
+    # Checkpoints are supplied via a writable runtime bind mount.
+    install -d /workspace/molmoact2/models/huggingface
 
     # Build the pinned Khronos Profiles layer inside this Ubuntu image.
     # UPDATE_DEPS builds jsoncpp 1.9.6 as a static library, avoiding the
@@ -93,9 +137,23 @@ From: nvcr.io/nvidia/isaac-lab:{{ ISAACLAB_TAG }}
     rm -rf "$profiles_src" "$profiles_build"
 
 %environment
+    export ROBOLAB_PYTHON=/workspace/isaaclab/_isaac_sim/python.sh
     export OMNI_KIT_ACCEPT_EULA=YES
     export ACCEPT_EULA=Y
-
+    export MOLMOACT2_ENV=/opt/venvs/molmoact2/bin/activate
+    export HF_HOME=/workspace/molmoact2/models/huggingface
+    export HF_HUB_ENABLE_HF_TRANSFER=1
+    
 %labels
     org.opencontainers.image.title RoboLab
     org.opencontainers.image.description "RoboLab with experimental Vulkan RTX driver compatibility profile"
+
+%help
+    Bind a Hugging Face cache containing the downloaded checkpoints:
+        apptainer exec --nv --bind /path/to/hf-cache:/workspace/molmoact2/models/huggingface IMAGE.sif \
+            /opt/venvs/molmoact2/bin/python \
+            /workspace/molmoact2/examples/droid/host_server_droid.py --dtype bfloat16
+
+    The cache must retain its hub/models--allenai--MolmoAct2-DROID layout.
+    Use a writable bind: the server patches checkpoint Python files for bf16.
+

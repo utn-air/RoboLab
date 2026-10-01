@@ -34,7 +34,7 @@ parser.add_argument(
     "--open-loop-horizon",
     "--open_loop_horizon",
     type=int,
-    default=10,
+    default=15,
     help="Number of MolmoAct2 actions to consume before requesting a new chunk.",
 )
 parser.add_argument(

@@ -32,7 +32,7 @@ class MolmoAct2Client(InferenceClient):
         self,
         remote_host: str = "localhost",
         remote_port: int = 8000,
-        open_loop_horizon: int = 10,
+        open_loop_horizon: int = 15, # all actions
         request_timeout: float = 60.0,
         endpoint: str = "/act",
     ) -> None:
@@ -95,7 +95,7 @@ class MolmoAct2Client(InferenceClient):
             "wrist_cam": extracted_obs["wrist_cam"],
             "instruction": instruction,
             "state": extracted_obs["state"],
-            "num_steps": self.open_loop_horizon,
+            "num_steps": 10, # according to paper and host_server_droid.py
         }
 
     def _query_server(self, request: dict) -> Any:
@@ -118,7 +118,6 @@ class MolmoAct2Client(InferenceClient):
     def _unpack_response(self, response: Any) -> np.ndarray:
         actions = np.asarray(response["actions"], dtype=np.float32)
 
-        print(f"Actions shape: {actions.shape}")
 
         if actions.ndim == 1:
             actions = actions[None, :]

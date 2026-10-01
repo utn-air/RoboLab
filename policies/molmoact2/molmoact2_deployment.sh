@@ -10,15 +10,15 @@ OUTPUT_DIR="$1"
 MOLMOACT2_DIR="${MOLMOACT2_DIR:-/workspace/molmoact2}"
 ROBOLAB_DIR="${ROBOLAB_DIR:-/workspace/robolab}"
 
-# Replace these with the activation scripts inside your Apptainer image.
-MOLMOACT2_ENV="${MOLMOACT2_ENV:-/opt/venvs/molmoact2/bin/activate}"
-ROBOLAB_ENV="${ROBOLAB_ENV:-/opt/venvs/robolab/bin/activate}"
+# Isaac Sim's launcher supplies its Python packages and shared libraries.
+export ROBOLAB_PYTHON="${ROBOLAB_PYTHON:-/workspace/isaaclab/_isaac_sim/python.sh}"
+ROBOLAB_PYTHON_WRAPPER="$ROBOLAB_DIR/docker/vulkan-rtx-compat/python-rtx-compat"
 
 SERVER_BIND_HOST="${SERVER_BIND_HOST:-0.0.0.0}"
 SERVER_CHECK_HOST="${SERVER_CHECK_HOST:-127.0.0.1}"
 
 HOST_IP="$(
-python-rtx-compat - <<'PY'
+"$ROBOLAB_PYTHON_WRAPPER" - <<'PY'
 import socket
 
 sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
@@ -35,7 +35,7 @@ REMOTE_PORT="${REMOTE_PORT:-8000}"
 
 SERVER_START_TIMEOUT="${SERVER_START_TIMEOUT:-600}"
 SERVER_STOP_TIMEOUT="${SERVER_STOP_TIMEOUT:-30}"
-SERVER_LOG="${SERVER_LOG:-/anvme/workspace/v106be14-vla/${REMOTE_PORT}.log}"
+SERVER_LOG="${SERVER_LOG:-/anvme/workspace/v106be14-vla/.cache/souts/molmoact2_${REMOTE_PORT}.log}"
 
 ID_TASKS=(
     BananaInBowlTask 
@@ -135,9 +135,7 @@ start_server() {
 
     (
         cd "$MOLMOACT2_DIR"
-        source "$MOLMOACT2_ENV"
-
-        exec python examples/droid/host_server_droid.py \
+        exec /opt/venvs/molmoact2/bin/python examples/droid/host_server_droid.py \
             --host "$SERVER_BIND_HOST" \
             --port "$REMOTE_PORT" \
             --dtype bfloat16
@@ -157,13 +155,11 @@ run_simulation() {
 
     cd "$ROBOLAB_DIR"
 
-    source "$ROBOLAB_ENV"
-
     for task in "${ID_TASKS[@]}"; do
         echo
         echo "=== Running RoboLab task: $task ==="
 
-        python-rtx-compat policies/molmoact2/run.py \
+        "$ROBOLAB_PYTHON_WRAPPER" policies/molmoact2/run.py \
             --headless \
             --remote-host "$REMOTE_HOST" \
             --remote-port "$REMOTE_PORT" \
@@ -182,7 +178,7 @@ run_simulation() {
         echo
         echo "=== Running RoboLab task: $task ==="
 
-        python-rtx-compat policies/molmoact2/run.py \
+        "$ROBOLAB_PYTHON_WRAPPER" policies/molmoact2/run.py \
             --headless \
             --remote-host "$REMOTE_HOST" \
             --remote-port "$REMOTE_PORT" \
