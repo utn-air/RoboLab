@@ -16,22 +16,8 @@ ROBOLAB_PYTHON_WRAPPER="$ROBOLAB_DIR/docker/vulkan-rtx-compat/python-rtx-compat"
 
 SERVER_BIND_HOST="${SERVER_BIND_HOST:-0.0.0.0}"
 SERVER_CHECK_HOST="${SERVER_CHECK_HOST:-127.0.0.1}"
-
-HOST_IP="$(
-"$ROBOLAB_PYTHON_WRAPPER" - <<'PY'
-import socket
-
-sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-try:
-    sock.connect(("8.8.8.8", 80))
-    print(sock.getsockname()[0])
-finally:
-    sock.close()
-PY
-)"
-
-REMOTE_HOST="${HOST_IP:-localhost}"
-REMOTE_PORT="${REMOTE_PORT:-8000}"
+REMOTE_HOST="${REMOTE_HOST:-127.0.0.1}"
+REMOTE_PORT="${REMOTE_PORT:-5000}"
 
 SERVER_START_TIMEOUT="${SERVER_START_TIMEOUT:-600}"
 SERVER_STOP_TIMEOUT="${SERVER_STOP_TIMEOUT:-30}"
@@ -126,9 +112,8 @@ cleanup_server() {
 
 start_server() {
     if port_open; then
-        echo "Using existing server at ${REMOTE_HOST}:${REMOTE_PORT}."
-        SERVER_PID=""
-        return 0
+        echo "Port ${REMOTE_PORT} is already open on ${SERVER_CHECK_HOST}; refusing to start MolmoAct2 server." >&2
+        return 1
     fi
 
     echo "No existing server found. Starting MolmoAct2 server..."
@@ -168,7 +153,7 @@ run_simulation() {
             --num-envs "$NUM_ENVS" \
             --video-mode sensor \
             --output-folder-name "$OUTPUT_DIR/ID" \
-            --instruction-type vague \
+            --instruction-type default \
             --record-image-data
 
         echo "=== Completed task: $task ==="

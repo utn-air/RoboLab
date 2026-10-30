@@ -164,7 +164,7 @@ DroidCfg.table_fixture = FRANKA_TABLE_FIXTURE
 # EE-pose recorder channels (HDF5 channel name -> EE body name), consumed by
 # create_recorder_config. "base_link" is the Robotiq 2F-85 gripper base
 # (Gripper/Robotiq_2F_85/base_link).
-DroidCfg.ee_recorder_bodies = {"ee_pose": "base_link"}
+DroidCfg.ee_recorder_bodies = {"ee_pose": "panda_link8"}
 
 
 @configclass
@@ -246,7 +246,7 @@ def ee_pos(
     """Returns the end effector position (x, y, z) in the robot-root frame (see docs/frames.md)."""
     robot = env.scene[asset_cfg.name]
     # Get the body index for the end effector link
-    ee_body_name = "base_link"  # Robotiq gripper base link
+    ee_body_name = "panda_link8" #"base_link"  # Robotiq gripper base link
     body_idx = robot.data.body_names.index(ee_body_name)
     # Return position (shape: [num_envs, 3])
     pos, _ = subtract_frame_transforms(
@@ -263,7 +263,7 @@ def ee_quat(
     """Returns the end effector orientation as quaternion (w, x, y, z) in the robot-root frame."""
     robot = env.scene[asset_cfg.name]
     # Get the body index for the end effector link
-    ee_body_name = "base_link"  # Robotiq gripper base link
+    ee_body_name = "panda_link8"  # Robotiq gripper base link
     body_idx = robot.data.body_names.index(ee_body_name)
     # Return quaternion (shape: [num_envs, 4])
     _, quat = subtract_frame_transforms(
@@ -308,17 +308,18 @@ class BinaryJointPositionZeroToOneAction(BinaryJointPositionAction):
     def process_actions(self, actions: torch.Tensor):
         # store the raw actions
         self._raw_actions[:] = actions
-        # compute the binary mask
-        if actions.dtype == torch.bool:
-            # true: close, false: open
-            binary_mask = actions == 0
-        else:
-            # true: close, false: open
-            binary_mask = actions > 0.5
+        self._processed_actions = actions
+        # # compute the binary mask
+        # if actions.dtype == torch.bool:
+        #     # true: close, false: open
+        #     binary_mask = actions == 0
+        # else:
+        #     # true: close, false: open
+        #     binary_mask = actions > 0.5
         # compute the command
-        self._processed_actions = torch.where(
-            binary_mask, self._close_command, self._open_command
-        )
+        # self._processed_actions = torch.where(
+        #     binary_mask, self._close_command, self._open_command
+        # )
         if self.cfg.clip is not None:
             self._processed_actions = torch.clamp(
                 self._processed_actions,
@@ -358,7 +359,7 @@ class DroidIKActionCfg:
     """Absolute end-effector pose control via differential IK.
 
     Cartesian targets are in the robot-root frame (see docs/frames.md).
-    Tracks base_link directly (no body_offset rotation). If a policy wants to
+    Tracks panda_link8 directly (no body_offset rotation). If a policy wants to
     command poses in eef_frame's coordinates, it must convert before sending:
     target_base_quat = target_eef_quat ⊗ R_eef_in_base⁻¹. We don't use
     body_offset.rot because IsaacLab's DifferentialIK computes the orientation
@@ -376,7 +377,7 @@ class DroidIKActionCfg:
     arm_action = DifferentialInverseKinematicsActionCfg(
         asset_name="robot",
         joint_names=["panda_joint.*"],
-        body_name="base_link",  # Robotiq 2F-85 base flange (gripper mount); matches ee_pos/ee_quat helpers
+        body_name="panda_link8",  # Robotiq 2F-85 base flange (gripper mount); matches ee_pos/ee_quat helpers
         controller=DifferentialIKControllerCfg(command_type="pose", use_relative_mode=False, ik_method="dls"),
         scale=1.0,
         body_offset=DifferentialInverseKinematicsActionCfg.OffsetCfg(pos=[0.0, 0.0, 0.0]),
@@ -407,7 +408,7 @@ class DroidRelIKActionCfg:
     arm_action = DifferentialInverseKinematicsActionCfg(
         asset_name="robot",
         joint_names=["panda_joint.*"],
-        body_name="base_link",  # Robotiq 2F-85 base flange (gripper mount); matches ee_pos/ee_quat helpers
+        body_name="panda_link8",  # Robotiq 2F-85 base flange (gripper mount); matches ee_pos/ee_quat helpers
         controller=DifferentialIKControllerCfg(command_type="pose", use_relative_mode=True, ik_method="dls"),
         scale=0.5,
         body_offset=DifferentialInverseKinematicsActionCfg.OffsetCfg(
@@ -433,7 +434,9 @@ class DroidRelIKActionCfg:
 class ProprioceptionObservationCfg(ObsGroup):
     arm_joint_pos = ObsTerm(func=arm_joint_pos)
     gripper_pos = ObsTerm(
-        func=gripper_pos, noise=noise.GaussianNoiseCfg(std=0.05), clip=(0, 1)
+        func=gripper_pos, 
+        # noise=noise.GaussianNoiseCfg(std=0.05), 
+        clip=(0, 1)
     )
     # ee_*: base_link (gripper mount flange). eef_*: eef_frame (EE control frame, R_offset rotated).
     ee_pos = ObsTerm(func=ee_pos)

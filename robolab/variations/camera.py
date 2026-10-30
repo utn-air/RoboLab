@@ -81,7 +81,11 @@ class OverShoulderRightCameraCfg:
             vertical_aperture=3.024,
         ),
         offset=TiledCameraCfg.OffsetCfg(
-            pos=(0.05, -0.57, 0.66), rot=(0.805, 0.399, -0.195, -0.393), convention="opengl"
+            # pos=(0.05, -0.57, 0.66), 
+            # rot=(0.805, 0.399, -0.195, -0.393), 
+            pos=(0.05, -0.67, 0.68),
+            rot=(0.83922254, 0.50901395, -0.06330685, -0.18056184),
+            convention="opengl"
         ),
     )
 

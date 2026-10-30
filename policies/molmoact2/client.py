@@ -90,6 +90,7 @@ class MolmoAct2Client(InferenceClient):
         }
 
     def _pack_request(self, extracted_obs: dict, instruction: str) -> dict:
+        print(f"[MolmoAct2Client]: {extracted_obs['state']}") 
         return {
             "external_cam": extracted_obs["external_cam"],
             "wrist_cam": extracted_obs["wrist_cam"],
@@ -124,6 +125,9 @@ class MolmoAct2Client(InferenceClient):
 
         if actions.shape[-1] != 8:
             raise ValueError(f"Expected action dim 8, got {actions.shape}")
+
+        if actions.ndim == 3:
+            actions = actions[0, :, :]
 
         return actions
 
